@@ -112,12 +112,9 @@
 
             <!-- 2. Invite Acceptance View -->
             <div id="invite-view" class="view">
-                <p class="subtitle">You've been invited to join as <span id="invite-role-text" class="role-tag"></span></p>
-                <div class="input-group">
-                    <label>Confirm Your Name</label>
-                    <input type="text" id="invite-name" placeholder="Full Name">
-                </div>
-                <button class="btn btn-primary" onclick="acceptInvitation()">Accept & Join</button>
+                <p class="subtitle">You are invited as a <span id="invite-role-text" class="role-tag">...</span></p>
+                <div id="google-invite-btn" style="display: flex; justify-content: center; margin-top: 2rem;"></div>
+                <p style="font-size: 0.7rem; color: var(--text-dim); text-align: center; margin-top: 1rem;">Signing in will link your account to this organization.</p>
             </div>
 
             <!-- 3. Dashboard View -->
@@ -126,6 +123,13 @@
                     <span id="display-user-name"></span>
                     <span id="display-role" class="role-tag"></span>
                     <a href="javascript:location.reload()" style="color: var(--text-dim); text-decoration: none; font-size: 0.7rem;">Logout</a>
+                </div>
+
+                <div id="permission-warning" style="display: none; margin-bottom: 1rem;">
+                    <div class="error-box" style="border: 1px solid #f59e0b; background: rgba(245,158,11,0.05); color: #fbbf24;">
+                        ⚠️ <strong>Gmail Access Missing:</strong> You didn't check the "Send email" box. Automated invites will be disabled. 
+                        <br><button onclick="logout()" class="btn btn-outline" style="margin-top:5px; padding:2px 10px; font-size:0.7rem; border-color:#fbbf24; color:#fbbf24">Fix Permissions</button>
+                    </div>
                 </div>
 
                 <div class="stats-grid">
@@ -376,6 +380,13 @@
                     if (data.success) {
                         showView('invite-view');
                         document.getElementById('invite-role-text').innerText = data.invite.role;
+                        
+                        // Render a special Google button for invitation acceptance
+                        google.accounts.id.initialize({ 
+                            client_id: GOOGLE_CLIENT_ID, 
+                            callback: (response) => acceptInvitation(response.credential) 
+                        });
+                        google.accounts.id.renderButton(document.getElementById("google-invite-btn"), { theme: "filled_blue", size: "large", shape: "pill", text: "continue_with" });
                     } else {
                         showMessage('Invalid or expired invite', true);
                     }
@@ -383,16 +394,20 @@
             }
         }
 
-        function acceptInvitation() {
-            const name = document.getElementById('invite-name').value;
+        function acceptInvitation(credential) {
+            // Decode the ID token to get user info (basic)
+            const payload = JSON.parse(atob(credential.split('.')[1]));
+            
             fetch('/api/invite/accept', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: currentInviteToken, name })
+                body: JSON.stringify({ token: currentInviteToken, payload })
             }).then(r => r.json()).then(data => {
                 if (data.success) {
                     window.history.pushState({}, document.title, "/"); // Clean URL
                     initDashboard(data.user);
+                } else {
+                    showMessage(data.error || 'Failed to accept invitation', true);
                 }
             });
         }

@@ -19,6 +19,13 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECR
 app.use(cors());
 app.use(express.json());
 
+// Startup Check for Render Env
+console.log('--- SYSTEM STARTUP ---');
+console.log('GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID.substring(0, 20) + '...');
+console.log('GOOGLE_CLIENT_SECRET Configured:', !!process.env.GOOGLE_CLIENT_SECRET);
+console.log('MONGODB_URI Configured:', !!process.env.MONGODB_URI);
+console.log('-----------------------');
+
 // MongoDB Connection
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('Connected to MongoDB'))
@@ -211,28 +218,31 @@ app.get('/api/invite/:token', async (req, res) => {
 
 // Accept Invitation (Registers the user with the correct role)
 app.post('/api/invite/accept', async (req, res) => {
-    const { token, name } = req.body;
+    const { token, payload } = req.body;
     try {
-        const invite = await Invitation.findOne({ token, status: 'pending' });
-        if (!invite) return res.status(404).json({ success: false, error: 'Invalid token' });
+        // Find the invitation
+        const invitation = await Invitation.findOne({ token, status: 'pending' });
+        if (!invitation) return res.status(404).json({ success: false, error: 'Invalid or expired invitation' });
 
-        let user = await User.findOne({ email: invite.email });
+        // Update or create user
+        let user = await User.findOne({ email: payload.email });
         if (!user) {
             user = new User({
-                email: invite.email,
-                name: name || invite.email.split('@')[0],
-                role: invite.role,
-                organizerEmail: invite.organizerEmail // Inherit from invite
+                googleId: payload.sub,
+                email: payload.email,
+                name: payload.name,
+                role: invitation.role,
+                organizerEmail: invitation.organizerEmail // Inherit the tenant!
             });
         } else {
-            user.role = invite.role;
-            user.organizerEmail = invite.organizerEmail;
+            user.role = invitation.role;
+            user.organizerEmail = invitation.organizerEmail;
         }
         await user.save();
 
-        invite.status = 'accepted';
-        await invite.save();
-
+        invitation.status = 'accepted';
+        await invitation.save();
+        
         res.json({ success: true, user });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
