@@ -6,7 +6,7 @@
     <title>Student Workspace | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --gold: #fbbf24; }
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --gold: #fbbf24; --danger: #ef4444; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; }
         .glass-header { background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
@@ -17,16 +17,21 @@
         .section-title { margin-bottom: 1.5rem; font-weight: 300; letter-spacing: 1.5px; color: var(--text-dim); text-transform: uppercase; font-size: 0.8rem; border-left: 3px solid var(--primary); padding-left: 10px; }
         .activity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; margin-bottom: 3rem; }
         .activity-card { background: var(--card); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; cursor: pointer; position: relative; }
-        .activity-card.approved { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); pointer-events: none; }
-        .activity-card.approved::after { content: '✓ VERIFIED'; position: absolute; inset: 0; background: rgba(16, 185, 129, 0.8); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; border-radius: 20px; z-index: 10; letter-spacing: 2px; }
+        .activity-card:hover { border-color: var(--primary); transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+        .activity-card.approved { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); }
+        .activity-card.approved::after { content: '✓ VERIFIED'; position: absolute; inset: 0; background: rgba(16, 185, 129, 0.85); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; border-radius: 20px; z-index: 10; letter-spacing: 2px; }
         
         .badge { font-size: 0.65rem; font-weight: bold; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 6px; position: absolute; top: 1.5rem; right: 1.5rem; }
-        
-        .rule-item { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; display: flex; gap: 10px; }
+        .milestone-pill { font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--text-dim); margin-right: 5px; }
+        .milestone-pill.done { background: var(--accent); color: white; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
         .modal-content { background: #111; padding: 2.5rem; border-radius: 30px; border: 1px solid var(--primary); max-width: 600px; width: 100%; position: relative; }
         .close-btn { position: absolute; top: 1.5rem; right: 1.5rem; color: var(--text-dim); cursor: pointer; font-size: 1.5rem; }
+        
+        .milestone-box { padding: 1rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+        .milestone-box:hover { border-color: var(--primary); background: rgba(255,255,255,0.02); }
+        .milestone-box.selected { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); }
     </style>
 </head>
 <body>
@@ -52,63 +57,68 @@
             </div>
             <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
             <div style="display:flex; gap:20px; margin-top:10px;">
-                <div class="rule-item"><span>📅</span> 2-Week Min</div>
-                <div class="rule-item"><span>⏰</span> 80-90 Hours</div>
-                <div class="rule-item"><span>📍</span> Geotag Photos Required</div>
+                <div style="font-size:0.8rem; color:var(--text-dim); display:flex; gap:15px;">
+                    <span>📅 Day College: <b>100</b></span>
+                    <span>📍 Lateral (3yr): <b>75</b></span>
+                    <span>🎓 Lateral (2yr): <b>50</b></span>
+                </div>
             </div>
         </div>
 
-        <div class="section-title">Official Rubrics (Priority Activities)</div>
+        <div class="section-title">Priority Rubrics (One-Day Events)</div>
         <div class="activity-grid" id="rubric-grid"></div>
 
-        <div class="section-title">AICTE Activity Heads</div>
+        <div class="section-title">AICTE Activity Heads (2-Week Milestones)</div>
         <div class="activity-grid" id="activity-grid"></div>
     </div>
 
     <div class="modal" id="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">✕</span>
-            <h2 id="m-title" style="margin-bottom:1rem;">Activity Detail</h2>
-            <p id="m-desc" style="color:var(--text-dim); line-height:1.6; margin-bottom:2rem;"></p>
+            <h2 id="m-title" style="margin-bottom:5px;">Activity Detail</h2>
+            <p id="m-type" style="font-size:0.7rem; color:var(--gold); margin-bottom:15px; text-transform:uppercase;"></p>
+            <p id="m-desc" style="color:var(--text-dim); line-height:1.6; margin-bottom:2rem; font-size:0.9rem;"></p>
             
-            <div style="background:rgba(255,255,255,0.03); padding:1.5rem; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
-                <h4 style="font-size:0.8rem; color:var(--primary); margin-bottom:1rem; letter-spacing:1px;">SUBMIT EVIDENCE (GEOTAGGED)</h4>
-                <div id="preview-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:10px; margin-bottom:15px;"></div>
+            <div id="milestone-selector" style="margin-bottom:20px;"></div>
+
+            <div id="upload-area" style="background:rgba(255,255,255,0.03); padding:1.5rem; border-radius:15px; border:1px solid rgba(255,255,255,0.1); display:none;">
+                <h4 style="font-size:0.8rem; color:var(--primary); margin-bottom:1rem; letter-spacing:1px;">UPLOAD GEOTAGGED PHOTOS</h4>
+                <div id="preview-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap:10px; margin-bottom:15px;"></div>
                 <input type="file" multiple id="file-input" accept="image/*" onchange="previewImages()" style="width:100%; padding:1rem; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:white;">
-                <button class="btn" id="submit-btn" style="margin-top:1.5rem;" onclick="handleSubmit()">Upload Evidence to Drive</button>
+                <button class="btn" id="submit-btn" style="margin-top:1.5rem; width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="handleSubmit()">Upload to Drive</button>
             </div>
         </div>
     </div>
 
     <script>
         const activities = [
-            { id: 1, title: "Help Local Schools", desc: "Helping local schools to achieve good results and enhance enrollment.", pts: 10 },
-            { id: 2, title: "Village Business Proposal", desc: "Preparing an actionable business proposal for enhancing village income.", pts: 10 },
-            { id: 3, title: "Water Management", desc: "Developing Sustainable Water Management system.", pts: 10 },
-            { id: 4, title: "Tourism Promotion", desc: "Innovative approaches for tourism promotion.", pts: 10 },
-            { id: 5, title: "Appropriate Tech", desc: "Promotion of appropriate technical solutions.", pts: 10 },
-            { id: 6, title: "Energy Conservation", desc: "Reduction in energy consumption methods.", pts: 10 },
-            { id: 7, title: "Rural Skilling", desc: "To skill rural population effectively.", pts: 10 },
-            { id: 8, title: "Digitized Money", desc: "Facilitating 100% digitized money transactions.", pts: 10 },
-            { id: 9, title: "Women Info Club", desc: "Setting up information clubs for social and economic issues.", pts: 10 },
-            { id: 10, title: "Garbage Disposal", desc: "Managing efficient garbage disposable system.", pts: 10 },
-            { id: 11, title: "Rural Marketing", desc: "To assist the marketing of rural produce.", pts: 10 },
-            { id: 12, title: "Food Preservation", desc: "Food preservation/packaging innovations.", pts: 10 },
-            { id: 13, title: "Local Automation", desc: "Automation of local activities.", pts: 10 },
-            { id: 14, title: "Public Awareness", desc: "Spreading public awareness under outreach programmes.", pts: 10 },
-            { id: 15, title: "National Initiatives", desc: "Digital India/ Skill India/ Swachh Bharat etc.", pts: 10 },
-            { id: 16, title: "Rain Water Harvesting", desc: "Creating awareness regarding rain water harvesting.", pts: 10 }
+            { id: 1, title: "Help Local Schools", desc: "Helping local schools to achieve good results and enhance enrollment.", pts: 10, type: 'weeks' },
+            { id: 2, title: "Village Business Proposal", desc: "Preparing an actionable business proposal for enhancing village income.", pts: 10, type: 'weeks' },
+            { id: 3, title: "Water Management", desc: "Developing Sustainable Water Management system.", pts: 10, type: 'weeks' },
+            { id: 4, title: "Tourism Promotion", desc: "Innovative approaches for tourism promotion.", pts: 10, type: 'weeks' },
+            { id: 5, title: "Appropriate Tech", desc: "Promotion of appropriate technical solutions.", pts: 10, type: 'weeks' },
+            { id: 6, title: "Energy Conservation", desc: "Reduction in energy consumption methods.", pts: 10, type: 'weeks' },
+            { id: 7, title: "Rural Skilling", desc: "To skill rural population effectively.", pts: 10, type: 'weeks' },
+            { id: 8, title: "Digitized Money", desc: "Facilitating 100% digitized money transactions.", pts: 10, type: 'weeks' },
+            { id: 9, title: "Women Info Club", desc: "Setting up information clubs for social and economic issues.", pts: 10, type: 'weeks' },
+            { id: 10, title: "Garbage Disposal", desc: "Managing efficient garbage disposable system.", pts: 10, type: 'weeks' },
+            { id: 11, title: "Rural Marketing", desc: "To assist the marketing of rural produce.", pts: 10, type: 'weeks' },
+            { id: 12, title: "Food Preservation", desc: "Food preservation/packaging innovations.", pts: 10, type: 'weeks' },
+            { id: 13, title: "Local Automation", desc: "Automation of local activities.", pts: 10, type: 'weeks' },
+            { id: 14, title: "Public Awareness", desc: "Spreading public awareness under outreach programmes.", pts: 10, type: 'weeks' },
+            { id: 15, title: "National Initiatives", desc: "Digital India/ Skill India/ Swachh Bharat etc.", pts: 10, type: 'weeks' },
+            { id: 16, title: "Rain Water Harvesting", desc: "Creating awareness regarding rain water harvesting.", pts: 10, type: 'weeks' }
         ];
 
         const rubrics = [
-            { id: 101, title: "Plantation Drive", desc: "Mandatory plantation drive with geotagged photo evidence.", pts: 10 },
-            { id: 102, title: "Volunteering", desc: "General volunteering for academic and social activities.", pts: 10 },
-            { id: 103, title: "Workshops (External)", desc: "Full day workshops attended outside the institution.", pts: 10 },
-            { id: 104, title: "Blood Donation", desc: "Donor certificate required (claimable once).", pts: 10 },
-            { id: 105, title: "Outreach Activity", desc: "One day outreach programme for social causes.", pts: 10 },
-            { id: 106, title: "Hackathon", desc: "Participation in recognized technical hackathons.", pts: 10 },
-            { id: 107, title: "NSS Camps", desc: "One week attendance at NSS camps.", pts: 20 },
-            { id: 108, title: "Marathon/Cause", desc: "Participation in marathon/walkathon/cyclothon for a cause.", pts: 10 }
+            { id: 101, title: "Plantation Drive", desc: "Mandatory plantation drive with geotagged photo evidence.", pts: 10, type: 'event' },
+            { id: 102, title: "Volunteering", desc: "General volunteering for academic and social activities.", pts: 10, type: 'event' },
+            { id: 103, title: "Workshops (External)", desc: "Full day workshops attended outside the institution.", pts: 10, type: 'event' },
+            { id: 104, title: "Blood Donation", desc: "Donor certificate required (claimable once).", pts: 10, type: 'event' },
+            { id: 105, title: "Outreach Activity", desc: "One day outreach programme for social causes.", pts: 10, type: 'event' },
+            { id: 106, title: "Hackathon", desc: "Participation in recognized technical hackathons.", pts: 10, type: 'event' },
+            { id: 107, title: "NSS Camps", desc: "One week attendance at NSS camps.", pts: 20, type: 'event' },
+            { id: 108, title: "Marathon/Cause", desc: "Participation in marathon/walkathon/cyclothon for a cause.", pts: 10, type: 'event' }
         ];
 
         let user = JSON.parse(localStorage.getItem('symboit_user'));
@@ -116,59 +126,94 @@
         document.getElementById('u-name').innerText = user.name;
 
         let submissions = [];
+        let currentActivity = null;
+        let selectedMilestone = null;
 
         async function render() {
             try {
                 const res = await fetch(`/api/submissions?studentEmail=${user.email}&organizerEmail=${user.organizerEmail}`);
                 const data = await res.json();
                 submissions = data.submissions || [];
-            } catch (e) { console.error('Failed to load subms', e); }
+            } catch (e) { console.error(e); }
 
             const rGrid = document.getElementById('rubric-grid');
             const aGrid = document.getElementById('activity-grid');
-            rGrid.innerHTML = '';
-            aGrid.innerHTML = '';
+            rGrid.innerHTML = ''; aGrid.innerHTML = '';
 
             let totalPoints = 0;
 
             rubrics.forEach(r => {
-                const isApproved = submissions.some(s => s.activityTitle === r.title && s.status === 'approved');
-                if(isApproved) totalPoints += r.pts;
-
+                const s = submissions.find(x => x.activityTitle === r.title);
+                const approved = s && s.status === 'approved';
+                if(approved) totalPoints += r.pts;
+                
                 rGrid.innerHTML += `
-                    <div class="activity-card ${isApproved ? 'approved' : ''}" onclick="openModal(${r.id}, true)">
-                        <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--accent)">+${r.pts} PTS</span>
+                    <div class="activity-card ${approved ? 'approved' : ''}" onclick="openModal(${r.id}, true)">
+                        <span class="badge">+${r.pts} PTS</span>
                         <h4 style="margin-bottom:10px; font-size:0.9rem;">${r.title}</h4>
-                        <p style="font-size:0.7rem; color:var(--text-dim); line-height:1.4;">${r.desc}</p>
+                        <div style="display:flex; align-items:center;">
+                            <span class="milestone-pill ${s ? 'done' : ''}">${s ? 'SUBMITTED' : 'ONE-DAY'}</span>
+                        </div>
                     </div>`;
             });
 
             activities.forEach(a => {
-                const isApproved = submissions.some(s => s.activityTitle === a.title && s.status === 'approved');
-                if(isApproved) totalPoints += a.pts;
+                const s = submissions.find(x => x.activityTitle === a.title && x.status === 'approved');
+                if(s) totalPoints += a.pts;
+                
+                const w1 = submissions.find(x => x.activityTitle === a.title && x.milestone === 'Week 1');
+                const w2 = submissions.find(x => x.activityTitle === a.title && x.milestone === 'Week 2');
 
                 aGrid.innerHTML += `
-                    <div class="activity-card ${isApproved ? 'approved' : ''}" onclick="openModal(${a.id}, false)">
+                    <div class="activity-card ${s ? 'approved' : ''}" onclick="openModal(${a.id}, false)">
                         <span class="badge">+${a.pts} PTS</span>
                         <h4 style="margin-bottom:10px; font-size:0.9rem;">${a.title}</h4>
-                        <p style="font-size:0.7rem; color:var(--text-dim); line-height:1.4;">${a.desc}</p>
+                        <div style="display:flex; align-items:center;">
+                            <span class="milestone-pill ${w1 ? 'done' : ''}">W1</span>
+                            <span class="milestone-pill ${w2 ? 'done' : ''}">W2</span>
+                        </div>
                     </div>`;
             });
 
-            // Update Progress Bar
             document.getElementById('p-val').innerText = totalPoints;
             const max = parseInt(document.getElementById('p-max').innerText);
             document.getElementById('p-bar').style.width = Math.min(100, (totalPoints / max) * 100) + '%';
         }
 
-        let currentActivity = null;
-
         function openModal(id, isRubric) {
             const list = isRubric ? rubrics : activities;
             currentActivity = list.find(x => x.id === id);
+            
             document.getElementById('m-title').innerText = currentActivity.title;
+            document.getElementById('m-type').innerText = currentActivity.type === 'weeks' ? '2-Week Project' : 'Single Event';
             document.getElementById('m-desc').innerText = currentActivity.desc;
             document.getElementById('modal').style.display = 'flex';
+            
+            const selector = document.getElementById('milestone-selector');
+            selector.innerHTML = '';
+            document.getElementById('upload-area').style.display = 'none';
+
+            if(currentActivity.type === 'weeks') {
+                ['Week 1', 'Week 2'].forEach(m => {
+                    const done = submissions.some(s => s.activityTitle === currentActivity.title && s.milestone === m);
+                    selector.innerHTML += `<div class="milestone-box ${done ? 'selected' : ''}" onclick="selectMilestone('${m}', ${done})">
+                        <b>${m}</b> ${done ? '— Evidence Uploaded ✓' : '— Needs Proof'}
+                    </div>`;
+                });
+            } else {
+                const done = submissions.some(s => s.activityTitle === currentActivity.title);
+                selector.innerHTML += `<div class="milestone-box ${done ? 'selected' : ''}" onclick="selectMilestone('Full', ${done})">
+                    <b>Event Evidence</b> ${done ? '— Evidence Uploaded ✓' : '— Needs Proof'}
+                </div>`;
+            }
+        }
+
+        function selectMilestone(m, done) {
+            if(done) return alert('This milestone is already submitted.');
+            selectedMilestone = m;
+            document.querySelectorAll('.milestone-box').forEach(b => b.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            document.getElementById('upload-area').style.display = 'block';
             document.getElementById('preview-container').innerHTML = '';
             document.getElementById('file-input').value = '';
         }
@@ -182,10 +227,7 @@
                 reader.onload = (e) => {
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.style.width = '100%';
-                    img.style.height = '80px';
-                    img.style.objectFit = 'cover';
-                    img.style.borderRadius = '8px';
+                    img.style.width = '100%'; img.style.height = '60px'; img.style.objectFit = 'cover'; img.style.borderRadius = '8px';
                     container.appendChild(img);
                 };
                 reader.readAsDataURL(file);
@@ -194,41 +236,31 @@
 
         async function handleSubmit() {
             const fileInput = document.getElementById('file-input');
-            if(fileInput.files.length === 0) return alert('Please select at least one photo.');
+            if(fileInput.files.length === 0) return alert('Select photos.');
             
             const btn = document.getElementById('submit-btn');
-            btn.innerText = 'Uploading to Secure Drive...';
-            btn.disabled = true;
+            btn.innerText = 'Uploading to Drive...'; btn.disabled = true;
 
             const formData = new FormData();
             formData.append('studentEmail', user.email);
             formData.append('organizerEmail', user.organizerEmail);
             formData.append('activityTitle', currentActivity.title);
+            formData.append('milestone', selectedMilestone);
             Array.from(fileInput.files).forEach(file => formData.append('files', file));
 
             try {
-                const res = await fetch('/api/submit-activity', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-                if(data.success) {
-                    alert('Successfully uploaded to Google Drive! Your mentor will be notified.');
+                const res = await fetch('/api/submit-activity', { method: 'POST', body: formData }).then(r => r.json());
+                if(res.success) {
+                    alert('Milestone Proof Uploaded!');
                     closeModal();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (err) {
-                alert('Upload failed. Check your connection.');
-            } finally {
-                btn.innerText = 'Upload Evidence to Drive';
-                btn.disabled = false;
-            }
+                    render();
+                } else alert(res.error);
+            } catch (err) { alert('Upload failed'); }
+            finally { btn.innerText = 'Upload to Drive'; btn.disabled = false; }
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
-        
         render();
     </script>
 </body>

@@ -67,13 +67,16 @@ const submissionSchema = new mongoose.Schema({
     studentEmail: String,
     organizerEmail: String,
     activityTitle: String,
+    milestone: String, // "Week 1", "Week 2", "Full"
     driveFolderId: String,
+    driveRootFolderId: String,
     files: [{
         name: String,
         driveFileId: String,
         viewLink: String
     }],
     status: { type: String, default: 'pending' },
+    pointsAwarded: { type: Number, default: 0 },
     submittedAt: { type: Date, default: Date.now }
 });
 
@@ -430,7 +433,7 @@ async function getDriveFolder(drive, name, parentId = null) {
 }
 
 app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
-    const { studentEmail, organizerEmail, activityTitle } = req.body;
+    const { studentEmail, organizerEmail, activityTitle, milestone } = req.body;
     
     try {
         const student = await User.findOne({ email: studentEmail });
@@ -442,11 +445,12 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
         oauth2Client.setCredentials({ refresh_token: student.refreshToken });
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-        // 1. Ensure Folder Structure: AICTE -> [Activity Title]
+        // 1. Ensure Folder Structure: AICTE -> [Activity Title] -> [Milestone]
         const aicteFolderId = await getDriveFolder(drive, 'AICTE');
         const activityFolderId = await getDriveFolder(drive, activityTitle, aicteFolderId);
+        const milestoneFolderId = await getDriveFolder(drive, milestone || 'General', activityFolderId);
 
-        // 2. Grant Permissions to Mentor and Organizer (so they can View/Edit)
+        // 2. Grant Permissions to Mentor and Organizer (if not already done)
         const shareWith = [organizerEmail];
         // Find mentor who invited this student to share with them too
         const mentorInvite = await Invitation.findOne({ email: studentEmail, status: 'accepted' });
@@ -475,8 +479,8 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
 
             const driveRes = await drive.files.create({
                 requestBody: {
-                    name: `${studentEmail.split('@')[0]}_${Date.now()}_${file.originalname}`,
-                    parents: [activityFolderId]
+                    name: `${studentEmail.split('@')[0]}_${milestone}_${Date.now()}_${file.originalname}`,
+                    parents: [milestoneFolderId]
                 },
                 media: {
                     mimeType: file.mimetype,
@@ -510,8 +514,9 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
             studentEmail,
             organizerEmail,
             activityTitle,
-            driveFolderId: activityFolderId,
-            driveRootFolderId: aicteFolderId, // Store root for easy mentor access
+            milestone,
+            driveFolderId: milestoneFolderId,
+            driveRootFolderId: aicteFolderId,
             files: uploadedFiles
         });
         await submission.save();

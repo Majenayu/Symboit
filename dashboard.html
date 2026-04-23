@@ -149,7 +149,10 @@
                                     <p style="font-size:0.6rem; color:var(--gold); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">VERIFICATION PENDING (${pending.length})</p>
                                     ${pending.map(p => `
                                         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
-                                            <div style="font-size:0.75rem; font-weight:600;">${p.activityTitle}</div>
+                                            <div>
+                                                <div style="font-size:0.75rem; font-weight:600;">${p.activityTitle}</div>
+                                                <div style="font-size:0.6rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px;">${p.milestone || 'Full Event'}</div>
+                                            </div>
                                             <div style="display:flex; gap:8px;">
                                                 <a href="${p.files[0]?.viewLink}" target="_blank" style="font-size:0.65rem; color:var(--primary); text-decoration:none; border:1px solid var(--primary); padding:2px 6px; border-radius:4px;">View Proof</a>
                                                 <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
