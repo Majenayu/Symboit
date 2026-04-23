@@ -6,51 +6,65 @@
     <title>Organizer Console | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; }
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --danger: #ef4444; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
-        .glass-header { background: var(--card); backdrop-filter: blur(10px); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; }
+        .glass-header { background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
         .stat-card { background: var(--card); padding: 1.5rem; border-radius: 18px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
-        .stat-val { font-size: 2rem; font-weight: 600; color: var(--primary); }
+        .stat-val { font-size: 2.2rem; font-weight: 600; color: var(--primary); }
         .tools-area { background: var(--card); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); }
-        input { width: 100%; padding: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 1rem; outline: none; }
-        .btn { width: 100%; padding: 1rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; background: var(--primary); color: white; }
+        input { width: 100%; padding: 1.1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 1rem; outline: none; font-family: inherit; }
+        input:focus { border-color: var(--primary); }
+        .btn { width: 100%; padding: 1rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; background: var(--primary); color: white; font-family: inherit; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(255,255,255,0.02); border-radius: 12px; margin-top: 0.8rem; border: 1px solid rgba(255,255,255,0.03); }
-        .status { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
-        .active { background: rgba(16,185,129,0.1); color: var(--accent); }
-        #message { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem; border-radius: 10px; display: none; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; background: rgba(255,255,255,0.02); border-radius: 14px; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05); }
+        .status { font-size: 0.65rem; padding: 3px 10px; border-radius: 6px; font-weight: bold; }
+        .active { background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
+        .pending { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+        .btn-del { background: transparent; color: var(--danger); border: none; cursor: pointer; opacity: 0.6; font-size: 1.2rem; }
+        .btn-del:hover { opacity: 1; }
+        #message { position: fixed; top: 2rem; right: 2rem; padding: 1.5rem; border-radius: 14px; display: none; z-index: 1000; box-shadow: 0 20px 40px rgba(0,0,0,0.5); backdrop-filter: blur(10px); max-width: 350px; }
+        .fallback-box { margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; }
     </style>
 </head>
 <body>
     <div style="max-width: 900px; margin: 0 auto;">
         <div class="glass-header">
-            <div><h1 style="font-size:1.2rem; letter-spacing:2px;">ORGANIZER CONSOLE</h1></div>
+            <div>
+                <h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1>
+            </div>
             <div style="text-align:right;">
-                <div id="u-name" style="font-weight:600;">...</div>
-                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.7rem; text-decoration:none;">Logout</a>
+                <div id="u-name" style="font-weight:600;">Loading...</div>
+                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
             </div>
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
-            <div class="stat-card"><div class="stat-val" id="m-count">0</div><div style="font-size:0.8rem; color:var(--text-dim)">Total Mentors</div></div>
-            <div class="stat-card" style="background:linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.1)); border:1px solid rgba(255,255,255,0.1);">
-                <div style="font-weight:600; color:var(--accent);">ENTERPRISE PLAN</div>
-                <div style="font-size:0.7rem; color:var(--text-dim); margin-top:5px;">AI Features Active</div>
+            <div class="stat-card">
+                <div class="stat-val" id="m-count">0</div>
+                <div style="font-size:0.8rem; color:var(--text-dim); margin-top:5px;">Professional Mentors</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-weight:600; color:var(--accent); font-size: 0.9rem;">ENTERPRISE AI PLUS</div>
+                <div style="font-size:0.7rem; color:var(--text-dim); margin-top:8px;">Automation & Role Isolation: ON</div>
             </div>
         </div>
 
         <div class="tools-area">
-            <h3 style="margin-bottom:1rem; font-weight:300;">Invite Professional Mentors</h3>
-            <input type="email" id="email" placeholder="mentor@gmail.com">
-            <button class="btn" onclick="send()">Send Branded Invitation</button>
+            <h3 style="margin-bottom:1.5rem; font-weight:400; font-size: 1.1rem;">Invite New Mentor</h3>
+            <input type="email" id="email-input" placeholder="Enter mentor's email address...">
+            <button class="btn" onclick="sendInvite()">Send Automated Invitation</button>
 
-            <div style="margin-top:2rem;">
-                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1rem; font-weight:600; letter-spacing:1px;">MANAGED NETWORK</p>
-                <div id="list"></div>
+            <div style="margin-top:3rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <p style="font-size:0.75rem; color:var(--text-dim); font-weight:600; letter-spacing:1.5px; text-transform: uppercase;">Mentor Network Management</p>
+                    <button onclick="refresh()" style="background:none; border:none; color:var(--primary); font-size:0.7rem; cursor:pointer;">Refresh List</button>
+                </div>
+                <div id="list-container"></div>
             </div>
         </div>
     </div>
+
     <div id="message"></div>
 
     <script>
@@ -58,37 +72,110 @@
         if(!user || user.role !== 'organizer') window.location.href = '/';
         document.getElementById('u-name').innerText = user.name;
 
-        function refresh() {
-            const list = document.getElementById('list');
-            Promise.all([
-                fetch(`/api/users?role=mentor&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
-                fetch(`/api/invitations?organizerEmail=${user.organizerEmail}`).then(r => r.json())
-            ]).then(([uData, iData]) => {
-                list.innerHTML = '';
-                uData.users.forEach(u => list.innerHTML += `<div class="list-item"><div>${u.name}<br><small style="color:var(--text-dim)">${u.email}</small></div><span class="status active">ACTIVE</span></div>`);
-                iData.invites.filter(inv => inv.role === 'mentor' && inv.status === 'pending').forEach(inv => list.innerHTML += `<div class="list-item" style="opacity:0.6;"><div>${inv.email}<br><small style="color:var(--text-dim)">Awaiting Acceptance</small></div><span class="status" style="color:#fbbf24">PENDING</span></div>`);
-                document.getElementById('m-count').innerText = uData.users.length;
-            });
+        async function refresh() {
+            const container = document.getElementById('list-container');
+            container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:2rem; font-size:0.8rem;">Syncing with secure vault...</p>';
+            
+            try {
+                const [uRes, iRes] = await Promise.all([
+                    fetch(`/api/users?role=mentor&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
+                    fetch(`/api/invitations?organizerEmail=${user.organizerEmail}`).then(r => r.json())
+                ]);
+
+                container.innerHTML = '';
+                
+                // Active Users
+                uRes.users.forEach(u => {
+                    container.innerHTML += `
+                        <div class="list-item">
+                            <div>
+                                <div style="font-weight:600;">${u.name}</div>
+                                <div style="font-size:0.75rem; color:var(--text-dim)">${u.email}</div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <span class="status active">ACTIVE</span>
+                                <button class="btn-del" onclick="deleteUser('${u._id}')">✕</button>
+                            </div>
+                        </div>`;
+                });
+
+                // Pending Invites
+                iRes.invites.filter(i => i.role === 'mentor' && i.status === 'pending').forEach(i => {
+                    container.innerHTML += `
+                        <div class="list-item" style="opacity:0.8; border-style:dashed;">
+                            <div>
+                                <div style="font-weight:600;">${i.email}</div>
+                                <div style="font-size:0.75rem; color:var(--text-dim)">Invitation Pending</div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <span class="status pending">PENDING</span>
+                                <button class="btn-del" onclick="deleteInvite('${i._id}')">✕</button>
+                            </div>
+                        </div>`;
+                });
+
+                document.getElementById('m-count').innerText = uRes.users.length;
+                if(container.innerHTML === '') container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:3rem; font-size:0.8rem;">No mentors found in your network.</p>';
+
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        function send() {
-            const email = document.getElementById('email').value;
-            fetch('/api/invite', {
+        async function sendInvite() {
+            const email = document.getElementById('email-input').value;
+            if(!email) return;
+
+            const res = await fetch('/api/invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, role: 'mentor', inviterEmail: user.email, organizerEmail: user.organizerEmail })
-            }).then(r => r.json()).then(data => {
-                const msg = document.getElementById('message');
-                msg.style.display = 'block';
-                msg.style.background = '#10b981';
-                msg.innerText = 'Branded Mail Processed';
-                if(data.inviteLink) msg.innerHTML += `<br><small style="font-size:0.6rem">Fallback: ${data.inviteLink}</small>`;
-                setTimeout(() => msg.style.display = 'none', 6000);
-                refresh();
+            });
+            const data = await res.json();
+
+            const msg = document.getElementById('message');
+            msg.style.display = 'block';
+            msg.style.background = data.success ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)';
+            msg.style.border = data.success ? '1px solid #10b981' : '1px solid #ef4444';
+            
+            let html = `<div style="font-weight:600;">${data.success ? 'Invitation Processed' : 'Error'}</div>`;
+            if(data.success && data.inviteLink) {
+                html += `
+                    <div class="fallback-box">
+                        <p style="margin-bottom:5px; opacity:0.7;">Email automation might fail due to account limits. Copy link manually:</p>
+                        <code style="word-break:break-all; color:white;">${data.inviteLink}</code>
+                        <button onclick="copyLink('${data.inviteLink}')" style="margin-top:8px; width:100%; padding:5px; background:var(--primary); border:none; border-radius:4px; color:white; cursor:pointer; font-size:0.7rem;">Copy Link</button>
+                    </div>`;
+            } else if(!data.success) {
+                html += `<div style="font-size:0.8rem; margin-top:5px;">${data.error}</div>`;
+            }
+            
+            msg.innerHTML = html;
+            document.getElementById('email-input').value = '';
+            refresh();
+            setTimeout(() => { if(msg.style.display === 'block') msg.style.display = 'none'; }, 10000);
+        }
+
+        async function deleteUser(id) {
+            if(!confirm('Permanently remove this mentor?')) return;
+            await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            refresh();
+        }
+
+        async function deleteInvite(id) {
+            if(!confirm('Cancel this pending invitation?')) return;
+            await fetch(`/api/invitations/${id}`, { method: 'DELETE' });
+            refresh();
+        }
+
+        function copyLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Invitation link copied to clipboard!');
             });
         }
 
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
+        
         refresh();
     </script>
 </body>
