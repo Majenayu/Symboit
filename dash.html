@@ -6,32 +6,142 @@
     <title>Student Workspace | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; }
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --gold: #fbbf24; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .workspace-card { background: var(--card); padding: 3rem; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); text-align: center; max-width: 500px; width: 100%; }
-        .logout-btn { margin-top: 2rem; display: inline-block; color: var(--text-dim); text-decoration: none; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1); padding: 8px 20px; border-radius: 10px; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; }
+        .glass-header { background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .progress-section { background: var(--card); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 2rem; }
+        .bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; margin: 15px 0; overflow: hidden; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: 1s ease; }
+        
+        .activity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .activity-card { background: var(--card); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; cursor: pointer; position: relative; }
+        .activity-card:hover { border-color: var(--primary); transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+        .badge { font-size: 0.65rem; font-weight: bold; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 6px; position: absolute; top: 1.5rem; right: 1.5rem; }
+        .rule-item { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; display: flex; gap: 10px; }
+
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: #111; padding: 2.5rem; border-radius: 30px; border: 1px solid var(--primary); max-width: 600px; width: 100%; position: relative; }
+        .close-btn { position: absolute; top: 1.5rem; right: 1.5rem; color: var(--text-dim); cursor: pointer; font-size: 1.5rem; }
     </style>
 </head>
 <body>
-    <div class="workspace-card">
-        <div style="font-size: 4rem; margin-bottom: 1.5rem;">🎓</div>
-        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Welcome, <span id="s-name">Student</span></h1>
-        <p style="color: var(--text-dim); line-height: 1.6;">Your AI-enhanced learning environment is ready. Your mentor-assigned courses and progress trackers will appear here shortly.</p>
-        
-        <div style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(16,185,129,0.05); border: 1px solid var(--accent); border-radius: 20px;">
-            <div style="color: var(--accent); font-weight: bold; font-size: 0.7rem; letter-spacing: 2px;">STATUS</div>
-            <div style="font-size: 1.1rem; margin-top: 5px;">Academic System Synchronized</div>
+    <div style="max-width: 1100px; margin: 0 auto;">
+        <div class="glass-header">
+            <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">STUDENT</span></h1></div>
+            <div style="text-align:right;">
+                <div id="u-name" style="font-weight:600;">Loading...</div>
+                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
+            </div>
         </div>
 
-        <a href="javascript:logout()" class="logout-btn">Sign Out</a>
+        <div class="progress-section">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                <div>
+                    <h2 style="font-weight:400; font-size:1.5rem;">AICTE Activity Points</h2>
+                    <p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Mandatory for Bachelor's Degree completion (Deadline: April 15, 2026)</p>
+                </div>
+                <div style="text-align:right;">
+                    <span id="p-val" style="font-size:2rem; font-weight:600; color:var(--accent);">0</span>
+                    <span style="color:var(--text-dim);"> / <span id="p-max">100</span> pts</span>
+                </div>
+            </div>
+            <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
+            <div style="display:flex; gap:20px; margin-top:10px;">
+                <div class="rule-item"><span>📅</span> 2-Week Minimum per Activity</div>
+                <div class="rule-item"><span>⏰</span> 80-90 Hours Required</div>
+                <div class="rule-item"><span>📍</span> Geotag Photos Mandatory</div>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom:1.5rem; font-weight:300; letter-spacing:1px; color:var(--text-dim)">AVAILABLE ACTIVITY HEADS</h3>
+        <div class="activity-grid" id="activity-list"></div>
+
+        <div style="margin-top:4rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:2rem;">
+            <h4 style="color:var(--gold); margin-bottom:1rem;">Official Rubrics (Dean Student Welfare)</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;" id="rubric-list"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">✕</span>
+            <h2 id="m-title" style="margin-bottom:1rem;">Activity Detail</h2>
+            <p id="m-desc" style="color:var(--text-dim); line-height:1.6; margin-bottom:2rem;"></p>
+            
+            <div style="background:rgba(255,255,255,0.03); padding:1.5rem; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
+                <h4 style="font-size:0.8rem; color:var(--primary); margin-bottom:1rem; letter-spacing:1px;">UPLOAD REPORT & GEOTAG PHOTOS</h4>
+                <input type="file" multiple style="width:100%; padding:1rem; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:white;">
+                <button class="btn" style="margin-top:1rem;" onclick="alert('Submission system connecting...')">Submit for Evaluation</button>
+            </div>
+        </div>
     </div>
 
     <script>
+        const activities = [
+            { id: 1, title: "Help Local Schools", desc: "Helping local schools to achieve good results and enhance enrollment in Higher/Technical/Vocational Education.", pts: 10 },
+            { id: 2, title: "Village Business Proposal", desc: "Preparing an actionable business proposal for enhancing the village income.", pts: 10 },
+            { id: 3, title: "Sustainable Water Management", desc: "Developing Sustainable Water Management system.", pts: 10 },
+            { id: 4, title: "Tourism Promotion", desc: "Tourism Promotion Innovative Approaches.", pts: 10 },
+            { id: 5, title: "Appropriate Technologies", desc: "Promotion of Appropriate Technologies.", pts: 10 },
+            { id: 6, title: "Energy Conservation", desc: "Reduction in Energy Consumption.", pts: 10 },
+            { id: 7, title: "Rural Population Skilling", desc: "To skill rural population.", pts: 10 },
+            { id: 8, title: "Digitized Money Transactions", desc: "Facilitating 100% Digitized money transactions.", pts: 10 },
+            { id: 9, title: "Women Info Club", desc: "Setting of the information imparting club for women leading to contribution in social and economic issues.", pts: 10 },
+            { id: 10, title: "Garbage Disposable System", desc: "Developing and managing efficient garbage disposable system.", pts: 10 },
+            { id: 11, title: "Marketing Rural Produce", desc: "To assist the marketing of rural produce.", pts: 10 },
+            { id: 12, title: "Food Preservation", desc: "Food preservation/packaging.", pts: 10 },
+            { id: 13, title: "Local Activity Automation", desc: "Automation of local activities.", pts: 10 },
+            { id: 14, title: "Rural Outreach Awareness", desc: "Spreading public awareness under rural outreach programmes.", pts: 10 },
+            { id: 15, title: "National Initiative Contribution", desc: "Digital India/ Skill India/ Swachh Bharat Internship etc.", pts: 10 },
+            { id: 16, title: "Rain Water Harvesting", desc: "Creating awareness regarding rain water harvesting in urban and rural area.", pts: 10 }
+        ];
+
+        const rubrics = [
+            { t: "Plantation Drive", p: 10 }, { t: "Volunteering", p: 10 },
+            { t: "Workshops (External)", p: 10 }, { t: "Blood Donation", p: 10 },
+            { t: "Outreach Activity", p: 10 }, { t: "Hackathon", p: 10 },
+            { t: "NSS Camps (1 Week)", p: 20 }, { t: "Marathon/Walkathon", p: 10 }
+        ];
+
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'student') window.location.href = '/';
-        document.getElementById('s-name').innerText = user.name;
+        document.getElementById('u-name').innerText = user.name;
+
+        // Set Target Points based on Category
+        let targetPoints = 100; // Default for 4-year regular
+        // Note: Logic can be expanded to check user metadata for Lateral Entry (75/50)
+        document.getElementById('p-max').innerText = targetPoints;
+
+        function render() {
+            const grid = document.getElementById('activity-list');
+            activities.forEach(a => {
+                grid.innerHTML += `
+                    <div class="activity-card" onclick="openModal(${a.id})">
+                        <span class="badge">${a.pts} PTS</span>
+                        <h4 style="margin-bottom:10px; font-size:0.95rem;">${a.title}</h4>
+                        <p style="font-size:0.75rem; color:var(--text-dim); line-height:1.5;">${a.desc.substring(0, 80)}...</p>
+                    </div>`;
+            });
+
+            const rList = document.getElementById('rubric-list');
+            rubrics.forEach(r => {
+                rList.innerHTML += `<div class="rule-item" style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px;">
+                    <span style="color:var(--accent)">+${r.p}</span> ${r.t}</div>`;
+            });
+        }
+
+        function openModal(id) {
+            const a = activities.find(x => x.id === id);
+            document.getElementById('m-title').innerText = a.title;
+            document.getElementById('m-desc').innerText = a.desc;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
+        
+        render();
     </script>
 </body>
 </html>
