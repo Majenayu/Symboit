@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
+const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -177,35 +178,25 @@ app.post('/api/invite', async (req, res) => {
         const organizer = await User.findOne({ email: organizerEmail });
         
         if (organizer && organizer.refreshToken) {
-            console.log(`[AUTH] Refresh Token found for ${organizerEmail}. Secret exists: ${!!process.env.GOOGLE_CLIENT_SECRET}`);
+            console.log(`[MAIL] Attempting Gmail API delivery for ${email}`);
             
-            // Manually refresh token to verify it works and get access token
             const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
             oauth2Client.setCredentials({ refresh_token: organizer.refreshToken });
 
             try {
-                const { token: accessToken } = await oauth2Client.getAccessToken();
-                console.log(`[AUTH] Access Token generated successfully.`);
-
-                const transporter = nodemailer.createTransport({
-                    host: 'smtp.gmail.com',
-                    port: 465,
-                    secure: true,
-                    auth: {
-                        type: 'OAuth2',
-                        user: organizerEmail,
-                        clientId: GOOGLE_CLIENT_ID,
-                        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                        refreshToken: organizer.refreshToken,
-                        accessToken: accessToken // Pass the fresh token directly
-                    }
-                });
-
-                const mailOptions = {
-                    from: `Symboit System <${organizerEmail}>`,
-                    to: email,
-                    subject: `Symboit Invitation – join as ${role}`,
-                    html: `
+                const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+                
+                // Construct the email in Base64 (Gmail API requirement)
+                const subject = `Symboit Invitation – join as ${role}`;
+                const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+                const messageParts = [
+                    `From: Symboit System <${organizerEmail}>`,
+                    `To: ${email}`,
+                    'Content-Type: text/html; charset=utf-8',
+                    'MIME-Version: 1.0',
+                    `Subject: ${utf8Subject}`,
+                    '',
+                    `
                     <!DOCTYPE html>
                     <html>
                     <head><meta charset="UTF-8"></head>
@@ -225,46 +216,45 @@ app.post('/api/invite', async (req, res) => {
                                             <tr><td align="center">
                                                 <a href="${inviteLink}" style="display:inline-block; padding:14px 28px; background:linear-gradient(90deg, #6366f1, #10b981); color:#ffffff; text-decoration:none; font-size:16px; font-weight:bold; border-radius:8px;">Accept Invitation</a>
                                             </td></tr>
-                                    </table>
-                                    <p style="color:#888; font-size:13px; text-align:center; margin-top:20px;">
-                                        If the button does not work, copy and paste this link into your browser:<br>
-                                        <span style="color:#6366f1;">${inviteLink}</span>
-                                    </p>
-                                </td></tr>
-                                <tr><td style="padding:25px 20px; text-align:center;">
-                                    <p style="color:#888; font-size:12px; margin:0;">Sent via Symboit AI Management System</p>
-                                </td></tr>
-                            </table>
-                        </td></tr>
-                    </table>
-                </body>
-                </html>`
-                };
+                                        </table>
+                                        <p style="color:#888; font-size:13px; text-align:center; margin-top:20px;">
+                                            If the button does not work, copy and paste this link into your browser:<br>
+                                            <span style="color:#6366f1;">${inviteLink}</span>
+                                        </p>
+                                    </td></tr>
+                                    <tr><td style="padding:25px 20px; text-align:center;">
+                                        <p style="color:#888; font-size:12px; margin:0;">Sent via Symboit AI Management System</p>
+                                    </td></tr>
+                                </table>
+                            </td></tr>
+                        </table>
+                    </body>
+                    </html>`
+                ];
+                const message = messageParts.join('\n');
+                const encodedMessage = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-                console.log('[AUTH] Sending via manual Access Token...');
-                await transporter.sendMail(mailOptions);
-                console.log('✅ [AUTH] Success! Email sent.');
-                return res.json({ success: true, inviteLink, emailSent: true });
-            } catch (authErr) {
-                console.error('[AUTH] ❌ Token Refresh/Send Failed:', authErr.message);
-                return res.json({ 
+                await gmail.users.messages.send({
+                    userId: 'me',
+                    requestBody: { raw: encodedMessage }
+                });
+
+                console.log(`[MAIL] Success: Email sent to ${email}`);
+                res.json({ success: true, emailSent: true, inviteLink });
+
+            } catch (mailError) {
+                console.error('[MAIL] Gmail API Error:', mailError);
+                res.json({ 
                     success: true, 
-                    inviteLink, 
                     emailSent: false, 
-                    error: 'Gmail auth failed, but invite was created. Please send the link manually.' 
+                    error: `Mail API Error: ${mailError.message}`, 
+                    inviteLink 
                 });
             }
         } else {
-            console.warn(`[AUTH] ❌ FAIL: No Refresh Token for ${organizerEmail}.`);
-            return res.json({ 
-                success: true, 
-                inviteLink, 
-                emailSent: false, 
-                error: 'Gmail auth missing. Use "Sign in with Google (Full Access)" to automate emails.' 
-            });
+            console.warn(`[MAIL] No Refresh Token for ${organizerEmail}`);
+            res.json({ success: true, emailSent: false, error: 'No Gmail permissions found.', inviteLink });
         }
-        
-        res.json({ success: true, inviteLink });
     } catch (error) {
         console.error('Invite error:', error);
         res.status(500).json({ success: false, error: error.message });
