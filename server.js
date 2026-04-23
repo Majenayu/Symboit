@@ -76,19 +76,34 @@ app.post('/api/auth/google', async (req, res) => {
         
         let user = await User.findOne({ email: payload.email });
         if (!user) {
-            user = new User({
-                googleId: payload.sub,
-                email: payload.email,
-                name: payload.name,
-                role: 'organizer',
-                organizerEmail: payload.email,
-                refreshToken: tokens.refresh_token,
-            });
+            // Check if this person was invited!
+            const invitation = await Invitation.findOne({ email: payload.email, status: 'pending' });
+            
+            if (invitation) {
+                user = new User({
+                    googleId: payload.sub,
+                    email: payload.email,
+                    name: payload.name,
+                    role: invitation.role,
+                    organizerEmail: invitation.organizerEmail
+                });
+                invitation.status = 'accepted';
+                await invitation.save();
+            } else {
+                // No invite? They are a new root Organizer
+                user = new User({
+                    googleId: payload.sub,
+                    email: payload.email,
+                    name: payload.name,
+                    role: 'organizer',
+                    organizerEmail: payload.email,
+                    refreshToken: tokens.refresh_token
+                });
+            }
             await user.save();
         } else {
-            // Ensure organizerEmail is set even for existing users
-            user.organizerEmail = user.email;
-            if (tokens.refresh_token) {
+            // Existing user
+            if (tokens.refresh_token && user.role === 'organizer') {
                 user.refreshToken = tokens.refresh_token;
             }
             await user.save();
@@ -107,14 +122,28 @@ app.post('/api/auth/magic', async (req, res) => {
     try {
         let user = await User.findOne({ email });
         if (!user) {
-            user = new User({ 
-                email, 
-                name: email.split('@')[0], 
-                role: 'organizer',
-                organizerEmail: email 
-            });
+            // Check for invitation in Magic Login too
+            const invitation = await Invitation.findOne({ email, status: 'pending' });
+            
+            if (invitation) {
+                user = new User({
+                    email,
+                    name: email.split('@')[0],
+                    role: invitation.role,
+                    organizerEmail: invitation.organizerEmail
+                });
+                invitation.status = 'accepted';
+                await invitation.save();
+            } else {
+                user = new User({
+                    email,
+                    name: email.split('@')[0],
+                    role: 'organizer',
+                    organizerEmail: email
+                });
+            }
             await user.save();
-        } else {
+        } else if (user.role === 'organizer') {
             user.organizerEmail = user.email;
             await user.save();
         }
