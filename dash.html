@@ -17,7 +17,9 @@
         .section-title { margin-bottom: 1.5rem; font-weight: 300; letter-spacing: 1.5px; color: var(--text-dim); text-transform: uppercase; font-size: 0.8rem; border-left: 3px solid var(--primary); padding-left: 10px; }
         .activity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; margin-bottom: 3rem; }
         .activity-card { background: var(--card); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; cursor: pointer; position: relative; }
-        .activity-card:hover { border-color: var(--primary); transform: translateY(-5px); background: rgba(255,255,255,0.05); }
+        .activity-card.approved { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); pointer-events: none; }
+        .activity-card.approved::after { content: '✓ VERIFIED'; position: absolute; inset: 0; background: rgba(16, 185, 129, 0.8); color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; border-radius: 20px; z-index: 10; letter-spacing: 2px; }
+        
         .badge { font-size: 0.65rem; font-weight: bold; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 6px; position: absolute; top: 1.5rem; right: 1.5rem; }
         
         .rule-item { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; display: flex; gap: 10px; }
@@ -113,13 +115,28 @@
         if(!user || user.role !== 'student') window.location.href = '/';
         document.getElementById('u-name').innerText = user.name;
 
-        function render() {
+        let submissions = [];
+
+        async function render() {
+            try {
+                const res = await fetch(`/api/submissions?studentEmail=${user.email}&organizerEmail=${user.organizerEmail}`);
+                const data = await res.json();
+                submissions = data.submissions || [];
+            } catch (e) { console.error('Failed to load subms', e); }
+
             const rGrid = document.getElementById('rubric-grid');
             const aGrid = document.getElementById('activity-grid');
-            
+            rGrid.innerHTML = '';
+            aGrid.innerHTML = '';
+
+            let totalPoints = 0;
+
             rubrics.forEach(r => {
+                const isApproved = submissions.some(s => s.activityTitle === r.title && s.status === 'approved');
+                if(isApproved) totalPoints += r.pts;
+
                 rGrid.innerHTML += `
-                    <div class="activity-card" onclick="openModal(${r.id}, true)">
+                    <div class="activity-card ${isApproved ? 'approved' : ''}" onclick="openModal(${r.id}, true)">
                         <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--accent)">+${r.pts} PTS</span>
                         <h4 style="margin-bottom:10px; font-size:0.9rem;">${r.title}</h4>
                         <p style="font-size:0.7rem; color:var(--text-dim); line-height:1.4;">${r.desc}</p>
@@ -127,13 +144,21 @@
             });
 
             activities.forEach(a => {
+                const isApproved = submissions.some(s => s.activityTitle === a.title && s.status === 'approved');
+                if(isApproved) totalPoints += a.pts;
+
                 aGrid.innerHTML += `
-                    <div class="activity-card" onclick="openModal(${a.id}, false)">
+                    <div class="activity-card ${isApproved ? 'approved' : ''}" onclick="openModal(${a.id}, false)">
                         <span class="badge">+${a.pts} PTS</span>
                         <h4 style="margin-bottom:10px; font-size:0.9rem;">${a.title}</h4>
                         <p style="font-size:0.7rem; color:var(--text-dim); line-height:1.4;">${a.desc}</p>
                     </div>`;
             });
+
+            // Update Progress Bar
+            document.getElementById('p-val').innerText = totalPoints;
+            const max = parseInt(document.getElementById('p-max').innerText);
+            document.getElementById('p-bar').style.width = Math.min(100, (totalPoints / max) * 100) + '%';
         }
 
         let currentActivity = null;

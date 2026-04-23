@@ -6,188 +6,209 @@
     <title>Mentor Dashboard | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --danger: #ef4444; }
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --danger: #ef4444; --gold: #fbbf24; --text: #fff; --text-dim: #94a3b8; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; }
-        .glass-header { background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .stat-card { background: var(--card); padding: 1.5rem; border-radius: 18px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
-        .stat-val { font-size: 2.2rem; font-weight: 600; color: var(--primary); }
-        .tools-area { background: var(--card); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); }
-        input { width: 100%; padding: 1.1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 1rem; outline: none; font-family: inherit; }
-        .btn { width: 100%; padding: 1rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; background: var(--primary); color: white; font-family: inherit; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; background: rgba(255,255,255,0.02); border-radius: 14px; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05); }
-        .status { font-size: 0.65rem; padding: 3px 10px; border-radius: 6px; font-weight: bold; }
-        .active { background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
-        .pending { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
-        .btn-action { background: transparent; border: none; cursor: pointer; opacity: 0.6; transition: 0.3s; color: var(--text-dim); }
-        .btn-action:hover { opacity: 1; color: var(--text); }
-        #message { position: fixed; top: 2rem; right: 2rem; padding: 1.5rem; border-radius: 14px; display: none; z-index: 1000; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); max-width: 350px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .fallback-box { margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow: hidden; }
+        
+        .sidebar { width: 320px; background: #080808; border-right: 1px solid rgba(255,255,255,0.05); padding: 2rem; display: flex; flex-direction: column; }
+        .main-content { flex: 1; padding: 2rem; overflow-y: auto; }
+        
+        .glass-card { background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.5rem; }
+        .btn { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
+        
+        .list-item { background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .list-item:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .progress-mini { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 1s ease; }
+
+        .update-feed { flex: 1; overflow-y: auto; margin-top: 2rem; }
+        .feed-item { font-size: 0.75rem; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        #message { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 12px; display: none; z-index: 1000; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
-    <div style="max-width: 900px; margin: 0 auto;">
-        <div class="glass-header">
-            <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">MENTOR</span></h1></div>
-            <div style="text-align:right;">
-                <div id="u-name" style="font-weight:600;">Loading...</div>
-                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
-            </div>
+    <div class="sidebar">
+        <h2 style="font-size:1.2rem; letter-spacing:2px; margin-bottom:2rem;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">MENTOR</span></h2>
+        
+        <div class="glass-card" style="padding:1rem;">
+            <p style="font-size:0.7rem; color:var(--text-dim); margin-bottom:10px;">BULK ACTIONS</p>
+            <button class="btn btn-primary" onclick="bulkNotify()">📧 Nudge All Students</button>
+            <p style="font-size:0.6rem; color:var(--text-dim); margin-top:8px; text-align:center;">Sends monthly upload reminder</p>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
-            <div class="stat-card" style="width: 250px;"><div class="stat-val" id="s-count">0</div><div style="font-size:0.8rem; color:var(--text-dim)">Students Managed</div></div>
-            <button onclick="refresh()" class="btn" style="width:auto; padding:0.8rem 1.5rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">🔄 Sync System</button>
+        <div class="update-feed">
+            <p style="font-size:0.7rem; color:var(--gold); font-weight:bold; letter-spacing:1px; margin-bottom:1rem;">RECENT UPDATES</p>
+            <div id="feed-container"></div>
         </div>
 
-        <div class="tools-area">
-            <h3 style="margin-bottom:1.5rem; font-weight:400; font-size:1.1rem;">Enroll New Student</h3>
-            <input type="email" id="email-input" placeholder="student@gmail.com">
-            <button class="btn" onclick="sendInvite()">Add Student to System</button>
-
-            <div style="margin-top:3rem;">
-                <p style="font-size:0.75rem; color:var(--text-dim); font-weight:600; letter-spacing:1.5px; margin-bottom:1.5rem; text-transform:uppercase;">Student Management</p>
-                <div id="list-container"></div>
-            </div>
-
-            <div style="margin-top:4rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:2.5rem;">
-                <p style="font-size:0.75rem; color:var(--gold); font-weight:600; letter-spacing:1.5px; margin-bottom:1.5rem; text-transform:uppercase;">AICTE Verification Queue</p>
-                <div id="submission-container"></div>
-            </div>
+        <div style="margin-top:auto;">
+            <p id="m-email" style="font-size:0.8rem; color:var(--text-dim);"></p>
+            <button class="btn btn-outline" style="font-size:0.7rem;" onclick="logout()">Sign Out</button>
         </div>
     </div>
+
+    <div class="main-content">
+        <div class="stat-grid">
+            <div class="glass-card">
+                <p style="font-size:0.75rem; color:var(--text-dim)">Total Students</p>
+                <h3 id="s-count" style="font-size:2rem;">0</h3>
+            </div>
+            <div class="glass-card">
+                <p style="font-size:0.75rem; color:var(--text-dim)">Pending Verification</p>
+                <h3 id="p-count" style="font-size:2rem; color:var(--gold);">0</h3>
+            </div>
+            <div class="glass-card">
+                <p style="font-size:0.75rem; color:var(--text-dim)">Success Rate</p>
+                <h3 id="avg-progress" style="font-size:2rem; color:var(--accent);">0%</h3>
+            </div>
+        </div>
+
+        <h2 style="margin-bottom:1.5rem; font-weight:300; font-size:1.2rem; letter-spacing:1px;">STUDENT NETWORK PROGRESS</h2>
+        <div id="student-list"></div>
+    </div>
+
     <div id="message"></div>
 
     <script>
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'mentor') window.location.href = '/';
-        document.getElementById('u-name').innerText = user.name;
+        document.getElementById('m-email').innerText = user.email;
 
-        async function refresh() {
-            const container = document.getElementById('list-container');
-            container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:2rem; font-size:0.8rem;">Syncing secure data...</p>';
-            
+        async function sync() {
             try {
-                const [uRes, iRes] = await Promise.all([
-                    fetch(`/api/users?role=student&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
-                    fetch(`/api/invitations?organizerEmail=${user.organizerEmail}`).then(r => r.json())
-                ]);
-
-                container.innerHTML = '';
-                uRes.users.forEach(u => {
-                    container.innerHTML += `
-                        <div class="list-item">
-                            <div><div style="font-weight:600;">${u.name}</div><div style="font-size:0.75rem; color:var(--text-dim)">${u.email}</div></div>
-                            <div style="display:flex; align-items:center; gap:15px;">
-                                <span class="status active">ACTIVE</span>
-                                <button class="btn-action" onclick="deleteUser('${u._id}')" style="color:var(--danger)">✕</button>
-                            </div>
-                        </div>`;
-                });
-
-                iRes.invites.filter(i => i.role === 'student' && i.status === 'pending').forEach(i => {
-                    const link = `${window.location.origin}?invite=${i.token}`;
-                    container.innerHTML += `
-                        <div class="list-item" style="border-style:dashed;">
-                            <div><div style="font-weight:600;">${i.email}</div><div style="font-size:0.75rem; color:var(--text-dim)">Enrollment Pending</div></div>
-                            <div style="display:flex; align-items:center; gap:15px;">
-                                <button class="btn-action" onclick="copyLink('${link}')" title="Copy Enrollment Link">🔗 Copy Link</button>
-                                <span class="status pending">PENDING</span>
-                                <button class="btn-action" onclick="deleteInvite('${i._id}')" style="color:var(--danger)">✕</button>
-                            </div>
-                        </div>`;
-                });
-
-                document.getElementById('s-count').innerText = uRes.users.length;
-                if(container.innerHTML === '') container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:3rem; font-size:0.8rem;">No students assigned yet.</p>';
+                // Fetch students
+                const uRes = await fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student`).then(r => r.json());
+                const sRes = await fetch(`/api/submissions?organizerEmail=${user.organizerEmail}`).then(r => r.json());
                 
-                loadSubmissions();
-            } catch (err) { container.innerHTML = '<p style="text-align:center; color:var(--danger);">Sync failed. Please check connection.</p>'; }
+                const students = uRes.users;
+                const submissions = sRes.submissions;
+
+                document.getElementById('s-count').innerText = students.length;
+                document.getElementById('p-count').innerText = submissions.filter(s => s.status === 'pending').length;
+
+                renderFeed(submissions);
+                renderStudents(students, submissions);
+            } catch (err) { console.error('Sync failed', err); }
         }
 
-        async function loadSubmissions() {
-            const container = document.getElementById('submission-container');
-            container.innerHTML = '<p style="font-size:0.7rem; color:var(--text-dim)">Loading evidence...</p>';
-            
-            try {
-                const res = await fetch(`/api/submissions?organizerEmail=${user.organizerEmail}`);
-                const data = await res.json();
-                
-                container.innerHTML = '';
-                if(data.submissions.length === 0) {
-                    container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-dim); opacity:0.5;">No submissions to verify yet.</p>';
-                    return;
-                }
+        function renderFeed(subs) {
+            const container = document.getElementById('feed-container');
+            container.innerHTML = '';
+            subs.slice(0, 10).forEach(s => {
+                container.innerHTML += `
+                    <div class="feed-item">
+                        <div style="color:var(--text)">${s.studentEmail.split('@')[0]}</div>
+                        <div style="color:var(--text-dim)">Uploaded: ${s.activityTitle}</div>
+                        <div style="font-size:0.6rem; color:var(--accent); margin-top:4px;">${new Date(s.submittedAt).toLocaleTimeString()}</div>
+                    </div>`;
+            });
+        }
 
-                data.submissions.forEach(sub => {
-                    container.innerHTML += `
-                        <div class="list-item" style="background:rgba(251, 191, 36, 0.02); border-color:rgba(251, 191, 36, 0.1);">
+        function renderStudents(students, submissions) {
+            const container = document.getElementById('student-list');
+            container.innerHTML = '';
+            
+            let totalAvg = 0;
+
+            students.forEach(s => {
+                const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
+                const points = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
+                const perc = Math.min(100, (points / 100) * 100);
+                totalAvg += perc;
+
+                // Pending submissions for this student
+                const pending = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'pending');
+
+                container.innerHTML += `
+                    <div class="glass-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
-                                <div style="font-weight:600; font-size:0.9rem;">${sub.activityTitle}</div>
-                                <div style="font-size:0.7rem; color:var(--text-dim)">By: ${sub.studentEmail} | ${new Date(sub.submittedAt).toLocaleDateString()}</div>
-                                <div style="margin-top:8px;">
-                                    ${sub.files.map(f => `<a href="${f.viewLink}" target="_blank" style="color:var(--primary); font-size:0.65rem; text-decoration:none; margin-right:10px; border:1px solid var(--primary); padding:2px 6px; border-radius:4px;">🖼️ ${f.name.substring(0, 15)}...</a>`).join('')}
-                                </div>
+                                <h4 style="margin-bottom:4px;">${s.name || s.email.split('@')[0]}</h4>
+                                <p style="font-size:0.75rem; color:var(--text-dim)">${s.email}</p>
                             </div>
-                            <div style="display:flex; gap:10px;">
-                                <button class="btn" style="width:auto; padding:8px 15px; font-size:0.7rem; background:var(--accent)" onclick="verify('${sub._id}', 'approved')">Verify</button>
-                                <button class="btn" style="width:auto; padding:8px 15px; font-size:0.7rem; background:var(--danger)" onclick="verify('${sub._id}', 'rejected')">Reject</button>
+                            <div style="text-align:right;">
+                                <span style="font-size:1.2rem; font-weight:600; color:var(--accent)">${points}</span>
+                                <span style="font-size:0.7rem; color:var(--text-dim)">/ 100 pts</span>
                             </div>
-                        </div>`;
-                });
-            } catch (err) { console.error(err); }
+                        </div>
+                        <div class="progress-mini"><div class="progress-fill" style="width:${perc}%"></div></div>
+                        
+                        ${pending.length > 0 ? `
+                            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
+                                <p style="font-size:0.65rem; color:var(--gold); margin-bottom:8px;">PENDING VERIFICATION (${pending.length})</p>
+                                ${pending.map(p => `
+                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; margin-bottom:5px;">
+                                        <span style="font-size:0.7rem;">${p.activityTitle}</span>
+                                        <div style="display:flex; gap:8px;">
+                                            <a href="${p.files[0]?.viewLink}" target="_blank" style="font-size:0.65rem; color:var(--primary); text-decoration:none;">View Drive</a>
+                                            <button onclick="verify('${p._id}', 'approved')" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">✓</button>
+                                            <button onclick="verify('${p._id}', 'rejected')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>`;
+            });
+
+            document.getElementById('avg-progress').innerText = (students.length > 0 ? Math.round(totalAvg / students.length) : 0) + '%';
         }
 
         async function verify(id, status) {
-            alert('Verification marked as ' + status + '. Connecting to points system...');
+            try {
+                const res = await fetch('/api/verify-submission', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, status, points: 10 })
+                }).then(r => r.json());
+                
+                if(res.success) {
+                    showMessage(`Activity ${status === 'approved' ? 'Verified ✓' : 'Rejected ✕'}`);
+                    sync();
+                }
+            } catch (e) { showMessage('Verification failed', true); }
         }
 
-        async function sendInvite() {
-            const email = document.getElementById('email-input').value;
-            if(!email) return;
+        async function bulkNotify() {
+            const msg = prompt("Add a custom message for your students:", "Please upload your latest progress photos for the monthly update.");
+            if (msg === null) return;
 
-            const res = await fetch('/api/invite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, role: 'student', inviterEmail: user.email, organizerEmail: user.organizerEmail })
-            });
-            const data = await res.json();
-
-            const msg = document.getElementById('message');
-            msg.style.display = 'block';
-            msg.style.background = data.emailSent ? 'rgba(16, 185, 129, 0.95)' : 'rgba(245, 158, 11, 0.95)';
-            msg.style.border = data.emailSent ? '1px solid #10b981' : '1px solid #fbbf24';
-            
-            let html = `<div style="font-weight:600; color:white;">${data.emailSent ? '📧 Email Sent Successfully!' : '⚠️ Automation Offline'}</div>`;
-            if(!data.emailSent && data.inviteLink) {
-                html += `
-                    <div class="fallback-box">
-                        <p style="margin-bottom:8px; opacity:0.8; color:white;">Gmail API blocked the auto-email. Please share this link manually:</p>
-                        <code style="word-break:break-all; color:var(--accent); font-weight:bold;">${data.inviteLink}</code>
-                        <button onclick="copyLink('${data.inviteLink}')" style="margin-top:10px; width:100%; padding:8px; background:var(--primary); border:none; border-radius:6px; color:white; cursor:pointer; font-weight:bold;">Copy & Close</button>
-                    </div>`;
-            } else if(data.error) {
-                html += `<div style="font-size:0.75rem; margin-top:5px; color:white;">${data.error}</div>`;
-            }
-            
-            msg.innerHTML = html;
-            document.getElementById('email-input').value = '';
-            refresh();
-            if(data.emailSent) setTimeout(() => { msg.style.display = 'none'; }, 5000);
+            showMessage('Sending broadcast to all students...');
+            try {
+                const res = await fetch('/api/bulk-notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        mentorEmail: user.email, 
+                        organizerEmail: user.organizerEmail,
+                        message: msg 
+                    })
+                }).then(r => r.json());
+                
+                if(res.success) showMessage(`Broadcast sent to ${res.count} students! 📧`);
+                else showMessage('Broadcast failed: ' + res.error, true);
+            } catch (e) { showMessage('Broadcast failed', true); }
         }
 
-        function copyLink(link) {
-            navigator.clipboard.writeText(link).then(() => {
-                alert('Enrollment link copied to clipboard!');
-                document.getElementById('message').style.display = 'none';
-            });
+        function showMessage(txt, isError = false) {
+            const m = document.getElementById('message');
+            m.innerText = txt;
+            m.style.display = 'block';
+            m.style.background = isError ? 'var(--danger)' : 'var(--accent)';
+            m.style.color = 'white';
+            setTimeout(() => m.style.display = 'none', 4000);
         }
 
-        async function deleteUser(id) { if(confirm('Permanently remove this student?')) { await fetch(`/api/users/${id}`, { method: 'DELETE' }); refresh(); } }
-        async function deleteInvite(id) { if(confirm('Cancel this enrollment?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); refresh(); } }
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
-        refresh();
+        
+        sync();
+        setInterval(sync, 30000); // Auto sync every 30s
     </script>
 </body>
 </html>

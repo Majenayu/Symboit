@@ -8,6 +8,7 @@ const { google } = require('googleapis');
 const { OAuth2Client } = require('google-auth-library');
 const multer = require('multer');
 const stream = require('stream');
+const cron = require('node-cron');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -460,21 +461,114 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
 
 // Get submissions for a Mentor to verify
 app.get('/api/submissions', async (req, res) => {
-    const { organizerEmail, mentorEmail } = req.query;
+    const { organizerEmail, studentEmail } = req.query;
     try {
-        // Find students invited by this mentor
-        const students = await User.find({ 
-            organizerEmail, 
-            role: 'student' 
-        });
+        const query = { organizerEmail };
+        if (studentEmail) query.studentEmail = studentEmail;
         
-        // Note: For strict Mentor-Student isolation, we'd check who invited them.
-        // For now, mentors see students in the same organization.
-        
-        const submissions = await Submission.find({ organizerEmail }).sort({ submittedAt: -1 });
+        const submissions = await Submission.find(query).sort({ submittedAt: -1 });
         res.json({ success: true, submissions });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Verify/Reject Submission
+app.post('/api/verify-submission', async (req, res) => {
+    const { id, status, points } = req.body;
+    try {
+        const sub = await Submission.findById(id);
+        if (!sub) return res.status(404).json({ success: false, error: 'Submission not found' });
+        
+        sub.status = status;
+        if (status === 'approved') sub.pointsAwarded = points || 10;
+        await sub.save();
+        
+        res.json({ success: true, submission: sub });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Bulk Email Notification for Mentor
+app.post('/api/bulk-notify', async (req, res) => {
+    const { mentorEmail, organizerEmail, message } = req.body;
+    try {
+        const students = await User.find({ organizerEmail, role: 'student' });
+        const mentor = await User.findOne({ email: mentorEmail });
+        
+        if (!mentor || !mentor.refreshToken) return res.status(400).json({ success: false, error: 'Mentor permissions missing' });
+
+        const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+        oauth2Client.setCredentials({ refresh_token: mentor.refreshToken });
+        const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+        for (const student of students) {
+            const subject = 'Action Required: Symboit AICTE Update';
+            const body = `
+                <div style="font-family: sans-serif; background: #050505; color: white; padding: 30px; border-radius: 20px;">
+                    <h2 style="color: #6366f1;">System Update Request</h2>
+                    <p>Your mentor has requested an update on your AICTE activities.</p>
+                    <p style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">${message || 'Please upload your latest progress photos and reports for the month.'}</p>
+                    <a href="https://symboit-60sd.onrender.com/" style="display: inline-block; padding: 10px 20px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px;">Open Student Workspace</a>
+                </div>`;
+
+            const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+            const rawMsg = [
+                `From: Symboit Mentor <${mentorEmail}>`,
+                `To: ${student.email}`,
+                'Content-Type: text/html; charset=utf-8',
+                'MIME-Version: 1.0',
+                `Subject: ${utf8Subject}`,
+                '',
+                body
+            ].join('\n');
+
+            const encoded = Buffer.from(rawMsg).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            await gmail.users.messages.send({ userId: 'me', requestBody: { raw: encoded } });
+        }
+
+        res.json({ success: true, count: students.length });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- AUTOMATED MONTHLY REMINDERS ---
+// Runs on the 27th of every month at 9:00 AM (approx 4th day from end of month)
+cron.schedule('0 9 27 * *', async () => {
+    console.log('[CRON] Starting monthly student reminder broadcast...');
+    const mentors = await User.find({ role: 'mentor', refreshToken: { $exists: true } });
+    
+    for (const mentor of mentors) {
+        // Find their organization students
+        const students = await User.find({ organizerEmail: mentor.organizerEmail, role: 'student' });
+        if (students.length === 0) continue;
+
+        const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+        oauth2Client.setCredentials({ refresh_token: mentor.refreshToken });
+        const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+        for (const student of students) {
+            const rawMsg = [
+                `From: Symboit System <${mentor.email}>`,
+                `To: ${student.email}`,
+                'Content-Type: text/html; charset=utf-8',
+                'MIME-Version: 1.0',
+                'Subject: Monthly AICTE Activity Reminder',
+                '',
+                `<div style="background:#050505; color:white; padding:40px; text-align:center; font-family:sans-serif;">
+                    <h1 style="color:#6366f1;">Monthly Update Reminder</h1>
+                    <p>This is an automated reminder to upload your activity photos and reports for this month.</p>
+                    <p style="color:#94a3b8;">Keep your profile up to date to ensure timely degree completion.</p>
+                    <br>
+                    <a href="https://symboit-60sd.onrender.com/" style="padding:12px 25px; background:#10b981; color:white; text-decoration:none; border-radius:10px;">Upload Evidence Now</a>
+                </div>`
+            ].join('\n');
+
+            const encoded = Buffer.from(rawMsg).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            await gmail.users.messages.send({ userId: 'me', requestBody: { raw: encoded } }).catch(e => console.error('Cron mail fail:', e));
+        }
     }
 });
 
