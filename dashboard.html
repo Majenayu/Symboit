@@ -129,20 +129,20 @@
 
                     container.innerHTML += `
                         <div class="glass-card">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div style="flex:1;">
-                                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:5px;">
-                                        <h4 style="font-size:1rem;">${s.name || s.email.split('@')[0]}</h4>
-                                        ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="Open Student AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.1rem; display:flex; align-items:center;">📂</a>` : '<span title="No submissions yet" style="opacity:0.2; font-size:1.1rem;">📂</span>'}
-                                    </div>
-                                    <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">${s.email}</p>
+                                    <h4 style="font-size:1rem;">${s.name || s.email.split('@')[0]}</h4>
+                                    <p style="font-size:0.75rem; color:var(--text-dim);">${s.email}</p>
                                 </div>
-                                <div style="text-align:right;">
-                                    <span style="font-size:1.5rem; font-weight:600; color:var(--accent)">${points}</span>
-                                    <span style="font-size:0.7rem; color:var(--text-dim)">/ 100 pts</span>
+                                <div style="text-align:right; display:flex; align-items:center; gap:15px;">
+                                    ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="Open AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="No submissions" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
+                                    <div>
+                                        <span style="font-size:1.5rem; font-weight:600; color:var(--accent)">${points}</span>
+                                        <span style="font-size:0.7rem; color:var(--text-dim)">/ 100 pts</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="progress-container" style="height:8px; margin-top:10px;"><div class="progress-bar" style="width:${perc}%"></div></div>
+                            <div class="progress-container" style="height:6px; margin-top:15px;"><div class="progress-bar" style="width:${perc}%"></div></div>
                             
                             ${pending.length > 0 ? `
                                 <div style="margin-top:20px; background:rgba(251, 191, 36, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.1);">
