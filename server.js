@@ -397,10 +397,33 @@ app.get('/api/genres', async (req, res) => {
         // Seed defaults if empty
         if (genres.length === 0) {
             const defaults = [
-                { title: "Plantation Drive", desc: "Mandatory plantation drive.", pts: 10, type: 'event', isRubric: true },
-                { title: "Blood Donation", desc: "Donor certificate required.", pts: 10, type: 'event', isRubric: true },
-                { title: "Help Local Schools", desc: "Enhancing enrollment and results.", pts: 10, type: 'weeks', isRubric: false },
-                { title: "Water Management", desc: "Sustainable water systems.", pts: 10, type: 'weeks', isRubric: false }
+                // Rubrics (isRubric: true, type: 'event')
+                { title: "Plantation Drive", desc: "Mandatory plantation drive with geotagged photo evidence.", pts: 10, type: 'event', isRubric: true },
+                { title: "Volunteering", desc: "General volunteering for academic and social activities.", pts: 10, type: 'event', isRubric: true },
+                { title: "Workshops (External)", desc: "Full day workshops attended outside the institution.", pts: 10, type: 'event', isRubric: true },
+                { title: "Blood Donation", desc: "Donor certificate required (claimable once).", pts: 10, type: 'event', isRubric: true },
+                { title: "Outreach Activity", desc: "One day outreach programme for social causes.", pts: 10, type: 'event', isRubric: true },
+                { title: "Hackathon", desc: "Participation in recognized technical hackathons.", pts: 10, type: 'event', isRubric: true },
+                { title: "NSS Camps", desc: "One week attendance at NSS camps.", pts: 20, type: 'event', isRubric: true },
+                { title: "Marathon/Cause", desc: "Participation in marathon/walkathon/cyclothon for a cause.", pts: 10, type: 'event', isRubric: true },
+                
+                // Activity Heads (isRubric: false, type: 'weeks')
+                { title: "School Result Enhancement", desc: "Helping local schools achieve results and enhance enrollment.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Village Business Proposal", desc: "Preparing actionable business proposal for village income.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Sustainable Water Management", desc: "Developing water management systems.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Tourism Promotion", desc: "Innovative approaches to tourism.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Appropriate Technologies", desc: "Promotion of appropriate tech solutions.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Energy Consumption Reduction", desc: "Methods to reduce energy usage.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Rural Skilling", desc: "Skilling rural population for better livelihood.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Digitized Money Transactions", desc: "Facilitating 100% digital money usage.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Women Info Club", desc: "Setting up info clubs for women's economic issues.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Garbage Disposal System", desc: "Developing efficient garbage systems.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Rural Marketing Assistant", desc: "Assisting marketing of rural produce.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Food Preservation", desc: "Food preservation and packaging innovations.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Local Automation", desc: "Automation of local community activities.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Public Awareness (Outreach)", desc: "Spreading awareness under outreach programmes.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "National Level Initiatives", desc: "Contribution to Digital India, Skill India, Swachh Bharat etc.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Rain Water Harvesting", desc: "Awareness regarding rain water harvesting.", pts: 10, type: 'weeks', isRubric: false }
             ];
             await Genre.insertMany(defaults.map(d => ({ ...d, organizerEmail })));
             genres = await Genre.find({ organizerEmail });
