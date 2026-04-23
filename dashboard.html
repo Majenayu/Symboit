@@ -116,53 +116,51 @@
             let totalPointsEarned = 0;
             const maxPointsPossible = students.length * 100;
 
-            students.forEach(s => {
-                const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                const points = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
-                totalPointsEarned += points;
-                
-                const perc = Math.min(100, (points / 100) * 100);
-                const pending = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'pending');
-                
-                // Get the root folder ID for the "View Entire Drive" button
-                const rootFolderId = sSubs.length > 0 ? sSubs[0].driveRootFolderId : (pending.length > 0 ? pending[0].driveRootFolderId : null);
+                students.forEach(s => {
+                    const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
+                    const points = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
+                    totalPointsEarned += points;
+                    
+                    const perc = Math.min(100, (points / 100) * 100);
+                    const pending = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'pending');
+                    
+                    // Get the root folder ID for the "View Entire Drive" button
+                    const rootFolderId = sSubs.length > 0 ? sSubs[0].driveRootFolderId : (pending.length > 0 ? pending[0].driveRootFolderId : null);
 
-                container.innerHTML += `
-                    <div class="glass-card">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                            <div>
-                                <h4 style="margin-bottom:2px; font-size:1rem;">${s.name || s.email.split('@')[0]}</h4>
-                                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">${s.email}</p>
-                                
-                                <div style="display:flex; gap:10px;">
-                                    ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" class="btn btn-outline" style="width:auto; font-size:0.6rem; padding:4px 10px; margin:0; border-color:var(--primary); color:var(--primary);">📂 Full Activity Drive</a>` : ''}
+                    container.innerHTML += `
+                        <div class="glass-card">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <div style="flex:1;">
+                                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:5px;">
+                                        <h4 style="font-size:1rem;">${s.name || s.email.split('@')[0]}</h4>
+                                        ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="Open Student AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.1rem; display:flex; align-items:center;">📂</a>` : '<span title="No submissions yet" style="opacity:0.2; font-size:1.1rem;">📂</span>'}
+                                    </div>
+                                    <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">${s.email}</p>
+                                </div>
+                                <div style="text-align:right;">
+                                    <span style="font-size:1.5rem; font-weight:600; color:var(--accent)">${points}</span>
+                                    <span style="font-size:0.7rem; color:var(--text-dim)">/ 100 pts</span>
                                 </div>
                             </div>
-                            <div style="text-align:right;">
-                                <span style="font-size:1.5rem; font-weight:600; color:var(--accent)">${points}</span>
-                                <span style="font-size:0.7rem; color:var(--text-dim)">/ 100 pts</span>
-                                <div style="font-size:0.6rem; color:var(--text-dim); margin-top:5px; text-transform:uppercase; letter-spacing:1px;">Individual Progress</div>
-                            </div>
-                        </div>
-                        <div class="progress-container" style="height:8px; margin-top:15px;"><div class="progress-bar" style="width:${perc}%"></div></div>
-                        
-                        ${pending.length > 0 ? `
-                            <div style="margin-top:20px; background:rgba(251, 191, 36, 0.05); padding:15px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.1);">
-                                <p style="font-size:0.65rem; color:var(--gold); margin-bottom:10px; font-weight:bold;">PENDING EVIDENCE (${pending.length})</p>
-                                ${pending.map(p => `
-                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:10px; border-radius:10px; margin-bottom:8px;">
-                                        <div style="font-size:0.8rem; font-weight:600;">${p.activityTitle}</div>
-                                        <div style="display:flex; gap:10px; align-items:center;">
-                                            <a href="${p.files[0]?.viewLink}" target="_blank" style="font-size:0.65rem; color:var(--primary); text-decoration:none;">View Proof</a>
-                                            <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem;">Approve</button>
-                                            <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem;">Reject</button>
+                            <div class="progress-container" style="height:8px; margin-top:10px;"><div class="progress-bar" style="width:${perc}%"></div></div>
+                            
+                            ${pending.length > 0 ? `
+                                <div style="margin-top:20px; background:rgba(251, 191, 36, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.1);">
+                                    <p style="font-size:0.6rem; color:var(--gold); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">VERIFICATION PENDING (${pending.length})</p>
+                                    ${pending.map(p => `
+                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
+                                            <div style="font-size:0.75rem; font-weight:600;">${p.activityTitle}</div>
+                                            <div style="display:flex; gap:8px;">
+                                                <a href="${p.files[0]?.viewLink}" target="_blank" style="font-size:0.65rem; color:var(--primary); text-decoration:none; border:1px solid var(--primary); padding:2px 6px; border-radius:4px;">View Proof</a>
+                                                <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
+                                                <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    </div>`;
-            });
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>`;
+                });
 
             // Update Organization Wide Progress
             const orgPerc = maxPointsPossible > 0 ? Math.round((totalPointsEarned / maxPointsPossible) * 100) : 0;
