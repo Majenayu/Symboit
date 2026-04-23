@@ -14,10 +14,12 @@
         .bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; margin: 15px 0; overflow: hidden; }
         .bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: 1s ease; }
         
-        .activity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .section-title { margin-bottom: 1.5rem; font-weight: 300; letter-spacing: 1.5px; color: var(--text-dim); text-transform: uppercase; font-size: 0.8rem; border-left: 3px solid var(--primary); padding-left: 10px; }
+        .activity-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; margin-bottom: 3rem; }
         .activity-card { background: var(--card); padding: 1.5rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; cursor: pointer; position: relative; }
         .activity-card:hover { border-color: var(--primary); transform: translateY(-5px); background: rgba(255,255,255,0.05); }
         .badge { font-size: 0.65rem; font-weight: bold; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 6px; position: absolute; top: 1.5rem; right: 1.5rem; }
+        
         .rule-item { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; display: flex; gap: 10px; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
@@ -26,7 +28,7 @@
     </style>
 </head>
 <body>
-    <div style="max-width: 1100px; margin: 0 auto;">
+    <div style="max-width: 1200px; margin: 0 auto;">
         <div class="glass-header">
             <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">STUDENT</span></h1></div>
             <div style="text-align:right;">
@@ -39,7 +41,7 @@
             <div style="display:flex; justify-content:space-between; align-items:flex-end;">
                 <div>
                     <h2 style="font-weight:400; font-size:1.5rem;">AICTE Activity Points</h2>
-                    <p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Mandatory for Bachelor's Degree completion (Deadline: April 15, 2026)</p>
+                    <p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Mandatory for Bachelor's Degree completion</p>
                 </div>
                 <div style="text-align:right;">
                     <span id="p-val" style="font-size:2rem; font-weight:600; color:var(--accent);">0</span>
@@ -48,19 +50,17 @@
             </div>
             <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
             <div style="display:flex; gap:20px; margin-top:10px;">
-                <div class="rule-item"><span>📅</span> 2-Week Minimum per Activity</div>
-                <div class="rule-item"><span>⏰</span> 80-90 Hours Required</div>
-                <div class="rule-item"><span>📍</span> Geotag Photos Mandatory</div>
+                <div class="rule-item"><span>📅</span> 2-Week Min</div>
+                <div class="rule-item"><span>⏰</span> 80-90 Hours</div>
+                <div class="rule-item"><span>📍</span> Geotag Photos Required</div>
             </div>
         </div>
 
-        <h3 style="margin-bottom:1.5rem; font-weight:300; letter-spacing:1px; color:var(--text-dim)">AVAILABLE ACTIVITY HEADS</h3>
-        <div class="activity-grid" id="activity-list"></div>
+        <div class="section-title">Official Rubrics (Priority Activities)</div>
+        <div class="activity-grid" id="rubric-grid"></div>
 
-        <div style="margin-top:4rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:2rem;">
-            <h4 style="color:var(--gold); margin-bottom:1rem;">Official Rubrics (Dean Student Welfare)</h4>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;" id="rubric-list"></div>
-        </div>
+        <div class="section-title">AICTE Activity Heads</div>
+        <div class="activity-grid" id="activity-grid"></div>
     </div>
 
     <div class="modal" id="modal">
@@ -70,72 +70,84 @@
             <p id="m-desc" style="color:var(--text-dim); line-height:1.6; margin-bottom:2rem;"></p>
             
             <div style="background:rgba(255,255,255,0.03); padding:1.5rem; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
-                <h4 style="font-size:0.8rem; color:var(--primary); margin-bottom:1rem; letter-spacing:1px;">UPLOAD REPORT & GEOTAG PHOTOS</h4>
-                <input type="file" multiple style="width:100%; padding:1rem; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:white;">
-                <button class="btn" style="margin-top:1rem;" onclick="alert('Submission system connecting...')">Submit for Evaluation</button>
+                <h4 style="font-size:0.8rem; color:var(--primary); margin-bottom:1rem; letter-spacing:1px;">SUBMIT EVIDENCE (GEOTAGGED)</h4>
+                <input type="file" multiple id="file-input" style="width:100%; padding:1rem; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:white;">
+                <button class="btn" style="margin-top:1.5rem;" onclick="handleSubmit()">Upload Evidence</button>
             </div>
         </div>
     </div>
 
     <script>
         const activities = [
-            { id: 1, title: "Help Local Schools", desc: "Helping local schools to achieve good results and enhance enrollment in Higher/Technical/Vocational Education.", pts: 10 },
-            { id: 2, title: "Village Business Proposal", desc: "Preparing an actionable business proposal for enhancing the village income.", pts: 10 },
-            { id: 3, title: "Sustainable Water Management", desc: "Developing Sustainable Water Management system.", pts: 10 },
-            { id: 4, title: "Tourism Promotion", desc: "Tourism Promotion Innovative Approaches.", pts: 10 },
-            { id: 5, title: "Appropriate Technologies", desc: "Promotion of Appropriate Technologies.", pts: 10 },
-            { id: 6, title: "Energy Conservation", desc: "Reduction in Energy Consumption.", pts: 10 },
-            { id: 7, title: "Rural Population Skilling", desc: "To skill rural population.", pts: 10 },
-            { id: 8, title: "Digitized Money Transactions", desc: "Facilitating 100% Digitized money transactions.", pts: 10 },
-            { id: 9, title: "Women Info Club", desc: "Setting of the information imparting club for women leading to contribution in social and economic issues.", pts: 10 },
-            { id: 10, title: "Garbage Disposable System", desc: "Developing and managing efficient garbage disposable system.", pts: 10 },
-            { id: 11, title: "Marketing Rural Produce", desc: "To assist the marketing of rural produce.", pts: 10 },
-            { id: 12, title: "Food Preservation", desc: "Food preservation/packaging.", pts: 10 },
-            { id: 13, title: "Local Activity Automation", desc: "Automation of local activities.", pts: 10 },
-            { id: 14, title: "Rural Outreach Awareness", desc: "Spreading public awareness under rural outreach programmes.", pts: 10 },
-            { id: 15, title: "National Initiative Contribution", desc: "Digital India/ Skill India/ Swachh Bharat Internship etc.", pts: 10 },
-            { id: 16, title: "Rain Water Harvesting", desc: "Creating awareness regarding rain water harvesting in urban and rural area.", pts: 10 }
+            { id: 1, title: "Help Local Schools", desc: "Helping local schools to achieve good results and enhance enrollment.", pts: 10 },
+            { id: 2, title: "Village Business Proposal", desc: "Preparing an actionable business proposal for enhancing village income.", pts: 10 },
+            { id: 3, title: "Water Management", desc: "Developing Sustainable Water Management system.", pts: 10 },
+            { id: 4, title: "Tourism Promotion", desc: "Innovative approaches for tourism promotion.", pts: 10 },
+            { id: 5, title: "Appropriate Tech", desc: "Promotion of appropriate technical solutions.", pts: 10 },
+            { id: 6, title: "Energy Conservation", desc: "Reduction in energy consumption methods.", pts: 10 },
+            { id: 7, title: "Rural Skilling", desc: "To skill rural population effectively.", pts: 10 },
+            { id: 8, title: "Digitized Money", desc: "Facilitating 100% digitized money transactions.", pts: 10 },
+            { id: 9, title: "Women Info Club", desc: "Setting up information clubs for social and economic issues.", pts: 10 },
+            { id: 10, title: "Garbage Disposal", desc: "Managing efficient garbage disposable system.", pts: 10 },
+            { id: 11, title: "Rural Marketing", desc: "To assist the marketing of rural produce.", pts: 10 },
+            { id: 12, title: "Food Preservation", desc: "Food preservation/packaging innovations.", pts: 10 },
+            { id: 13, title: "Local Automation", desc: "Automation of local activities.", pts: 10 },
+            { id: 14, title: "Public Awareness", desc: "Spreading public awareness under outreach programmes.", pts: 10 },
+            { id: 15, title: "National Initiatives", desc: "Digital India/ Skill India/ Swachh Bharat etc.", pts: 10 },
+            { id: 16, title: "Rain Water Harvesting", desc: "Creating awareness regarding rain water harvesting.", pts: 10 }
         ];
 
         const rubrics = [
-            { t: "Plantation Drive", p: 10 }, { t: "Volunteering", p: 10 },
-            { t: "Workshops (External)", p: 10 }, { t: "Blood Donation", p: 10 },
-            { t: "Outreach Activity", p: 10 }, { t: "Hackathon", p: 10 },
-            { t: "NSS Camps (1 Week)", p: 20 }, { t: "Marathon/Walkathon", p: 10 }
+            { id: 101, title: "Plantation Drive", desc: "Mandatory plantation drive with geotagged photo evidence.", pts: 10 },
+            { id: 102, title: "Volunteering", desc: "General volunteering for academic and social activities.", pts: 10 },
+            { id: 103, title: "Workshops (External)", desc: "Full day workshops attended outside the institution.", pts: 10 },
+            { id: 104, title: "Blood Donation", desc: "Donor certificate required (claimable once).", pts: 10 },
+            { id: 105, title: "Outreach Activity", desc: "One day outreach programme for social causes.", pts: 10 },
+            { id: 106, title: "Hackathon", desc: "Participation in recognized technical hackathons.", pts: 10 },
+            { id: 107, title: "NSS Camps", desc: "One week attendance at NSS camps.", pts: 20 },
+            { id: 108, title: "Marathon/Cause", desc: "Participation in marathon/walkathon/cyclothon for a cause.", pts: 10 }
         ];
 
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'student') window.location.href = '/';
         document.getElementById('u-name').innerText = user.name;
 
-        // Set Target Points based on Category
-        let targetPoints = 100; // Default for 4-year regular
-        // Note: Logic can be expanded to check user metadata for Lateral Entry (75/50)
-        document.getElementById('p-max').innerText = targetPoints;
-
         function render() {
-            const grid = document.getElementById('activity-list');
-            activities.forEach(a => {
-                grid.innerHTML += `
-                    <div class="activity-card" onclick="openModal(${a.id})">
-                        <span class="badge">${a.pts} PTS</span>
-                        <h4 style="margin-bottom:10px; font-size:0.95rem;">${a.title}</h4>
-                        <p style="font-size:0.75rem; color:var(--text-dim); line-height:1.5;">${a.desc.substring(0, 80)}...</p>
+            const rGrid = document.getElementById('rubric-grid');
+            const aGrid = document.getElementById('activity-grid');
+            
+            rubrics.forEach(r => {
+                rGrid.innerHTML += `
+                    <div class="activity-card" onclick="openModal(${r.id}, true)">
+                        <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--accent)">+${r.pts} PTS</span>
+                        <h4 style="margin-bottom:10px; font-size:0.9rem;">${r.title}</h4>
+                        <p style="font-size:0.7rem; color:var(--text-dim); line-height:1.4;">${r.desc}</p>
                     </div>`;
             });
 
-            const rList = document.getElementById('rubric-list');
-            rubrics.forEach(r => {
-                rList.innerHTML += `<div class="rule-item" style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px;">
-                    <span style="color:var(--accent)">+${r.p}</span> ${r.t}</div>`;
+            activities.forEach(a => {
+                aGrid.innerHTML += `
+                    <div class="activity-card" onclick="openModal(${a.id}, false)">
+                        <span class="badge">+${a.pts} PTS</span>
+                        <h4 style="margin-bottom:10px; font-size:0.9rem;">${a.title}</h4>
+                        <p style="font-size:0.7rem; color:var(--text-dim); line-height:1.4;">${a.desc}</p>
+                    </div>`;
             });
         }
 
-        function openModal(id) {
-            const a = activities.find(x => x.id === id);
-            document.getElementById('m-title').innerText = a.title;
-            document.getElementById('m-desc').innerText = a.desc;
+        function openModal(id, isRubric) {
+            const list = isRubric ? rubrics : activities;
+            const item = list.find(x => x.id === id);
+            document.getElementById('m-title').innerText = item.title;
+            document.getElementById('m-desc').innerText = item.desc;
             document.getElementById('modal').style.display = 'flex';
+        }
+
+        function handleSubmit() {
+            const files = document.getElementById('file-input').files;
+            if(files.length === 0) return alert('Please select files first.');
+            alert('Submission received locally. Waiting for external storage configuration...');
+            closeModal();
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
