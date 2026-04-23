@@ -454,6 +454,19 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
                 fields: 'id, webViewLink'
             });
 
+            // FALLBACK: Grant permission to the FILE specifically as well
+            for (const email of shareWith) {
+                await drive.permissions.create({
+                    fileId: driveRes.data.id,
+                    requestBody: {
+                        type: 'user',
+                        role: 'writer',
+                        emailAddress: email
+                    },
+                    fields: 'id'
+                }).catch(e => console.error(`File share fail with ${email}`, e));
+            }
+
             uploadedFiles.push({
                 name: file.originalname,
                 driveFileId: driveRes.data.id,
