@@ -18,13 +18,10 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
         
-        .list-item { background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
-        .list-item:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
-        
-        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .progress-mini { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-top: 8px; }
-        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: 1s ease; }
+        .progress-container { width: 100%; height: 14px; background: rgba(255,255,255,0.05); border-radius: 7px; overflow: hidden; margin: 15px 0; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: 1s ease; }
 
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
         .update-feed { flex: 1; overflow-y: auto; margin-top: 2rem; }
         .feed-item { font-size: 0.75rem; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
@@ -37,13 +34,12 @@
         <h2 style="font-size:1.2rem; letter-spacing:2px; margin-bottom:2rem;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">MENTOR</span></h2>
         
         <div class="glass-card" style="padding:1rem;">
-            <p style="font-size:0.7rem; color:var(--text-dim); margin-bottom:10px;">BULK ACTIONS</p>
-            <button class="btn btn-primary" onclick="bulkNotify()">📧 Nudge All Students</button>
-            <p style="font-size:0.6rem; color:var(--text-dim); margin-top:8px; text-align:center;">Sends monthly upload reminder</p>
+            <p style="font-size:0.7rem; color:var(--text-dim); margin-bottom:10px;">COMMUNICATION</p>
+            <button class="btn btn-primary" onclick="bulkNotify()">📧 Bulk Email Students</button>
         </div>
 
         <div class="update-feed">
-            <p style="font-size:0.7rem; color:var(--gold); font-weight:bold; letter-spacing:1px; margin-bottom:1rem;">RECENT UPDATES</p>
+            <p style="font-size:0.7rem; color:var(--gold); font-weight:bold; letter-spacing:1px; margin-bottom:1rem;">LIVE UPDATES</p>
             <div id="feed-container"></div>
         </div>
 
@@ -54,22 +50,26 @@
     </div>
 
     <div class="main-content">
+        <div class="glass-card" style="border-left: 5px solid var(--primary);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                <h3 style="font-weight:400; letter-spacing:1px;">ORGANIZATION PROGRESS</h3>
+                <span id="org-perc" style="color:var(--accent); font-weight:bold;">0%</span>
+            </div>
+            <div class="progress-container"><div class="progress-bar" id="org-bar" style="width:0%"></div></div>
+        </div>
+
         <div class="stat-grid">
             <div class="glass-card">
-                <p style="font-size:0.75rem; color:var(--text-dim)">Total Students</p>
+                <p style="font-size:0.75rem; color:var(--text-dim)">Network Size</p>
                 <h3 id="s-count" style="font-size:2rem;">0</h3>
             </div>
             <div class="glass-card">
-                <p style="font-size:0.75rem; color:var(--text-dim)">Pending Verification</p>
+                <p style="font-size:0.75rem; color:var(--text-dim)">To Verify</p>
                 <h3 id="p-count" style="font-size:2rem; color:var(--gold);">0</h3>
-            </div>
-            <div class="glass-card">
-                <p style="font-size:0.75rem; color:var(--text-dim)">Success Rate</p>
-                <h3 id="avg-progress" style="font-size:2rem; color:var(--accent);">0%</h3>
             </div>
         </div>
 
-        <h2 style="margin-bottom:1.5rem; font-weight:300; font-size:1.2rem; letter-spacing:1px;">STUDENT NETWORK PROGRESS</h2>
+        <h2 style="margin-bottom:1.5rem; font-weight:300; font-size:1.1rem; letter-spacing:1px; color:var(--text-dim)">STUDENT WORKSPACES</h2>
         <div id="student-list"></div>
     </div>
 
@@ -82,7 +82,6 @@
 
         async function sync() {
             try {
-                // Fetch students
                 const uRes = await fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student`).then(r => r.json());
                 const sRes = await fetch(`/api/submissions?organizerEmail=${user.organizerEmail}`).then(r => r.json());
                 
@@ -104,7 +103,7 @@
                 container.innerHTML += `
                     <div class="feed-item">
                         <div style="color:var(--text)">${s.studentEmail.split('@')[0]}</div>
-                        <div style="color:var(--text-dim)">Uploaded: ${s.activityTitle}</div>
+                        <div style="color:var(--text-dim)">Sub: ${s.activityTitle}</div>
                         <div style="font-size:0.6rem; color:var(--accent); margin-top:4px;">${new Date(s.submittedAt).toLocaleTimeString()}</div>
                     </div>`;
             });
@@ -114,41 +113,49 @@
             const container = document.getElementById('student-list');
             container.innerHTML = '';
             
-            let totalAvg = 0;
+            let totalPointsEarned = 0;
+            const maxPointsPossible = students.length * 100;
 
             students.forEach(s => {
                 const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
                 const points = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
+                totalPointsEarned += points;
+                
                 const perc = Math.min(100, (points / 100) * 100);
-                totalAvg += perc;
-
-                // Pending submissions for this student
                 const pending = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'pending');
+                
+                // Get the root folder ID for the "View Entire Drive" button
+                const rootFolderId = sSubs.length > 0 ? sSubs[0].driveRootFolderId : (pending.length > 0 ? pending[0].driveRootFolderId : null);
 
                 container.innerHTML += `
                     <div class="glass-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                             <div>
-                                <h4 style="margin-bottom:4px;">${s.name || s.email.split('@')[0]}</h4>
-                                <p style="font-size:0.75rem; color:var(--text-dim)">${s.email}</p>
+                                <h4 style="margin-bottom:2px; font-size:1rem;">${s.name || s.email.split('@')[0]}</h4>
+                                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">${s.email}</p>
+                                
+                                <div style="display:flex; gap:10px;">
+                                    ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" class="btn btn-outline" style="width:auto; font-size:0.6rem; padding:4px 10px; margin:0; border-color:var(--primary); color:var(--primary);">📂 Full Activity Drive</a>` : ''}
+                                </div>
                             </div>
                             <div style="text-align:right;">
-                                <span style="font-size:1.2rem; font-weight:600; color:var(--accent)">${points}</span>
+                                <span style="font-size:1.5rem; font-weight:600; color:var(--accent)">${points}</span>
                                 <span style="font-size:0.7rem; color:var(--text-dim)">/ 100 pts</span>
+                                <div style="font-size:0.6rem; color:var(--text-dim); margin-top:5px; text-transform:uppercase; letter-spacing:1px;">Individual Progress</div>
                             </div>
                         </div>
-                        <div class="progress-mini"><div class="progress-fill" style="width:${perc}%"></div></div>
+                        <div class="progress-container" style="height:8px; margin-top:15px;"><div class="progress-bar" style="width:${perc}%"></div></div>
                         
                         ${pending.length > 0 ? `
-                            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
-                                <p style="font-size:0.65rem; color:var(--gold); margin-bottom:8px;">PENDING VERIFICATION (${pending.length})</p>
+                            <div style="margin-top:20px; background:rgba(251, 191, 36, 0.05); padding:15px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.1);">
+                                <p style="font-size:0.65rem; color:var(--gold); margin-bottom:10px; font-weight:bold;">PENDING EVIDENCE (${pending.length})</p>
                                 ${pending.map(p => `
-                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; margin-bottom:5px;">
-                                        <span style="font-size:0.7rem;">${p.activityTitle}</span>
-                                        <div style="display:flex; gap:8px;">
-                                            <a href="${p.files[0]?.viewLink}" target="_blank" style="font-size:0.65rem; color:var(--primary); text-decoration:none;">View Drive</a>
-                                            <button onclick="verify('${p._id}', 'approved')" style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">✓</button>
-                                            <button onclick="verify('${p._id}', 'rejected')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:10px; border-radius:10px; margin-bottom:8px;">
+                                        <div style="font-size:0.8rem; font-weight:600;">${p.activityTitle}</div>
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <a href="${p.files[0]?.viewLink}" target="_blank" style="font-size:0.65rem; color:var(--primary); text-decoration:none;">View Proof</a>
+                                            <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem;">Approve</button>
+                                            <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.8rem;">Reject</button>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -157,7 +164,10 @@
                     </div>`;
             });
 
-            document.getElementById('avg-progress').innerText = (students.length > 0 ? Math.round(totalAvg / students.length) : 0) + '%';
+            // Update Organization Wide Progress
+            const orgPerc = maxPointsPossible > 0 ? Math.round((totalPointsEarned / maxPointsPossible) * 100) : 0;
+            document.getElementById('org-bar').style.width = orgPerc + '%';
+            document.getElementById('org-perc').innerText = orgPerc + '%';
         }
 
         async function verify(id, status) {
@@ -176,24 +186,18 @@
         }
 
         async function bulkNotify() {
-            const msg = prompt("Add a custom message for your students:", "Please upload your latest progress photos for the monthly update.");
+            const msg = prompt("Add a message for your students:", "Please upload your latest progress photos for the monthly update.");
             if (msg === null) return;
-
-            showMessage('Sending broadcast to all students...');
+            showMessage('Sending emails to all students...');
             try {
                 const res = await fetch('/api/bulk-notify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        mentorEmail: user.email, 
-                        organizerEmail: user.organizerEmail,
-                        message: msg 
-                    })
+                    body: JSON.stringify({ mentorEmail: user.email, organizerEmail: user.organizerEmail, message: msg })
                 }).then(r => r.json());
-                
-                if(res.success) showMessage(`Broadcast sent to ${res.count} students! 📧`);
-                else showMessage('Broadcast failed: ' + res.error, true);
-            } catch (e) { showMessage('Broadcast failed', true); }
+                if(res.success) showMessage(`Emails sent to ${res.count} students! 📧`);
+                else showMessage('Failed: ' + res.error, true);
+            } catch (e) { showMessage('Failed', true); }
         }
 
         function showMessage(txt, isError = false) {
@@ -206,9 +210,8 @@
         }
 
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
-        
         sync();
-        setInterval(sync, 30000); // Auto sync every 30s
+        setInterval(sync, 45000); // Sync every 45s
     </script>
 </body>
 </html>

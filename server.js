@@ -415,6 +415,26 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
         const aicteFolderId = await getDriveFolder(drive, 'AICTE');
         const activityFolderId = await getDriveFolder(drive, activityTitle, aicteFolderId);
 
+        // 2. Grant Permissions to Mentor and Organizer (so they can View/Edit)
+        const shareWith = [organizerEmail];
+        // Find mentor who invited this student to share with them too
+        const mentorInvite = await Invitation.findOne({ email: studentEmail, status: 'accepted' });
+        if (mentorInvite && mentorInvite.inviterEmail !== organizerEmail) {
+            shareWith.push(mentorInvite.inviterEmail);
+        }
+
+        for (const email of shareWith) {
+            await drive.permissions.create({
+                fileId: aicteFolderId,
+                requestBody: {
+                    type: 'user',
+                    role: 'writer', // Editor access
+                    emailAddress: email
+                },
+                fields: 'id'
+            }).catch(e => console.error(`Failed to share folder with ${email}`, e));
+        }
+
         const uploadedFiles = [];
 
         // 2. Upload each file to the folder
@@ -447,6 +467,7 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
             organizerEmail,
             activityTitle,
             driveFolderId: activityFolderId,
+            driveRootFolderId: aicteFolderId, // Store root for easy mentor access
             files: uploadedFiles
         });
         await submission.save();
