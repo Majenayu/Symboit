@@ -106,7 +106,8 @@ app.post('/api/auth/google', async (req, res) => {
                     email: payload.email,
                     name: payload.name,
                     role: invitation.role,
-                    organizerEmail: invitation.organizerEmail
+                    organizerEmail: invitation.organizerEmail,
+                    refreshToken: tokens.refresh_token // Capture for students too
                 });
                 invitation.status = 'accepted';
                 await invitation.save();
@@ -124,7 +125,7 @@ app.post('/api/auth/google', async (req, res) => {
             await user.save();
         } else {
             // Existing user
-            if (tokens.refresh_token && user.role === 'organizer') {
+            if (tokens.refresh_token) {
                 user.refreshToken = tokens.refresh_token;
             }
             await user.save();
@@ -400,13 +401,13 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
     const { studentEmail, organizerEmail, activityTitle } = req.body;
     
     try {
-        const organizer = await User.findOne({ email: organizerEmail });
-        if (!organizer || !organizer.refreshToken) {
-            return res.status(400).json({ success: false, error: 'Organizer has not granted Drive permissions.' });
+        const student = await User.findOne({ email: studentEmail });
+        if (!student || !student.refreshToken) {
+            return res.status(400).json({ success: false, error: 'Student has not granted Drive permissions. Please logout and login again.' });
         }
 
         const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
-        oauth2Client.setCredentials({ refresh_token: organizer.refreshToken });
+        oauth2Client.setCredentials({ refresh_token: student.refreshToken });
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
         // 1. Ensure Folder Structure: AICTE -> [Activity Title]
