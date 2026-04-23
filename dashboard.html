@@ -1,10 +1,306 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Redirecting to Dashboard...</title>
-    <meta http-equiv="refresh" content="0; url=/">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Symboit AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050505;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --primary: #6366f1;
+            --accent: #10b981;
+            --text: #ffffff;
+            --text-dim: #94a3b8;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+
+        /* Glassmorphism Header */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            padding: 1.2rem 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-pulse { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+
+        .user-info { text-align: right; }
+        .role-badge { background: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; text-transform: uppercase; margin-top: 4px; display: inline-block; }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--card-bg); padding: 1.5rem; border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .stat-value { font-size: 2rem; font-weight: 600; color: var(--primary); }
+        .stat-label { font-size: 0.8rem; color: var(--text-dim); }
+
+        /* Tools Area */
+        .tools-card { background: var(--card-bg); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 2rem; }
+        .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1.5rem; font-weight: 300; }
+
+        input { 
+            width: 100%; padding: 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 12px; color: white; outline: none; margin-bottom: 1rem; font-family: inherit;
+        }
+        input:focus { border-color: var(--primary); background: rgba(255, 255, 255, 0.08); }
+
+        .btn { 
+            width: 100%; padding: 1rem; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: inherit;
+            border: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+        
+        /* List Items */
+        .list-section { margin-top: 2rem; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: var(--card-bg); border-radius: 14px; margin-bottom: 0.8rem; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .status-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .status-accepted { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .btn-delete { color: var(--danger); background: transparent; border: none; cursor: pointer; opacity: 0.6; transition: 0.3s; }
+        .btn-delete:hover { opacity: 1; }
+
+        #message { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 12px; backdrop-filter: blur(10px); z-index: 1000; display: none; }
+
+    </style>
 </head>
 <body>
-    <p>Loading your dashboard...</p>
+
+    <div class="dashboard-container">
+        <!-- Navigation -->
+        <div class="glass-nav">
+            <div class="logo-area">
+                <div class="logo-pulse"></div>
+                <h1 style="font-size: 1.2rem; letter-spacing: 2px;">SYMBOIT</h1>
+            </div>
+            <div class="user-info">
+                <div id="display-user-name" style="font-weight: 600;">Loading...</div>
+                <div id="display-role" class="role-badge">...</div>
+                <div style="margin-top: 5px;"><a href="javascript:logout()" style="color: var(--text-dim); text-decoration: none; font-size: 0.7rem;">Sign Out</a></div>
+            </div>
+        </div>
+
+        <!-- System Alerts -->
+        <div id="permission-warning" style="display: none; margin-bottom: 1.5rem; padding: 1rem; border-radius: 12px; background: rgba(245,158,11,0.05); border: 1px solid #fbbf24; color: #fbbf24; font-size: 0.85rem;">
+            ⚠️ <strong>Gmail Automation Offline:</strong> Full permissions not granted. Emails will not be sent automatically. 
+            <button onclick="logout()" style="background:none; border:1px solid #fbbf24; color:#fbbf24; padding:2px 10px; border-radius:4px; margin-left:10px; cursor:pointer;">Fix Now</button>
+        </div>
+
+        <!-- Plan Summary -->
+        <div class="stat-card" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.1));">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size: 0.7rem; color: var(--accent); font-weight: bold; margin-bottom: 4px;">SYSTEM PLAN</div>
+                    <div style="font-size: 1.1rem; font-weight: 600;">Enterprise AI Plus</div>
+                </div>
+                <span class="status-badge status-accepted" style="padding: 4px 12px;">UNLIMITED ACCESS</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="count-mentors">0</div>
+                <div class="stat-label">Active Mentors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="count-students">0</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+
+        <!-- Tools Area -->
+        <div class="tools-card">
+            <!-- Organizer View -->
+            <div id="organizer-tools" style="display: none;">
+                <p class="subtitle">Add Professional Mentors to the Organization</p>
+                <input type="email" id="mentor-email" placeholder="mentor@gmail.com">
+                <button class="btn btn-primary" onclick="sendInvite('mentor')">Send Invite to Mentor</button>
+            </div>
+
+            <!-- Mentor View -->
+            <div id="mentor-tools" style="display: none;">
+                <p class="subtitle">Enroll New Students to Your Group</p>
+                <input type="email" id="student-email" placeholder="student@gmail.com">
+                <button class="btn btn-primary" onclick="sendInvite('student')">Add Student</button>
+            </div>
+
+            <!-- Student View -->
+            <div id="student-tools" style="display: none;">
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem;">🎓</div>
+                    <h2 style="margin-top: 1rem;">Student Workspace</h2>
+                    <p class="subtitle">Your courses and mentor assignments are being processed by the AI system.</p>
+                </div>
+            </div>
+
+            <div class="list-section">
+                <p id="list-title" style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1rem; font-weight: 600; letter-spacing: 1px;"></p>
+                <div id="user-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+        let currentUser = null;
+
+        // Load user from session
+        window.onload = function() {
+            const userData = localStorage.getItem('symboit_user');
+            if (!userData) {
+                window.location.href = '/';
+                return;
+            }
+            currentUser = JSON.parse(userData);
+            initDashboard();
+        };
+
+        function initDashboard() {
+            document.getElementById('display-user-name').innerText = currentUser.name;
+            document.getElementById('display-role').innerText = currentUser.role;
+
+            if (currentUser.role === 'organizer' && !currentUser.refreshToken) {
+                document.getElementById('permission-warning').style.display = 'block';
+            }
+
+            if (currentUser.role === 'organizer') {
+                document.getElementById('organizer-tools').style.display = 'block';
+                document.getElementById('list-title').innerText = 'MANAGED MENTORS';
+                refreshList('mentor');
+            } else if (currentUser.role === 'mentor') {
+                document.getElementById('mentor-tools').style.display = 'block';
+                document.getElementById('list-title').innerText = 'MANAGED STUDENTS';
+                refreshList('student');
+            } else if (currentUser.role === 'student') {
+                document.getElementById('student-tools').style.display = 'block';
+            }
+        }
+
+        function refreshList(role) {
+            const list = document.getElementById('user-list');
+            list.innerHTML = '<p style="text-align:center; color:var(--text-dim); font-size:0.8rem;">Syncing...</p>';
+
+            Promise.all([
+                fetch(`/api/users?role=${role}&organizerEmail=${currentUser.organizerEmail}`).then(r => r.json()),
+                fetch(`/api/invitations?organizerEmail=${currentUser.organizerEmail}`).then(r => r.json())
+            ]).then(([userData, inviteData]) => {
+                list.innerHTML = '';
+                
+                userData.users.forEach(u => {
+                    list.innerHTML += `
+                        <div class="list-item">
+                            <div>
+                                <div style="font-weight:600;">${u.name}</div>
+                                <div style="font-size:0.75rem; color:var(--text-dim)">${u.email}</div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span class="status-badge status-accepted">ACTIVE</span>
+                                <button class="btn-delete" onclick="deleteUser('${u._id}', '${role}')">✕</button>
+                            </div>
+                        </div>`;
+                });
+
+                inviteData.invites.filter(inv => inv.role === role && inv.status === 'pending').forEach(inv => {
+                    list.innerHTML += `
+                        <div class="list-item" style="opacity: 0.7; border-style: dashed;">
+                            <div>
+                                <div style="font-weight:600; color:var(--text-dim)">${inv.email}</div>
+                                <div style="font-size:0.75rem; color:var(--text-dim)">Awaiting Acceptance</div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span class="status-badge status-pending">PENDING</span>
+                                <button class="btn-delete" onclick="deleteInvite('${inv._id}', '${role}')">✕</button>
+                            </div>
+                        </div>`;
+                });
+
+                if (role === 'mentor') document.getElementById('count-mentors').innerText = userData.users.length;
+                if (role === 'student') document.getElementById('count-students').innerText = userData.users.length;
+                
+                if (list.innerHTML === '') {
+                    list.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:2rem;">No data available.</p>';
+                }
+            });
+        }
+
+        function sendInvite(targetRole) {
+            const email = document.getElementById(`${targetRole}-email`).value;
+            if (!email) return;
+
+            fetch('/api/invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email, 
+                    role: targetRole, 
+                    inviterEmail: currentUser.email,
+                    organizerEmail: currentUser.organizerEmail 
+                })
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    showMessage('Invitation Processed Successfully');
+                    if (data.inviteLink) {
+                        // Show manual link as a popup or in message
+                        const linkMsg = `<br><span style="font-size:0.7rem; color:var(--accent)">Fallback Link: ${data.inviteLink}</span>`;
+                        document.getElementById('message').innerHTML += linkMsg;
+                    }
+                    document.getElementById(`${targetRole}-email`).value = '';
+                    refreshList(targetRole);
+                } else {
+                    showMessage(data.error || 'Failed', true);
+                }
+            });
+        }
+
+        function deleteUser(id, role) {
+            if (confirm('Permanently remove access?')) {
+                fetch(`/api/users/${id}`, { method: 'DELETE' }).then(() => refreshList(role));
+            }
+        }
+
+        function deleteInvite(id, role) {
+            if (confirm('Cancel this invitation?')) {
+                fetch(`/api/invitations/${id}`, { method: 'DELETE' }).then(() => refreshList(role));
+            }
+        }
+
+        function showMessage(text, isError = false) {
+            const msg = document.getElementById('message');
+            msg.style.display = 'block';
+            msg.style.background = isError ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)';
+            msg.innerHTML = text;
+            setTimeout(() => msg.style.display = 'none', 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('symboit_user');
+            window.location.href = '/';
+        }
+    </script>
 </body>
 </html>

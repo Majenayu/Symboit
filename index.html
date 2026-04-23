@@ -259,22 +259,11 @@
             // Fallback for organizerEmail if missing from DB for old users
             if (!currentUser.organizerEmail) currentUser.organizerEmail = user.email;
             
-            showView('dashboard-view');
-            document.getElementById('display-user-name').innerText = user.name;
-            document.getElementById('display-role').innerText = user.role;
+            // Save to localStorage for persistence across pages
+            localStorage.setItem('symboit_user', JSON.stringify(currentUser));
             
-            if (user.role === 'organizer') {
-                document.getElementById('organizer-tools').style.display = 'block';
-                document.getElementById('list-title').innerText = 'YOUR MENTORS';
-                refreshList('mentor');
-            } else if (user.role === 'mentor') {
-                document.getElementById('mentor-tools').style.display = 'block';
-                document.getElementById('list-title').innerText = 'YOUR STUDENTS';
-                refreshList('student');
-            } else if (user.role === 'student') {
-                document.getElementById('student-tools').style.display = 'block';
-                document.getElementById('list-title').innerText = 'MY PROGRESS';
-            }
+            // Redirect to the dedicated dashboard page as requested
+            window.location.href = '/dashboard.html';
         }
 
         function refreshList(role) {
