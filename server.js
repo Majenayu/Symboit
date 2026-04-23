@@ -139,7 +139,10 @@ app.post('/api/invite', async (req, res) => {
         });
         await invitation.save();
         
-        const inviteLink = `http://localhost:${PORT}?invite=${token}`;
+        const protocol = req.headers['x-forwarded-proto'] || 'http';
+        const host = req.get('host');
+        const inviteLink = `${protocol}://${host}?invite=${token}`;
+        
         console.log(`Invite generated for ${email}. Looking for organizer: ${organizerEmail}`);
         const organizer = await User.findOne({ email: organizerEmail });
         
