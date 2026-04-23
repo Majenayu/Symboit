@@ -22,7 +22,8 @@
         .pending { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
         .btn-action { background: transparent; border: none; cursor: pointer; opacity: 0.6; transition: 0.3s; color: var(--text-dim); }
         .btn-action:hover { opacity: 1; color: var(--text); }
-        #message { position: fixed; top: 2rem; right: 2rem; padding: 1.5rem; border-radius: 14px; display: none; z-index: 1000; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        #message { position: fixed; top: 2rem; right: 2rem; padding: 1.5rem; border-radius: 14px; display: none; z-index: 1000; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); max-width: 350px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .fallback-box { margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; }
     </style>
 </head>
 <body>
@@ -31,21 +32,22 @@
             <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">MENTOR</span></h1></div>
             <div style="text-align:right;">
                 <div id="u-name" style="font-weight:600;">Loading...</div>
-                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none;">Sign Out</a>
+                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
             </div>
         </div>
 
-        <div style="margin-bottom:2rem;">
-            <div class="stat-card" style="width: 250px;"><div class="stat-val" id="s-count">0</div><div style="font-size:0.8rem; color:var(--text-dim)">Students</div></div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
+            <div class="stat-card" style="width: 250px;"><div class="stat-val" id="s-count">0</div><div style="font-size:0.8rem; color:var(--text-dim)">Students Managed</div></div>
+            <button onclick="refresh()" class="btn" style="width:auto; padding:0.8rem 1.5rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">🔄 Sync System</button>
         </div>
 
         <div class="tools-area">
-            <h3 style="margin-bottom:1.5rem; font-weight:400;">Enroll New Student</h3>
+            <h3 style="margin-bottom:1.5rem; font-weight:400; font-size:1.1rem;">Enroll New Student</h3>
             <input type="email" id="email-input" placeholder="student@gmail.com">
-            <button class="btn" onclick="sendInvite()">Add Student</button>
+            <button class="btn" onclick="sendInvite()">Add Student to System</button>
 
             <div style="margin-top:3rem;">
-                <p style="font-size:0.75rem; color:var(--text-dim); font-weight:600; letter-spacing:1.5px; margin-bottom:1.5rem;">MY STUDENTS</p>
+                <p style="font-size:0.75rem; color:var(--text-dim); font-weight:600; letter-spacing:1.5px; margin-bottom:1.5rem; text-transform:uppercase;">Student Management</p>
                 <div id="list-container"></div>
             </div>
         </div>
@@ -59,69 +61,87 @@
 
         async function refresh() {
             const container = document.getElementById('list-container');
-            const [uRes, iRes] = await Promise.all([
-                fetch(`/api/users?role=student&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
-                fetch(`/api/invitations?organizerEmail=${user.organizerEmail}`).then(r => r.json())
-            ]);
-            container.innerHTML = '';
+            container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:2rem; font-size:0.8rem;">Syncing secure data...</p>';
             
-            uRes.users.forEach(u => {
-                container.innerHTML += `
-                    <div class="list-item">
-                        <div><div style="font-weight:600;">${u.name}</div><div style="font-size:0.75rem; color:var(--text-dim)">${u.email}</div></div>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <span class="status active">ACTIVE</span>
-                            <button class="btn-action" onclick="deleteUser('${u._id}')" style="color:var(--danger)">✕</button>
-                        </div>
-                    </div>`;
-            });
+            try {
+                const [uRes, iRes] = await Promise.all([
+                    fetch(`/api/users?role=student&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
+                    fetch(`/api/invitations?organizerEmail=${user.organizerEmail}`).then(r => r.json())
+                ]);
 
-            iRes.invites.filter(i => i.role === 'student' && i.status === 'pending').forEach(i => {
-                const link = `${window.location.origin}?invite=${i.token}`;
-                container.innerHTML += `
-                    <div class="list-item" style="border-style:dashed;">
-                        <div><div style="font-weight:600;">${i.email}</div><div style="font-size:0.75rem; color:var(--text-dim)">Enrollment Pending</div></div>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <button class="btn-action" onclick="copyLink('${link}')" title="Copy Enrollment Link">🔗 Copy Link</button>
-                            <span class="status pending">PENDING</span>
-                            <button class="btn-action" onclick="deleteInvite('${i._id}')" style="color:var(--danger)">✕</button>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('s-count').innerText = uRes.users.length;
+                container.innerHTML = '';
+                uRes.users.forEach(u => {
+                    container.innerHTML += `
+                        <div class="list-item">
+                            <div><div style="font-weight:600;">${u.name}</div><div style="font-size:0.75rem; color:var(--text-dim)">${u.email}</div></div>
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <span class="status active">ACTIVE</span>
+                                <button class="btn-action" onclick="deleteUser('${u._id}')" style="color:var(--danger)">✕</button>
+                            </div>
+                        </div>`;
+                });
+
+                iRes.invites.filter(i => i.role === 'student' && i.status === 'pending').forEach(i => {
+                    const link = `${window.location.origin}?invite=${i.token}`;
+                    container.innerHTML += `
+                        <div class="list-item" style="border-style:dashed;">
+                            <div><div style="font-weight:600;">${i.email}</div><div style="font-size:0.75rem; color:var(--text-dim)">Enrollment Pending</div></div>
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <button class="btn-action" onclick="copyLink('${link}')" title="Copy Enrollment Link">🔗 Copy Link</button>
+                                <span class="status pending">PENDING</span>
+                                <button class="btn-action" onclick="deleteInvite('${i._id}')" style="color:var(--danger)">✕</button>
+                            </div>
+                        </div>`;
+                });
+
+                document.getElementById('s-count').innerText = uRes.users.length;
+                if(container.innerHTML === '') container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:3rem; font-size:0.8rem;">No students assigned yet.</p>';
+            } catch (err) { container.innerHTML = '<p style="text-align:center; color:var(--danger);">Sync failed. Please check connection.</p>'; }
         }
 
         async function sendInvite() {
             const email = document.getElementById('email-input').value;
             if(!email) return;
+
             const res = await fetch('/api/invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, role: 'student', inviterEmail: user.email, organizerEmail: user.organizerEmail })
             });
             const data = await res.json();
-            if(data.success) {
-                showMessage('Student Enrollment Processed');
-                document.getElementById('email-input').value = '';
-                refresh();
-            } else {
-                showMessage(data.error || 'Failed', true);
+
+            const msg = document.getElementById('message');
+            msg.style.display = 'block';
+            msg.style.background = data.emailSent ? 'rgba(16, 185, 129, 0.95)' : 'rgba(245, 158, 11, 0.95)';
+            msg.style.border = data.emailSent ? '1px solid #10b981' : '1px solid #fbbf24';
+            
+            let html = `<div style="font-weight:600; color:white;">${data.emailSent ? '📧 Email Sent Successfully!' : '⚠️ Automation Offline'}</div>`;
+            if(!data.emailSent && data.inviteLink) {
+                html += `
+                    <div class="fallback-box">
+                        <p style="margin-bottom:8px; opacity:0.8; color:white;">Gmail API blocked the auto-email. Please share this link manually:</p>
+                        <code style="word-break:break-all; color:var(--accent); font-weight:bold;">${data.inviteLink}</code>
+                        <button onclick="copyLink('${data.inviteLink}')" style="margin-top:10px; width:100%; padding:8px; background:var(--primary); border:none; border-radius:6px; color:white; cursor:pointer; font-weight:bold;">Copy & Close</button>
+                    </div>`;
+            } else if(data.error) {
+                html += `<div style="font-size:0.75rem; margin-top:5px; color:white;">${data.error}</div>`;
             }
+            
+            msg.innerHTML = html;
+            document.getElementById('email-input').value = '';
+            refresh();
+            if(data.emailSent) setTimeout(() => { msg.style.display = 'none'; }, 5000);
         }
 
         function copyLink(link) {
             navigator.clipboard.writeText(link).then(() => {
-                alert('Enrollment link copied! Send this manually to the student.');
+                alert('Enrollment link copied to clipboard!');
+                document.getElementById('message').style.display = 'none';
             });
         }
 
-        async function deleteUser(id) { if(confirm('Remove student?')) { await fetch(`/api/users/${id}`, { method: 'DELETE' }); refresh(); } }
-        async function deleteInvite(id) { if(confirm('Cancel enrollment?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); refresh(); } }
-        function showMessage(text, isErr=false) {
-            const m = document.getElementById('message');
-            m.style.display = 'block'; m.style.background = isErr ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)';
-            m.innerText = text; setTimeout(() => m.style.display='none', 5000);
-        }
+        async function deleteUser(id) { if(confirm('Permanently remove this student?')) { await fetch(`/api/users/${id}`, { method: 'DELETE' }); refresh(); } }
+        async function deleteInvite(id) { if(confirm('Cancel this enrollment?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); refresh(); } }
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
         refresh();
     </script>
