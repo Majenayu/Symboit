@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Workspace | Symboit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .workspace-card { background: var(--card); padding: 3rem; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); text-align: center; max-width: 500px; width: 100%; }
+        .logout-btn { margin-top: 2rem; display: inline-block; color: var(--text-dim); text-decoration: none; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1); padding: 8px 20px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="workspace-card">
+        <div style="font-size: 4rem; margin-bottom: 1.5rem;">🎓</div>
+        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Welcome, <span id="s-name">Student</span></h1>
+        <p style="color: var(--text-dim); line-height: 1.6;">Your AI-enhanced learning environment is ready. Your mentor-assigned courses and progress trackers will appear here shortly.</p>
+        
+        <div style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(16,185,129,0.05); border: 1px solid var(--accent); border-radius: 20px;">
+            <div style="color: var(--accent); font-weight: bold; font-size: 0.7rem; letter-spacing: 2px;">STATUS</div>
+            <div style="font-size: 1.1rem; margin-top: 5px;">Academic System Synchronized</div>
+        </div>
+
+        <a href="javascript:logout()" class="logout-btn">Sign Out</a>
+    </div>
+
+    <script>
+        let user = JSON.parse(localStorage.getItem('symboit_user'));
+        if(!user || user.role !== 'student') window.location.href = '/';
+        document.getElementById('s-name').innerText = user.name;
+        function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
+    </script>
+</body>
+</html>

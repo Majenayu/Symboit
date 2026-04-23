@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mentor Dashboard | Symboit</title>
+    <title>Organizer Console | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; }
@@ -25,27 +25,28 @@
 <body>
     <div style="max-width: 900px; margin: 0 auto;">
         <div class="glass-header">
-            <div><h1 style="font-size:1.2rem; letter-spacing:2px;">MENTOR DASHBOARD</h1></div>
+            <div><h1 style="font-size:1.2rem; letter-spacing:2px;">ORGANIZER CONSOLE</h1></div>
             <div style="text-align:right;">
                 <div id="u-name" style="font-weight:600;">...</div>
                 <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.7rem; text-decoration:none;">Logout</a>
             </div>
         </div>
 
-        <div style="margin-bottom:2rem;">
-            <div class="stat-card" style="width: 250px;">
-                <div class="stat-val" id="s-count">0</div>
-                <div style="font-size:0.8rem; color:var(--text-dim)">Students in My Group</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
+            <div class="stat-card"><div class="stat-val" id="m-count">0</div><div style="font-size:0.8rem; color:var(--text-dim)">Total Mentors</div></div>
+            <div class="stat-card" style="background:linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.1)); border:1px solid rgba(255,255,255,0.1);">
+                <div style="font-weight:600; color:var(--accent);">ENTERPRISE PLAN</div>
+                <div style="font-size:0.7rem; color:var(--text-dim); margin-top:5px;">AI Features Active</div>
             </div>
         </div>
 
         <div class="tools-area">
-            <h3 style="margin-bottom:1rem; font-weight:300;">Enroll New Students</h3>
-            <input type="email" id="email" placeholder="student@gmail.com">
-            <button class="btn" onclick="send()">Invite Student to System</button>
+            <h3 style="margin-bottom:1rem; font-weight:300;">Invite Professional Mentors</h3>
+            <input type="email" id="email" placeholder="mentor@gmail.com">
+            <button class="btn" onclick="send()">Send Branded Invitation</button>
 
             <div style="margin-top:2rem;">
-                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1rem; font-weight:600; letter-spacing:1px;">MY STUDENTS</p>
+                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1rem; font-weight:600; letter-spacing:1px;">MANAGED NETWORK</p>
                 <div id="list"></div>
             </div>
         </div>
@@ -54,19 +55,19 @@
 
     <script>
         let user = JSON.parse(localStorage.getItem('symboit_user'));
-        if(!user || user.role !== 'mentor') window.location.href = '/';
+        if(!user || user.role !== 'organizer') window.location.href = '/';
         document.getElementById('u-name').innerText = user.name;
 
         function refresh() {
             const list = document.getElementById('list');
             Promise.all([
-                fetch(`/api/users?role=student&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
+                fetch(`/api/users?role=mentor&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
                 fetch(`/api/invitations?organizerEmail=${user.organizerEmail}`).then(r => r.json())
             ]).then(([uData, iData]) => {
                 list.innerHTML = '';
                 uData.users.forEach(u => list.innerHTML += `<div class="list-item"><div>${u.name}<br><small style="color:var(--text-dim)">${u.email}</small></div><span class="status active">ACTIVE</span></div>`);
-                iData.invites.filter(inv => inv.role === 'student' && inv.status === 'pending').forEach(inv => list.innerHTML += `<div class="list-item" style="opacity:0.6;"><div>${inv.email}<br><small style="color:var(--text-dim)">Awaiting Acceptance</small></div><span class="status" style="color:#fbbf24">PENDING</span></div>`);
-                document.getElementById('s-count').innerText = uData.users.length;
+                iData.invites.filter(inv => inv.role === 'mentor' && inv.status === 'pending').forEach(inv => list.innerHTML += `<div class="list-item" style="opacity:0.6;"><div>${inv.email}<br><small style="color:var(--text-dim)">Awaiting Acceptance</small></div><span class="status" style="color:#fbbf24">PENDING</span></div>`);
+                document.getElementById('m-count').innerText = uData.users.length;
             });
         }
 
@@ -75,12 +76,12 @@
             fetch('/api/invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, role: 'student', inviterEmail: user.email, organizerEmail: user.organizerEmail })
+                body: JSON.stringify({ email, role: 'mentor', inviterEmail: user.email, organizerEmail: user.organizerEmail })
             }).then(r => r.json()).then(data => {
                 const msg = document.getElementById('message');
                 msg.style.display = 'block';
                 msg.style.background = '#10b981';
-                msg.innerText = 'Invitation Processed';
+                msg.innerText = 'Branded Mail Processed';
                 if(data.inviteLink) msg.innerHTML += `<br><small style="font-size:0.6rem">Fallback: ${data.inviteLink}</small>`;
                 setTimeout(() => msg.style.display = 'none', 6000);
                 refresh();

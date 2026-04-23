@@ -256,14 +256,21 @@
         // --- DASHBOARD ---
         function initDashboard(user) {
             currentUser = user;
-            // Fallback for organizerEmail if missing from DB for old users
             if (!currentUser.organizerEmail) currentUser.organizerEmail = user.email;
             
-            // Save to localStorage for persistence across pages
+            // Save to localStorage for persistence
             localStorage.setItem('symboit_user', JSON.stringify(currentUser));
             
-            // Redirect to the dedicated dashboard page as requested
-            window.location.href = '/dashboard.html';
+            // ROLE-BASED FILE REDIRECTION
+            if (user.role === 'organizer') {
+                window.location.href = '/d.html';
+            } else if (user.role === 'mentor') {
+                window.location.href = '/dashboard.html';
+            } else if (user.role === 'student') {
+                window.location.href = '/dash.html';
+            } else {
+                window.location.href = '/';
+            }
         }
 
         function refreshList(role) {
