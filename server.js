@@ -175,7 +175,40 @@ app.post('/api/invite', async (req, res) => {
                     from: `Symboit System <${organizerEmail}>`,
                     to: email,
                     subject: `Symboit Invitation – join as ${role}`,
-                    text: `Hello,\n\nYou have been invited to join Symboit as a ${role}.\n\nAccept invitation here: ${inviteLink}`
+                    html: `
+                    <!DOCTYPE html>
+                    <html>
+                    <head><meta charset="UTF-8"></head>
+                    <body style="margin:0; padding:0; background-color:#050505; font-family: 'Roboto', Arial, sans-serif;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#050505;">
+                            <tr><td align="center">
+                                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%;">
+                                    <tr><td style="padding:30px 20px; text-align:center;">
+                                        <h1 style="margin:0; color:#6366f1; font-size:28px; letter-spacing:1px;">Symboit</h1>
+                                    </td></tr>
+                                    <tr><td style="background:#0b0b12; border-radius:12px; padding:40px 30px;">
+                                        <h2 style="color:#ffffff; font-size:24px; margin:0 0 20px 0; text-align:center;">You are Invited to Join the Future of Learning</h2>
+                                        <p style="color:#cfcfe6; font-size:15px; line-height:1.7; text-align:center;">
+                                            You have been invited to join <b style="color:#ffffff;">Symboit</b> as a <b style="color:#10b981;">${role}</b>.
+                                        </p>
+                                        <table align="center" cellpadding="0" cellspacing="0" style="margin:30px auto;">
+                                            <tr><td align="center">
+                                                <a href="${inviteLink}" style="display:inline-block; padding:14px 28px; background:linear-gradient(90deg, #6366f1, #10b981); color:#ffffff; text-decoration:none; font-size:16px; font-weight:bold; border-radius:8px;">Accept Invitation</a>
+                                            </td></tr>
+                                    </table>
+                                    <p style="color:#888; font-size:13px; text-align:center; margin-top:20px;">
+                                        If the button does not work, copy and paste this link into your browser:<br>
+                                        <span style="color:#6366f1;">${inviteLink}</span>
+                                    </p>
+                                </td></tr>
+                                <tr><td style="padding:25px 20px; text-align:center;">
+                                    <p style="color:#888; font-size:12px; margin:0;">Sent via Symboit AI Management System</p>
+                                </td></tr>
+                            </table>
+                        </td></tr>
+                    </table>
+                </body>
+                </html>`
                 };
 
                 console.log('[AUTH] Sending via manual Access Token...');
