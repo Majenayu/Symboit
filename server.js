@@ -3,11 +3,15 @@ const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
 const crypto = require('crypto');
-const { OAuth2Client } = require('google-auth-library');
-const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
+const { OAuth2Client } = require('google-auth-library');
+const multer = require('multer');
+const stream = require('stream');
 const dotenv = require('dotenv');
 dotenv.config();
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -56,6 +60,22 @@ const invitationSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 const Invitation = mongoose.model('Invitation', invitationSchema);
+
+const submissionSchema = new mongoose.Schema({
+    studentEmail: String,
+    organizerEmail: String,
+    activityTitle: String,
+    driveFolderId: String,
+    files: [{
+        name: String,
+        driveFileId: String,
+        viewLink: String
+    }],
+    status: { type: String, default: 'pending' },
+    submittedAt: { type: Date, default: Date.now }
+});
+
+const Submission = mongoose.model('Submission', submissionSchema);
 
 // --- Auth Endpoints ---
 
@@ -355,6 +375,108 @@ app.delete('/api/invitations/:id', async (req, res) => {
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Serve Frontend (Catch-all for SPA routes)
+// --- AICTE Activity Submissions (Google Drive) ---
+
+async function getDriveFolder(drive, name, parentId = null) {
+    let query = `name = '${name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+    if (parentId) query += ` and '${parentId}' in parents`;
+    
+    const res = await drive.files.list({ q: query, fields: 'files(id, name)' });
+    if (res.data.files.length > 0) return res.data.files[0].id;
+
+    const folderMetadata = {
+        name: name,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: parentId ? [parentId] : []
+    };
+    const folder = await drive.files.create({
+        resource: folderMetadata,
+        fields: 'id'
+    });
+    return folder.data.id;
+}
+
+app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
+    const { studentEmail, organizerEmail, activityTitle } = req.body;
+    
+    try {
+        const organizer = await User.findOne({ email: organizerEmail });
+        if (!organizer || !organizer.refreshToken) {
+            return res.status(400).json({ success: false, error: 'Organizer has not granted Drive permissions.' });
+        }
+
+        const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+        oauth2Client.setCredentials({ refresh_token: organizer.refreshToken });
+        const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+        // 1. Ensure Folder Structure: AICTE -> [Activity Title]
+        const aicteFolderId = await getDriveFolder(drive, 'AICTE');
+        const activityFolderId = await getDriveFolder(drive, activityTitle, aicteFolderId);
+
+        const uploadedFiles = [];
+
+        // 2. Upload each file to the folder
+        for (const file of req.files) {
+            const bufferStream = new stream.PassThrough();
+            bufferStream.end(file.buffer);
+
+            const driveRes = await drive.files.create({
+                requestBody: {
+                    name: `${studentEmail.split('@')[0]}_${Date.now()}_${file.originalname}`,
+                    parents: [activityFolderId]
+                },
+                media: {
+                    mimeType: file.mimetype,
+                    body: bufferStream
+                },
+                fields: 'id, webViewLink'
+            });
+
+            uploadedFiles.push({
+                name: file.originalname,
+                driveFileId: driveRes.data.id,
+                viewLink: driveRes.data.webViewLink
+            });
+        }
+
+        // 3. Store metadata in MongoDB (references only, no files)
+        const submission = new Submission({
+            studentEmail,
+            organizerEmail,
+            activityTitle,
+            driveFolderId: activityFolderId,
+            files: uploadedFiles
+        });
+        await submission.save();
+
+        res.json({ success: true, submission });
+
+    } catch (error) {
+        console.error('[DRIVE] Upload Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get submissions for a Mentor to verify
+app.get('/api/submissions', async (req, res) => {
+    const { organizerEmail, mentorEmail } = req.query;
+    try {
+        // Find students invited by this mentor
+        const students = await User.find({ 
+            organizerEmail, 
+            role: 'student' 
+        });
+        
+        // Note: For strict Mentor-Student isolation, we'd check who invited them.
+        // For now, mentors see students in the same organization.
+        
+        const submissions = await Submission.find({ organizerEmail }).sort({ submittedAt: -1 });
+        res.json({ success: true, submissions });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.get(/.*/, (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });

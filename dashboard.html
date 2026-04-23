@@ -50,6 +50,11 @@
                 <p style="font-size:0.75rem; color:var(--text-dim); font-weight:600; letter-spacing:1.5px; margin-bottom:1.5rem; text-transform:uppercase;">Student Management</p>
                 <div id="list-container"></div>
             </div>
+
+            <div style="margin-top:4rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:2.5rem;">
+                <p style="font-size:0.75rem; color:var(--gold); font-weight:600; letter-spacing:1.5px; margin-bottom:1.5rem; text-transform:uppercase;">AICTE Verification Queue</p>
+                <div id="submission-container"></div>
+            </div>
         </div>
     </div>
     <div id="message"></div>
@@ -96,7 +101,46 @@
 
                 document.getElementById('s-count').innerText = uRes.users.length;
                 if(container.innerHTML === '') container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:3rem; font-size:0.8rem;">No students assigned yet.</p>';
+                
+                loadSubmissions();
             } catch (err) { container.innerHTML = '<p style="text-align:center; color:var(--danger);">Sync failed. Please check connection.</p>'; }
+        }
+
+        async function loadSubmissions() {
+            const container = document.getElementById('submission-container');
+            container.innerHTML = '<p style="font-size:0.7rem; color:var(--text-dim)">Loading evidence...</p>';
+            
+            try {
+                const res = await fetch(`/api/submissions?organizerEmail=${user.organizerEmail}`);
+                const data = await res.json();
+                
+                container.innerHTML = '';
+                if(data.submissions.length === 0) {
+                    container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-dim); opacity:0.5;">No submissions to verify yet.</p>';
+                    return;
+                }
+
+                data.submissions.forEach(sub => {
+                    container.innerHTML += `
+                        <div class="list-item" style="background:rgba(251, 191, 36, 0.02); border-color:rgba(251, 191, 36, 0.1);">
+                            <div>
+                                <div style="font-weight:600; font-size:0.9rem;">${sub.activityTitle}</div>
+                                <div style="font-size:0.7rem; color:var(--text-dim)">By: ${sub.studentEmail} | ${new Date(sub.submittedAt).toLocaleDateString()}</div>
+                                <div style="margin-top:8px;">
+                                    ${sub.files.map(f => `<a href="${f.viewLink}" target="_blank" style="color:var(--primary); font-size:0.65rem; text-decoration:none; margin-right:10px; border:1px solid var(--primary); padding:2px 6px; border-radius:4px;">🖼️ ${f.name.substring(0, 15)}...</a>`).join('')}
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn" style="width:auto; padding:8px 15px; font-size:0.7rem; background:var(--accent)" onclick="verify('${sub._id}', 'approved')">Verify</button>
+                                <button class="btn" style="width:auto; padding:8px 15px; font-size:0.7rem; background:var(--danger)" onclick="verify('${sub._id}', 'rejected')">Reject</button>
+                            </div>
+                        </div>`;
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        async function verify(id, status) {
+            alert('Verification marked as ' + status + '. Connecting to points system...');
         }
 
         async function sendInvite() {

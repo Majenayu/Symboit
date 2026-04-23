@@ -71,8 +71,9 @@
             
             <div style="background:rgba(255,255,255,0.03); padding:1.5rem; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
                 <h4 style="font-size:0.8rem; color:var(--primary); margin-bottom:1rem; letter-spacing:1px;">SUBMIT EVIDENCE (GEOTAGGED)</h4>
-                <input type="file" multiple id="file-input" style="width:100%; padding:1rem; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:white;">
-                <button class="btn" style="margin-top:1.5rem;" onclick="handleSubmit()">Upload Evidence</button>
+                <div id="preview-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:10px; margin-bottom:15px;"></div>
+                <input type="file" multiple id="file-input" accept="image/*" onchange="previewImages()" style="width:100%; padding:1rem; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:white;">
+                <button class="btn" id="submit-btn" style="margin-top:1.5rem;" onclick="handleSubmit()">Upload Evidence to Drive</button>
             </div>
         </div>
     </div>
@@ -135,19 +136,69 @@
             });
         }
 
+        let currentActivity = null;
+
         function openModal(id, isRubric) {
             const list = isRubric ? rubrics : activities;
-            const item = list.find(x => x.id === id);
-            document.getElementById('m-title').innerText = item.title;
-            document.getElementById('m-desc').innerText = item.desc;
+            currentActivity = list.find(x => x.id === id);
+            document.getElementById('m-title').innerText = currentActivity.title;
+            document.getElementById('m-desc').innerText = currentActivity.desc;
             document.getElementById('modal').style.display = 'flex';
+            document.getElementById('preview-container').innerHTML = '';
+            document.getElementById('file-input').value = '';
         }
 
-        function handleSubmit() {
+        function previewImages() {
+            const container = document.getElementById('preview-container');
+            container.innerHTML = '';
             const files = document.getElementById('file-input').files;
-            if(files.length === 0) return alert('Please select files first.');
-            alert('Submission received locally. Waiting for external storage configuration...');
-            closeModal();
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.width = '100%';
+                    img.style.height = '80px';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '8px';
+                    container.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleSubmit() {
+            const fileInput = document.getElementById('file-input');
+            if(fileInput.files.length === 0) return alert('Please select at least one photo.');
+            
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = 'Uploading to Secure Drive...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('studentEmail', user.email);
+            formData.append('organizerEmail', user.organizerEmail);
+            formData.append('activityTitle', currentActivity.title);
+            Array.from(fileInput.files).forEach(file => formData.append('files', file));
+
+            try {
+                const res = await fetch('/api/submit-activity', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert('Successfully uploaded to Google Drive! Your mentor will be notified.');
+                    closeModal();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Upload failed. Check your connection.');
+            } finally {
+                btn.innerText = 'Upload Evidence to Drive';
+                btn.disabled = false;
+            }
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
