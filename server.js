@@ -18,6 +18,7 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECR
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname)); // Serve static files (d.html, dash.html, etc.)
 
 // Startup Check for Render Env
 console.log('--- SYSTEM STARTUP ---');
