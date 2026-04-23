@@ -47,6 +47,7 @@ const userSchema = new mongoose.Schema({
     organizerEmail: String, // The root organizer this user belongs to
     scopes: [String],
     refreshToken: String,
+    driveRootFolderId: String, // Store the main AICTE folder ID
 });
 
 const invitationSchema = new mongoose.Schema({
@@ -129,9 +130,39 @@ app.post('/api/auth/google', async (req, res) => {
             if (tokens.refresh_token) {
                 user.refreshToken = tokens.refresh_token;
             }
-            await user.save();
         }
-        
+
+        // Initialize AICTE Folder for Students if missing
+        if (user.role === 'student' && user.refreshToken && !user.driveRootFolderId) {
+            try {
+                const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+                oauth2Client.setCredentials({ refresh_token: user.refreshToken });
+                const drive = google.drive({ version: 'v3', auth: oauth2Client });
+                
+                const folderId = await getDriveFolder(drive, 'AICTE');
+                user.driveRootFolderId = folderId;
+
+                // Share with Organizer & Mentor
+                const shareWith = [user.organizerEmail];
+                const mentorInvite = await Invitation.findOne({ email: user.email, status: 'accepted' });
+                if (mentorInvite && mentorInvite.inviterEmail !== user.organizerEmail) {
+                    shareWith.push(mentorInvite.inviterEmail);
+                }
+
+                for (const email of shareWith) {
+                    await drive.permissions.create({
+                        fileId: folderId,
+                        requestBody: { type: 'user', role: 'writer', emailAddress: email },
+                        fields: 'id'
+                    }).catch(e => console.error('Initial folder share fail', e));
+                }
+                console.log(`[DRIVE] Initialized AICTE folder for student ${user.email}`);
+            } catch (e) {
+                console.error('[DRIVE] Failed to init student folder:', e);
+            }
+        }
+
+        await user.save();
         res.json({ success: true, user });
     } catch (error) {
         console.error('Google auth error:', error);
@@ -335,7 +366,7 @@ app.get('/api/users', async (req, res) => {
     try {
         const query = { role };
         if (organizerEmail) query.organizerEmail = organizerEmail;
-        const users = await User.find(query);
+        const users = await User.find(query).select('name email role driveRootFolderId');
         res.json({ success: true, users });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });

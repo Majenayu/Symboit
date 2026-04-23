@@ -124,8 +124,8 @@
                     const perc = Math.min(100, (points / 100) * 100);
                     const pending = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'pending');
                     
-                    // Get the root folder ID for the "View Entire Drive" button
-                    const rootFolderId = sSubs.length > 0 ? sSubs[0].driveRootFolderId : (pending.length > 0 ? pending[0].driveRootFolderId : null);
+                    // Use folder ID from User model (always available after first login)
+                    const rootFolderId = s.driveRootFolderId;
 
                     container.innerHTML += `
                         <div class="glass-card">
@@ -135,7 +135,7 @@
                                     <p style="font-size:0.75rem; color:var(--text-dim);">${s.email}</p>
                                 </div>
                                 <div style="text-align:right; display:flex; align-items:center; gap:15px;">
-                                    ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="Open AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="No submissions" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
+                                    ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="Open AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="Awaiting first login" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
                                     <div>
                                         <span style="font-size:1.5rem; font-weight:600; color:var(--accent)">${points}</span>
                                         <span style="font-size:0.7rem; color:var(--text-dim)">/ 100 pts</span>
