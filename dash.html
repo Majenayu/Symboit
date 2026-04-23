@@ -84,6 +84,12 @@
 
             <div id="upload-area" style="background:rgba(255,255,255,0.03); padding:1.5rem; border-radius:15px; border:1px solid rgba(255,255,255,0.1); display:none;">
                 <h4 style="font-size:0.8rem; color:var(--primary); margin-bottom:1rem; letter-spacing:1px;">UPLOAD GEOTAGGED PHOTOS</h4>
+                
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">ACTIVITY DATE</label>
+                    <input type="date" id="event-date" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+                </div>
+
                 <div id="preview-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap:10px; margin-bottom:15px;"></div>
                 <input type="file" multiple id="file-input" accept="image/*" onchange="previewImages()" style="width:100%; padding:1rem; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:white;">
                 <button class="btn" id="submit-btn" style="margin-top:1.5rem; width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="handleSubmit()">Upload to Drive</button>
@@ -142,11 +148,27 @@
             rGrid.innerHTML = ''; aGrid.innerHTML = '';
 
             let totalPoints = 0;
+            let currentYearPoints = 0;
+            const currentYear = new Date().getFullYear();
+
+            // Calculate current year points specifically for the cap
+            submissions.forEach(s => {
+                if(s.status === 'approved') {
+                    const sYear = new Date(s.eventDate || s.submittedAt).getFullYear();
+                    if(sYear === currentYear) {
+                        currentYearPoints += (s.pointsAwarded || 10);
+                    }
+                }
+            });
+
+            // Final points calculation with 30pt yearly cap
+            // Note: Total points = Sum of (Yearly Points Capped at 30)
+            // Simplified for now: Total points = Min(30, currentYearApproved)
+            totalPoints = Math.min(30, currentYearPoints);
 
             rubrics.forEach(r => {
                 const s = submissions.find(x => x.activityTitle === r.title);
                 const approved = s && s.status === 'approved';
-                if(approved) totalPoints += r.pts;
                 
                 rGrid.innerHTML += `
                     <div class="activity-card ${approved ? 'approved' : ''}" onclick="openModal(${r.id}, true)">
@@ -159,9 +181,6 @@
             });
 
             activities.forEach(a => {
-                const s = submissions.find(x => x.activityTitle === a.title && x.status === 'approved');
-                if(s) totalPoints += a.pts;
-                
                 const w1 = submissions.find(x => x.activityTitle === a.title && x.milestone === 'Week 1' && x.status === 'approved');
                 const w2 = submissions.find(x => x.activityTitle === a.title && x.milestone === 'Week 2' && x.status === 'approved');
                 
@@ -170,7 +189,7 @@
                 if(w2) cleared++;
 
                 aGrid.innerHTML += `
-                    <div class="activity-card ${s ? 'approved' : ''}" onclick="openModal(${a.id}, false)">
+                    <div class="activity-card ${cleared === 2 ? 'approved' : ''}" onclick="openModal(${a.id}, false)">
                         <span class="badge">+${a.pts} PTS</span>
                         <h4 style="margin-bottom:10px; font-size:0.9rem;">${a.title}</h4>
                         <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -183,7 +202,11 @@
                     </div>`;
             });
 
+            // Update Progress Bar
             document.getElementById('p-val').innerText = totalPoints;
+            if(currentYearPoints > 30) {
+                document.getElementById('p-val').innerHTML += ` <span style="font-size:0.7rem; color:var(--gold);">(Cap Reached: ${currentYearPoints} Earned)</span>`;
+            }
             const max = parseInt(document.getElementById('p-max').innerText);
             document.getElementById('p-bar').style.width = Math.min(100, (totalPoints / max) * 100) + '%';
         }
@@ -244,6 +267,8 @@
 
         async function handleSubmit() {
             const fileInput = document.getElementById('file-input');
+            const dateInput = document.getElementById('event-date');
+            if(!dateInput.value) return alert('Please select the activity date.');
             if(fileInput.files.length === 0) return alert('Select photos.');
             
             const btn = document.getElementById('submit-btn');
@@ -254,6 +279,7 @@
             formData.append('organizerEmail', user.organizerEmail);
             formData.append('activityTitle', currentActivity.title);
             formData.append('milestone', selectedMilestone);
+            formData.append('eventDate', dateInput.value);
             Array.from(fileInput.files).forEach(file => formData.append('files', file));
 
             try {

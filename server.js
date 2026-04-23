@@ -68,6 +68,7 @@ const submissionSchema = new mongoose.Schema({
     organizerEmail: String,
     activityTitle: String,
     milestone: String, // "Week 1", "Week 2", "Full"
+    eventDate: Date, // The date the student actually did the activity
     driveFolderId: String,
     driveRootFolderId: String,
     files: [{
@@ -433,7 +434,7 @@ async function getDriveFolder(drive, name, parentId = null) {
 }
 
 app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
-    const { studentEmail, organizerEmail, activityTitle, milestone } = req.body;
+    const { studentEmail, organizerEmail, activityTitle, milestone, eventDate } = req.body;
     
     try {
         const student = await User.findOne({ email: studentEmail });
@@ -515,6 +516,7 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
             organizerEmail,
             activityTitle,
             milestone,
+            eventDate,
             driveFolderId: milestoneFolderId,
             driveRootFolderId: aicteFolderId,
             files: uploadedFiles
