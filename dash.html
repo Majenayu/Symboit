@@ -63,6 +63,10 @@
                     <span>🎓 Lateral (2yr): <b>50</b></span>
                 </div>
             </div>
+            <div style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-dim);">
+                <div>Coordinator: <b>Prof. Soumya G V</b></div>
+                <div>HOD CSE (AI&ML): <b>Dr. Aditya C R</b></div>
+            </div>
         </div>
 
         <div class="section-title">Priority Rubrics (One-Day Events)</div>
@@ -161,16 +165,23 @@
                 const s = submissions.find(x => x.activityTitle === a.title && x.status === 'approved');
                 if(s) totalPoints += a.pts;
                 
-                const w1 = submissions.find(x => x.activityTitle === a.title && x.milestone === 'Week 1');
-                const w2 = submissions.find(x => x.activityTitle === a.title && x.milestone === 'Week 2');
+                const w1 = submissions.find(x => x.activityTitle === a.title && x.milestone === 'Week 1' && x.status === 'approved');
+                const w2 = submissions.find(x => x.activityTitle === a.title && x.milestone === 'Week 2' && x.status === 'approved');
+                
+                let cleared = 0;
+                if(w1) cleared++;
+                if(w2) cleared++;
 
                 aGrid.innerHTML += `
                     <div class="activity-card ${s ? 'approved' : ''}" onclick="openModal(${a.id}, false)">
                         <span class="badge">+${a.pts} PTS</span>
                         <h4 style="margin-bottom:10px; font-size:0.9rem;">${a.title}</h4>
-                        <div style="display:flex; align-items:center;">
-                            <span class="milestone-pill ${w1 ? 'done' : ''}">W1</span>
-                            <span class="milestone-pill ${w2 ? 'done' : ''}">W2</span>
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div style="display:flex; gap:5px;">
+                                <span class="milestone-pill ${w1 ? 'done' : ''}">W1</span>
+                                <span class="milestone-pill ${w2 ? 'done' : ''}">W2</span>
+                            </div>
+                            <span style="font-size:0.6rem; color:var(--accent);">${cleared}/2 Cleared</span>
                         </div>
                     </div>`;
             });
