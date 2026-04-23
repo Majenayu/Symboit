@@ -6,127 +6,198 @@
     <title>Organizer Console | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --danger: #ef4444; }
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --danger: #ef4444; --text: #fff; --text-dim: #94a3b8; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; }
-        .glass-header { background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .stat-card { background: var(--card); padding: 1.5rem; border-radius: 18px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
-        .stat-val { font-size: 2.2rem; font-weight: 600; color: var(--primary); }
-        .tools-area { background: var(--card); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); }
-        input { width: 100%; padding: 1.1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 1rem; outline: none; font-family: inherit; }
-        .btn { width: 100%; padding: 1rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; background: var(--primary); color: white; font-family: inherit; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; background: rgba(255,255,255,0.02); border-radius: 14px; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05); }
-        .status { font-size: 0.65rem; padding: 3px 10px; border-radius: 6px; font-weight: bold; }
-        .active { background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
-        .pending { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
-        .btn-action { background: transparent; border: none; cursor: pointer; opacity: 0.6; transition: 0.3s; color: var(--text-dim); }
-        .btn-action:hover { opacity: 1; color: var(--text); }
-        #message { position: fixed; top: 2rem; right: 2rem; padding: 1.5rem; border-radius: 14px; display: none; z-index: 1000; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; overflow-y: auto; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
+        .glass-card { background: var(--card); backdrop-filter: blur(12px); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
+        
+        .btn { padding: 10px 20px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: inherit; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        
+        input, select, textarea { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; margin-bottom: 15px; font-family: inherit; }
+        
+        .list-item { background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .badge { font-size: 0.6rem; padding: 2px 8px; border-radius: 5px; background: rgba(99, 102, 241, 0.1); color: var(--primary); }
+
+        #message { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 12px; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
-    <div style="max-width: 900px; margin: 0 auto;">
-        <div class="glass-header">
-            <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1></div>
-            <div style="text-align:right;">
-                <div id="u-name" style="font-weight:600;">Loading...</div>
-                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none;">Sign Out</a>
+    <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; margin-bottom:3rem;">
+        <h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1>
+        <button class="btn btn-primary" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="grid">
+        <!-- Manage Genres (Activities) -->
+        <div class="glass-card">
+            <h2 style="margin-bottom:1.5rem; font-weight:400;">CURRICULUM MANAGER</h2>
+            <form id="genre-form" onsubmit="saveGenre(event)">
+                <input type="hidden" id="genre-id">
+                <input type="text" id="g-title" placeholder="Activity Title (e.g. Plantation Drive)" required>
+                <textarea id="g-desc" placeholder="Brief Description..." rows="2" required></textarea>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="g-pts" placeholder="Points" required>
+                    <select id="g-type">
+                        <option value="weeks">2-Week Project</option>
+                        <option value="event">Single Day Event</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="g-rubric" style="width:auto; margin:0;">
+                    <label for="g-rubric" style="font-size:0.8rem; color:var(--text-dim);">Mark as Priority Rubric</label>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">Save Activity</button>
+                <button type="button" class="btn" style="width:100%; margin-top:5px; background:transparent; color:var(--text-dim);" onclick="resetForm()">Cancel</button>
+            </form>
+
+            <div style="margin-top:2.5rem;">
+                <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">EXISTING ACTIVITIES</h3>
+                <div id="genre-list"></div>
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
-            <div class="stat-card"><div class="stat-val" id="m-count">0</div><div style="font-size:0.8rem; color:var(--text-dim)">Mentors</div></div>
-            <div class="stat-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.1));">
-                <div style="font-weight:600; color:var(--accent);">ENTERPRISE AI</div>
+        <!-- Mentors & Invites -->
+        <div class="glass-card">
+            <h2 style="margin-bottom:1.5rem; font-weight:400;">MENTOR NETWORK</h2>
+            <div style="margin-bottom:2rem;">
+                <input type="email" id="invite-email" placeholder="Mentor Email">
+                <button class="btn btn-primary" style="width:100%;" onclick="sendInvite()">Send Invitation Link</button>
             </div>
-        </div>
-
-        <div class="tools-area">
-            <h3 style="margin-bottom:1.5rem; font-weight:400;">Invite New Mentor</h3>
-            <input type="email" id="email-input" placeholder="Enter email...">
-            <button class="btn" onclick="sendInvite()">Send Invitation</button>
-
-            <div style="margin-top:3rem;">
-                <p style="font-size:0.75rem; color:var(--text-dim); font-weight:600; letter-spacing:1.5px; margin-bottom:1.5rem;">MENTOR MANAGEMENT</p>
-                <div id="list-container"></div>
-            </div>
+            
+            <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">ACTIVE MENTORS</h3>
+            <div id="mentor-list"></div>
         </div>
     </div>
+
     <div id="message"></div>
 
     <script>
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'organizer') window.location.href = '/';
-        document.getElementById('u-name').innerText = user.name;
 
-        async function refresh() {
-            const container = document.getElementById('list-container');
-            const [uRes, iRes] = await Promise.all([
-                fetch(`/api/users?role=mentor&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
-                fetch(`/api/invitations?organizerEmail=${user.organizerEmail}`).then(r => r.json())
-            ]);
-            container.innerHTML = '';
-            
-            uRes.users.forEach(u => {
-                container.innerHTML += `
+        async function sync() {
+            try {
+                // Fetch Genres
+                const gRes = await fetch(`/api/genres?organizerEmail=${user.email}`).then(r => r.json());
+                renderGenres(gRes.genres);
+
+                // Fetch Mentors
+                const mRes = await fetch(`/api/users?organizerEmail=${user.email}&role=mentor`).then(r => r.json());
+                renderMentors(mRes.users);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderGenres(genres) {
+            const list = document.getElementById('genre-list');
+            list.innerHTML = '';
+            genres.forEach(g => {
+                list.innerHTML += `
                     <div class="list-item">
-                        <div><div style="font-weight:600;">${u.name}</div><div style="font-size:0.75rem; color:var(--text-dim)">${u.email}</div></div>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <span class="status active">ACTIVE</span>
-                            <button class="btn-action" onclick="deleteUser('${u._id}')" style="color:var(--danger)">✕</button>
+                        <div>
+                            <div style="font-weight:600; font-size:0.9rem;">${g.title} <span class="badge">${g.pts} PTS</span></div>
+                            <div style="font-size:0.7rem; color:var(--text-dim);">${g.type === 'weeks' ? '2-Week' : 'Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="editGenre('${g._id}', '${g.title}', '${g.desc}', ${g.pts}, '${g.type}', ${g.isRubric})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.8rem;">Edit</button>
+                            <button onclick="deleteGenre('${g._id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.8rem;">Del</button>
                         </div>
                     </div>`;
             });
+        }
 
-            iRes.invites.filter(i => i.role === 'mentor' && i.status === 'pending').forEach(i => {
-                const link = `${window.location.origin}?invite=${i.token}`;
-                container.innerHTML += `
-                    <div class="list-item" style="border-style:dashed;">
-                        <div><div style="font-weight:600;">${i.email}</div><div style="font-size:0.75rem; color:var(--text-dim)">Invitation Pending</div></div>
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <button class="btn-action" onclick="copyLink('${link}')" title="Copy Invitation Link">🔗 Copy Link</button>
-                            <span class="status pending">PENDING</span>
-                            <button class="btn-action" onclick="deleteInvite('${i._id}')" style="color:var(--danger)">✕</button>
+        function renderMentors(mentors) {
+            const list = document.getElementById('mentor-list');
+            list.innerHTML = '';
+            mentors.forEach(m => {
+                list.innerHTML += `
+                    <div class="list-item">
+                        <div>
+                            <div style="font-weight:600; font-size:0.9rem;">${m.name || m.email.split('@')[0]}</div>
+                            <div style="font-size:0.7rem; color:var(--text-dim);">${m.email}</div>
                         </div>
+                        <button onclick="deleteMentor('${m._id}')" class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;">Remove</button>
                     </div>`;
             });
-            document.getElementById('m-count').innerText = uRes.users.length;
+        }
+
+        async function saveGenre(e) {
+            e.preventDefault();
+            const id = document.getElementById('genre-id').value;
+            const data = {
+                organizerEmail: user.email,
+                title: document.getElementById('g-title').value,
+                desc: document.getElementById('g-desc').value,
+                pts: document.getElementById('g-pts').value,
+                type: document.getElementById('g-type').value,
+                isRubric: document.getElementById('g-rubric').checked
+            };
+
+            const url = id ? `/api/genres/${id}` : '/api/genres';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).then(r => r.json());
+                if(res.success) {
+                    showMessage(id ? 'Activity Updated!' : 'Activity Created!');
+                    resetForm();
+                    sync();
+                }
+            } catch (e) { showMessage('Error saving genre', true); }
+        }
+
+        function editGenre(id, title, desc, pts, type, isRubric) {
+            document.getElementById('genre-id').value = id;
+            document.getElementById('g-title').value = title;
+            document.getElementById('g-desc').value = desc;
+            document.getElementById('g-pts').value = pts;
+            document.getElementById('g-type').value = type;
+            document.getElementById('g-rubric').checked = isRubric;
+        }
+
+        async function deleteGenre(id) {
+            if(!confirm('Delete this activity?')) return;
+            await fetch(`/api/genres/${id}`, { method: 'DELETE' });
+            sync();
+        }
+
+        function resetForm() {
+            document.getElementById('genre-id').value = '';
+            document.getElementById('genre-form').reset();
         }
 
         async function sendInvite() {
-            const email = document.getElementById('email-input').value;
-            if(!email) return;
+            const email = document.getElementById('invite-email').value;
+            if(!email) return showMessage('Enter email', true);
             const res = await fetch('/api/invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, role: 'mentor', inviterEmail: user.email, organizerEmail: user.organizerEmail })
-            });
-            const data = await res.json();
-            if(data.success) {
-                showMessage('Invitation Processed Successfully');
-                document.getElementById('email-input').value = '';
-                refresh();
-            } else {
-                showMessage(data.error || 'Failed', true);
+                body: JSON.stringify({ email, inviterEmail: user.email, organizerEmail: user.email, role: 'mentor' })
+            }).then(r => r.json());
+            if(res.success) {
+                showMessage('Invitation sent! 📧');
+                document.getElementById('invite-email').value = '';
             }
         }
 
-        function copyLink(link) {
-            navigator.clipboard.writeText(link).then(() => {
-                alert('Invitation link copied to clipboard! You can now send it manually via WhatsApp or personal email.');
-            });
+        function showMessage(txt, isError = false) {
+            const m = document.getElementById('message');
+            m.innerText = txt;
+            m.style.display = 'block';
+            m.style.background = isError ? 'var(--danger)' : 'var(--accent)';
+            m.style.color = 'white';
+            setTimeout(() => m.style.display = 'none', 3000);
         }
 
-        async function deleteUser(id) { if(confirm('Remove access?')) { await fetch(`/api/users/${id}`, { method: 'DELETE' }); refresh(); } }
-        async function deleteInvite(id) { if(confirm('Cancel invite?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); refresh(); } }
-        function showMessage(text, isErr=false) {
-            const m = document.getElementById('message');
-            m.style.display = 'block'; m.style.background = isErr ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)';
-            m.innerText = text; setTimeout(() => m.style.display='none', 5000);
-        }
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
-        refresh();
+        sync();
     </script>
 </body>
 </html>

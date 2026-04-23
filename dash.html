@@ -98,35 +98,8 @@
     </div>
 
     <script>
-        const activities = [
-            { id: 1, title: "Help Local Schools", desc: "Helping local schools to achieve good results and enhance enrollment.", pts: 10, type: 'weeks' },
-            { id: 2, title: "Village Business Proposal", desc: "Preparing an actionable business proposal for enhancing village income.", pts: 10, type: 'weeks' },
-            { id: 3, title: "Water Management", desc: "Developing Sustainable Water Management system.", pts: 10, type: 'weeks' },
-            { id: 4, title: "Tourism Promotion", desc: "Innovative approaches for tourism promotion.", pts: 10, type: 'weeks' },
-            { id: 5, title: "Appropriate Tech", desc: "Promotion of appropriate technical solutions.", pts: 10, type: 'weeks' },
-            { id: 6, title: "Energy Conservation", desc: "Reduction in energy consumption methods.", pts: 10, type: 'weeks' },
-            { id: 7, title: "Rural Skilling", desc: "To skill rural population effectively.", pts: 10, type: 'weeks' },
-            { id: 8, title: "Digitized Money", desc: "Facilitating 100% digitized money transactions.", pts: 10, type: 'weeks' },
-            { id: 9, title: "Women Info Club", desc: "Setting up information clubs for social and economic issues.", pts: 10, type: 'weeks' },
-            { id: 10, title: "Garbage Disposal", desc: "Managing efficient garbage disposable system.", pts: 10, type: 'weeks' },
-            { id: 11, title: "Rural Marketing", desc: "To assist the marketing of rural produce.", pts: 10, type: 'weeks' },
-            { id: 12, title: "Food Preservation", desc: "Food preservation/packaging innovations.", pts: 10, type: 'weeks' },
-            { id: 13, title: "Local Automation", desc: "Automation of local activities.", pts: 10, type: 'weeks' },
-            { id: 14, title: "Public Awareness", desc: "Spreading public awareness under outreach programmes.", pts: 10, type: 'weeks' },
-            { id: 15, title: "National Initiatives", desc: "Digital India/ Skill India/ Swachh Bharat etc.", pts: 10, type: 'weeks' },
-            { id: 16, title: "Rain Water Harvesting", desc: "Creating awareness regarding rain water harvesting.", pts: 10, type: 'weeks' }
-        ];
-
-        const rubrics = [
-            { id: 101, title: "Plantation Drive", desc: "Mandatory plantation drive with geotagged photo evidence.", pts: 10, type: 'event' },
-            { id: 102, title: "Volunteering", desc: "General volunteering for academic and social activities.", pts: 10, type: 'event' },
-            { id: 103, title: "Workshops (External)", desc: "Full day workshops attended outside the institution.", pts: 10, type: 'event' },
-            { id: 104, title: "Blood Donation", desc: "Donor certificate required (claimable once).", pts: 10, type: 'event' },
-            { id: 105, title: "Outreach Activity", desc: "One day outreach programme for social causes.", pts: 10, type: 'event' },
-            { id: 106, title: "Hackathon", desc: "Participation in recognized technical hackathons.", pts: 10, type: 'event' },
-            { id: 107, title: "NSS Camps", desc: "One week attendance at NSS camps.", pts: 20, type: 'event' },
-            { id: 108, title: "Marathon/Cause", desc: "Participation in marathon/walkathon/cyclothon for a cause.", pts: 10, type: 'event' }
-        ];
+        let activities = [];
+        let rubrics = [];
 
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'student') window.location.href = '/';
@@ -138,6 +111,13 @@
 
         async function render() {
             try {
+                // Fetch institutional genres first
+                const gRes = await fetch(`/api/genres?organizerEmail=${user.organizerEmail}`).then(r => r.json());
+                const allGenres = gRes.genres || [];
+                rubrics = allGenres.filter(g => g.isRubric);
+                activities = allGenres.filter(g => !g.isRubric);
+
+                // Fetch student submissions
                 const res = await fetch(`/api/submissions?studentEmail=${user.email}&organizerEmail=${user.organizerEmail}`);
                 const data = await res.json();
                 submissions = data.submissions || [];
@@ -171,7 +151,7 @@
                 const approved = s && s.status === 'approved';
                 
                 rGrid.innerHTML += `
-                    <div class="activity-card ${approved ? 'approved' : ''}" onclick="openModal(${r.id}, true)">
+                    <div class="activity-card ${approved ? 'approved' : ''}" onclick="openModal('${r._id}', true)">
                         <span class="badge">+${r.pts} PTS</span>
                         <h4 style="margin-bottom:10px; font-size:0.9rem;">${r.title}</h4>
                         <div style="display:flex; align-items:center;">
@@ -189,7 +169,7 @@
                 if(w2) cleared++;
 
                 aGrid.innerHTML += `
-                    <div class="activity-card ${cleared === 2 ? 'approved' : ''}" onclick="openModal(${a.id}, false)">
+                    <div class="activity-card ${cleared === 2 ? 'approved' : ''}" onclick="openModal('${a._id}', false)">
                         <span class="badge">+${a.pts} PTS</span>
                         <h4 style="margin-bottom:10px; font-size:0.9rem;">${a.title}</h4>
                         <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -213,7 +193,7 @@
 
         function openModal(id, isRubric) {
             const list = isRubric ? rubrics : activities;
-            currentActivity = list.find(x => x.id === id);
+            currentActivity = list.find(x => x._id === id);
             
             document.getElementById('m-title').innerText = currentActivity.title;
             document.getElementById('m-type').innerText = currentActivity.type === 'weeks' ? '2-Week Project' : 'Single Event';

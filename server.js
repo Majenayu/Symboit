@@ -63,6 +63,16 @@ const invitationSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 const Invitation = mongoose.model('Invitation', invitationSchema);
 
+const genreSchema = new mongoose.Schema({
+    organizerEmail: String,
+    title: String,
+    desc: String,
+    pts: Number,
+    type: { type: String, enum: ['weeks', 'event'] }, // 2-week project vs 1-day event
+    isRubric: { type: Boolean, default: false } // Priority Rubrics vs Regular Heads
+});
+const Genre = mongoose.model('Genre', genreSchema);
+
 const submissionSchema = new mongoose.Schema({
     studentEmail: String,
     organizerEmail: String,
@@ -372,6 +382,59 @@ app.get('/api/users', async (req, res) => {
         if (organizerEmail) query.organizerEmail = organizerEmail;
         const users = await User.find(query).select('name email role driveRootFolderId');
         res.json({ success: true, users });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- Genre / Activity Config Endpoints ---
+
+app.get('/api/genres', async (req, res) => {
+    const { organizerEmail } = req.query;
+    try {
+        let genres = await Genre.find({ organizerEmail });
+        
+        // Seed defaults if empty
+        if (genres.length === 0) {
+            const defaults = [
+                { title: "Plantation Drive", desc: "Mandatory plantation drive.", pts: 10, type: 'event', isRubric: true },
+                { title: "Blood Donation", desc: "Donor certificate required.", pts: 10, type: 'event', isRubric: true },
+                { title: "Help Local Schools", desc: "Enhancing enrollment and results.", pts: 10, type: 'weeks', isRubric: false },
+                { title: "Water Management", desc: "Sustainable water systems.", pts: 10, type: 'weeks', isRubric: false }
+            ];
+            await Genre.insertMany(defaults.map(d => ({ ...d, organizerEmail })));
+            genres = await Genre.find({ organizerEmail });
+        }
+
+        res.json({ success: true, genres });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/genres', async (req, res) => {
+    try {
+        const genre = new Genre(req.body);
+        await genre.save();
+        res.json({ success: true, genre });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.put('/api/genres/:id', async (req, res) => {
+    try {
+        const genre = await Genre.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json({ success: true, genre });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.delete('/api/genres/:id', async (req, res) => {
+    try {
+        await Genre.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
