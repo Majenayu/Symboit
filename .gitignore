@@ -1,0 +1,4 @@
+node_modules
+.env
+*.docx
+package-lock.json
