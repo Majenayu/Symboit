@@ -289,7 +289,7 @@ app.delete('/api/invitations/:id', async (req, res) => {
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Serve Frontend (Catch-all for SPA routes)
-app.get('/(.*)', (req, res) => {
+app.get(/.*/, (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
