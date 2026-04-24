@@ -360,7 +360,14 @@
         async function deleteUser(id) { if(confirm('Remove this mentor?')) { await fetch(`/api/users/${id}`, { method: 'DELETE' }); sync(); } }
         async function deleteInvite(id) { if(confirm('Cancel invitation?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); sync(); } }
 
-        function openReportModal() { document.getElementById('report-modal').style.display = 'flex'; }
+        function openReportModal() { 
+            document.getElementById('report-modal').style.display = 'flex'; 
+            const now = new Date();
+            const lastYear = new Date();
+            lastYear.setFullYear(now.getFullYear() - 1);
+            document.getElementById('report-to').value = now.toISOString().split('T')[0];
+            document.getElementById('report-from').value = lastYear.toISOString().split('T')[0];
+        }
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
         let selectedFmt = 'pdf';
         function setFormat(f) {

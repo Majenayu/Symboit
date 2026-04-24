@@ -359,7 +359,14 @@
         function selM(m) { selectedMilestone = m; document.getElementById('upload-area').style.display = 'block'; }
         async function subM() { const fd = new FormData(); fd.append('studentEmail', user.email); fd.append('organizerEmail', user.organizerEmail); fd.append('activityTitle', currentActivity.title); fd.append('milestone', selectedMilestone); fd.append('eventDate', document.getElementById('event-date').value); Array.from(document.getElementById('file-input').files).forEach(f => fd.append('files', f)); await fetch('/api/submit-activity', { method: 'POST', body: fd }); closeModal(); sync(); showMessage('Uploaded!'); }
 
-        function openReportModal() { document.getElementById('report-modal').style.display = 'flex'; }
+        function openReportModal() { 
+            document.getElementById('report-modal').style.display = 'flex'; 
+            const now = new Date();
+            const lastYear = new Date();
+            lastYear.setFullYear(now.getFullYear() - 1);
+            document.getElementById('report-to').value = now.toISOString().split('T')[0];
+            document.getElementById('report-from').value = lastYear.toISOString().split('T')[0];
+        }
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
         async function generateReport() {
             const btn = document.getElementById('gen-btn'); 
