@@ -1,4 +1,5 @@
 const cors = require('cors');
+const axios = require('axios');
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -1059,16 +1060,21 @@ cron.schedule('0 9 27 * *', async () => {
 
 // --- REPORT GENERATION ---
 
-async function fetchDriveImage(drive, fileId) {
+async function fetchDriveImage(oauth2Client, fileId) {
     try {
-        console.log(`[REPORT] Fetching Drive image: ${fileId}`);
-        const res = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
-        if (res && res.data) {
-            return Buffer.from(res.data);
+        console.log(`[REPORT] Fetching Drive image via Axios: ${fileId}`);
+        const token = await oauth2Client.getAccessToken();
+        const response = await axios.get(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { Authorization: `Bearer ${token.token}` },
+            responseType: 'arraybuffer'
+        });
+        
+        if (response.data) {
+            return Buffer.from(response.data);
         }
         return null;
     } catch (e) {
-        console.error(`[REPORT] Drive image fetch failed (${fileId}):`, e.message);
+        console.error(`[REPORT] Axios Drive fetch failed (${fileId}):`, e.message);
         return null;
     }
 }
@@ -1127,7 +1133,7 @@ app.post('/api/report/generate', async (req, res) => {
                         console.warn(`[REPORT] No ID found for file entry:`, f);
                         continue;
                     }
-                    const buf = await fetchDriveImage(drive, id);
+                    const buf = await fetchDriveImage(oauth2Client, id);
                     if (buf) {
                         photoBuffers.push(buf);
                     }
@@ -1259,7 +1265,7 @@ app.post('/api/report/generate', async (req, res) => {
                         console.warn(`[REPORT] No ID found for file entry:`, f);
                         continue;
                     }
-                    const buf = await fetchDriveImage(drive, id);
+                    const buf = await fetchDriveImage(oauth2Client, id);
                     if (buf) {
                         photoBuffers.push(buf);
                     }
