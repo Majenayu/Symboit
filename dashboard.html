@@ -188,13 +188,19 @@
             <div id="invite-status-list"></div>
         </div>
 
-        <!-- Tab 5: Feed -->
-        <div id="tab-feed" class="tab-content">
+        <!-- Tab 5: Events (Global Feed) -->
+        <div id="tab-events" class="tab-content">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
                 <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin:0;">GLOBAL FEED</p>
                 <button onclick="openEventModal()" style="background:rgba(139, 92, 246, 0.15); border:1px solid rgba(139, 92, 246, 0.3); color:var(--primary); padding:8px 16px; border-radius:10px; font-size:0.7rem; font-weight:600;">+ POST</button>
             </div>
-            <div id="live-feed-list" style="display:flex; flex-direction:column; gap:20px;"></div>
+            <div id="global-event-list" style="display:flex; flex-direction:column; gap:20px;"></div>
+        </div>
+
+        <!-- Tab 6: Feed (Activity History) -->
+        <div id="tab-feed" class="tab-content">
+            <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin-bottom:15px;">ACTIVITY HISTORY</p>
+            <div id="live-feed-list"></div>
         </div>
     </div>
 
@@ -209,7 +215,7 @@
             <span>PORTFOLIO</span>
         </div>
         <div class="fab-wrap">
-            <div class="fab" onclick="switchTab('aicte', document.querySelector('.nav-item'))">
+            <div class="fab" onclick="switchTab('events', null)">
                 <div class="fab-icon">📅</div>
                 <div class="fab-label">Events</div>
             </div>
@@ -297,7 +303,8 @@
                 renderAICTE(students, subs);
                 renderPortfolio(students, achs, parts);
                 renderNetwork(invites);
-                renderFeed(events);
+                renderEvents(events);
+                renderHistory(subs, achs, parts);
 
                 // Mentor Progress
                 const totalEarned = [...subs, ...achs, ...parts].filter(i => i.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
@@ -400,8 +407,8 @@
                 </div>`).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No pending invitations.</p>';
         }
 
-        function renderFeed(events) {
-            document.getElementById('live-feed-list').innerHTML = events.map(ev => `
+        function renderEvents(events) {
+            document.getElementById('global-event-list').innerHTML = events.map(ev => `
                 <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; overflow:hidden;">
                     <div style="padding:15px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
                         <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1.2rem;">${ev.authorName.charAt(0).toUpperCase()}</div>
@@ -416,7 +423,22 @@
                         ${ev.downloadLink ? `<a href="${ev.downloadLink}" target="_blank" style="text-decoration:none; color:var(--primary); font-size:0.8rem; font-weight:600; padding:8px 16px; background:rgba(139, 92, 246, 0.1); border-radius:8px;">📥 Download Image</a>` : ''}
                     </div>
                 </div>
-            `).join('');
+            `).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No events posted yet.</p>';
+        }
+
+        function renderHistory(subs, achs, parts) {
+            const feed = [...subs, ...achs, ...parts].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 20);
+            document.getElementById('live-feed-list').innerHTML = feed.map(item => {
+                const t = item.rank ? 'ACH' : (item.activityTitle ? 'AICTE' : 'PART');
+                const color = t === 'ACH' ? 'var(--gold)' : (t === 'AICTE' ? 'var(--primary)' : '#38bdf8');
+                return `<div style="padding:14px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-size:0.85rem;"><b>${item.studentEmail.split('@')[0]}</b>: ${item.title || item.activityTitle || 'Proof'}</div>
+                        <span style="font-size:0.55rem; font-weight:700; color:${color}; background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px;">${t}</span>
+                    </div>
+                    <div style="font-size:0.65rem; color:var(--text-dim); margin-top:5px;">${new Date(item.submittedAt).toLocaleString()} • <span style="color:${item.status==='approved'?'#4ade80':item.status==='rejected'?'var(--danger)':'var(--gold)'}">${(item.status||'pending').toUpperCase()}</span></div>
+                </div>`;
+            }).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No activity yet.</p>';
         }
 
         async function verify(id, status, type, title) {
