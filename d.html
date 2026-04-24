@@ -27,6 +27,12 @@
 
         #message { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 12px; display: none; z-index: 1000; }
 
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: #111; padding: 2.5rem; border-radius: 30px; border: 1px solid var(--primary); max-width: 500px; width: 100%; position: relative; }
+        .close-btn { position: absolute; top: 1.5rem; right: 1.5rem; color: var(--text-dim); cursor: pointer; font-size: 1.5rem; }
+
+        input[type="date"] { color-scheme: dark; }
+
         @media (max-width: 768px) {
             body { padding: 1rem; }
             .grid { grid-template-columns: 1fr; gap: 1rem; }
@@ -39,7 +45,10 @@
 <body>
     <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; margin-bottom:3rem;">
         <h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1>
-        <button class="btn btn-primary" onclick="logout()">Logout</button>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-outline" style="border-color:var(--accent); color:var(--accent);" onclick="openReportModal()">📊 Generate Portfolio Reports</button>
+            <button class="btn btn-primary" onclick="logout()">Logout</button>
+        </div>
     </div>
 
     <div class="grid">
@@ -84,6 +93,40 @@
             
             <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">MENTOR NETWORK</h3>
             <div id="mentor-list"></div>
+        </div>
+    </div>
+
+    <div id="report-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeReportModal()">&times;</span>
+            <h2 style="font-weight:400; margin-bottom:1.5rem;">Global Portfolio Generation</h2>
+            
+            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">REPORT CATEGORY</label>
+            <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; margin-bottom:20px; outline:none;">
+                <option value="aicte">AICTE Activity Points (All Time)</option>
+                <option value="ach">Achievement Node (Range)</option>
+                <option value="part">Participation Node (Range)</option>
+            </select>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                <div>
+                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">FROM DATE</label>
+                    <input type="date" id="report-from" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; outline:none;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">TO DATE</label>
+                    <input type="date" id="report-to" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; outline:none;">
+                </div>
+            </div>
+
+            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">FILE FORMAT</label>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:25px;">
+                <button class="btn btn-outline" id="fmt-pdf" onclick="setFormat('pdf')" style="border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)">PDF Document</button>
+                <button class="btn btn-outline" id="fmt-docx" onclick="setFormat('docx')">Word (.docx)</button>
+            </div>
+
+            <button class="btn btn-primary" onclick="generateReport()" id="gen-btn">Generate Comprehensive Report</button>
+            <p style="font-size:0.7rem; color:var(--text-dim); margin-top:15px; text-align:center;">This will process all students grouped by their mentors.</p>
         </div>
     </div>
 
@@ -348,6 +391,64 @@
         }
 
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
+        // --- REPORTING ---
+        let selectedFormat = 'pdf';
+        function setFormat(f) {
+            selectedFormat = f;
+            document.getElementById('fmt-pdf').style.cssText = f === 'pdf' ? 'border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)' : '';
+            document.getElementById('fmt-docx').style.cssText = f === 'docx' ? 'border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)' : '';
+        }
+
+        function openReportModal() {
+            document.getElementById('report-modal').style.display = 'flex';
+            const now = new Date();
+            document.getElementById('report-to').value = now.toISOString().split('T')[0];
+            const lastYear = new Date();
+            lastYear.setFullYear(now.getFullYear() - 1);
+            document.getElementById('report-from').value = lastYear.toISOString().split('T')[0];
+        }
+
+        function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
+
+        async function generateReport() {
+            const btn = document.getElementById('gen-btn');
+            const type = document.getElementById('report-type').value;
+            const start = document.getElementById('report-from').value;
+            const end = document.getElementById('report-to').value;
+
+            btn.innerText = "Aggregating Portfolio Data...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/report/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ organizerEmail: user.email, type, startDate: start, endDate: end, format: selectedFormat })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Generation failed');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `organizer_global_report_${type}_${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                showMessage("Global report generated successfully!");
+                closeReportModal();
+            } catch (error) {
+                showMessage(error.message);
+            } finally {
+                btn.innerText = "Generate Comprehensive Report";
+                btn.disabled = false;
+            }
+        }
+
         sync();
     </script>
 </body>

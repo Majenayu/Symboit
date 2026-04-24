@@ -1070,48 +1070,62 @@ async function fetchDriveImage(oauth2Client, fileId) {
 }
 
 app.post('/api/report/generate', async (req, res) => {
-    const { studentEmail, organizerEmail, type, startDate, endDate, format } = req.body;
+    const { studentEmail, mentorEmail, organizerEmail, type, startDate, endDate, format } = req.body;
     try {
-        const student = await User.findOne({ email: studentEmail });
-        if (!student || !student.refreshToken) return res.status(400).json({ success: false, error: 'Drive permissions missing.' });
+        // Use the requester's token to fetch all images (Mentor/Organizer has access)
+        const requesterEmail = studentEmail || mentorEmail || organizerEmail;
+        const requester = await User.findOne({ email: requesterEmail });
+        if (!requester || !requester.refreshToken) return res.status(400).json({ success: false, error: 'Drive permissions missing. Please re-login.' });
 
         const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
-        oauth2Client.setCredentials({ refresh_token: student.refreshToken });
-        const drive = google.drive({ version: 'v3', auth: oauth2Client });
+        oauth2Client.setCredentials({ refresh_token: requester.refreshToken });
 
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
 
-        let data = [];
         let reportTitle = "";
+        let data = [];
+        let students = [];
+
+        if (studentEmail) {
+            students = [requester];
+        } else if (mentorEmail) {
+            students = await User.find({ mentorEmail, role: 'student' }).sort({ name: 1 });
+        } else if (organizerEmail) {
+            students = await User.find({ organizerEmail, role: 'student' }).sort({ mentorEmail: 1, name: 1 });
+        }
+
+        const studentEmails = students.map(s => s.email.toLowerCase());
         
         if (type === 'aicte') {
             reportTitle = "AICTE Activity Points Report";
-            // Ignore range for AICTE - get all approved
             data = await Submission.find({ 
-                studentEmail: studentEmail.toLowerCase(), 
+                studentEmail: { $in: studentEmails }, 
                 status: 'approved' 
-            }).lean().sort({ eventDate: 1 });
+            }).lean().sort({ studentEmail: 1, eventDate: 1 });
         } else {
             const query = { 
-                studentEmail: studentEmail.toLowerCase(), 
+                studentEmail: { $in: studentEmails }, 
                 status: 'approved',
                 eventDate: { $gte: start, $lte: end }
             };
-
             if (type === 'ach') {
                 reportTitle = "Achievement Node Report";
-                data = await Achievement.find(query).lean().sort({ eventDate: 1 });
+                data = await Achievement.find(query).lean().sort({ studentEmail: 1, eventDate: 1 });
             } else if (type === 'part') {
                 reportTitle = "Participation Node Report";
-                data = await Participation.find(query).lean().sort({ eventDate: 1 });
+                data = await Participation.find(query).lean().sort({ studentEmail: 1, eventDate: 1 });
             }
         }
 
-        console.log(`[REPORT] Found ${data.length} records for ${studentEmail} (${type}) in range ${startDate} to ${endDate}`);
+        if (data.length === 0) return res.status(404).json({ success: false, error: `No approved records found for the selected range.` });
 
-        if (data.length === 0) return res.status(404).json({ success: false, error: `No approved ${type.toUpperCase()} records found between ${startDate} and ${endDate}. Please check your dates.` });
+        // Map data to students for easier rendering
+        const studentMap = {};
+        students.forEach(s => studentMap[s.email.toLowerCase()] = s);
+
+        console.log(`[REPORT] Generating multi-report for ${requesterEmail}. Records: ${data.length}`);
 
         if (format === 'docx') {
             const sections = [];
@@ -1131,6 +1145,7 @@ app.post('/api/report/generate', async (req, res) => {
                     }
                 }
 
+                const currentStudent = studentMap[item.studentEmail.toLowerCase()] || { name: item.studentEmail.split('@')[0], email: item.studentEmail };
                 const children = [
                     // Header Table for perfect Name/Email alignment
                     new Table({
@@ -1140,10 +1155,10 @@ app.post('/api/report/generate', async (req, res) => {
                             new TableRow({
                                 children: [
                                     new TableCell({
-                                        children: [new Paragraph({ children: [new TextRun({ text: student.name || studentEmail.split('@')[0], bold: true, size: 24 })] })],
+                                        children: [new Paragraph({ children: [new TextRun({ text: currentStudent.name || currentStudent.email.split('@')[0], bold: true, size: 24 })] })],
                                     }),
                                     new TableCell({
-                                        children: [new Paragraph({ children: [new TextRun({ text: studentEmail, size: 20 })], alignment: AlignmentType.RIGHT })],
+                                        children: [new Paragraph({ children: [new TextRun({ text: currentStudent.email, size: 20 })], alignment: AlignmentType.RIGHT })],
                                     }),
                                 ],
                             }),
@@ -1231,9 +1246,11 @@ app.post('/api/report/generate', async (req, res) => {
                 const item = data[i];
                 if (i > 0) doc.addPage();
 
+                const currentStudent = studentMap[item.studentEmail.toLowerCase()] || { name: item.studentEmail.split('@')[0], email: item.studentEmail };
+
                 // Header
-                doc.fontSize(12).font('Helvetica-Bold').text(student.name || studentEmail.split('@')[0], 40, 40);
-                doc.fontSize(10).font('Helvetica').text(studentEmail, 40, 40, { align: 'right' });
+                doc.fontSize(12).font('Helvetica-Bold').text(currentStudent.name || currentStudent.email.split('@')[0], 40, 40);
+                doc.fontSize(10).font('Helvetica').text(currentStudent.email, 40, 40, { align: 'right' });
                 doc.moveDown(2);
 
                 // Title
