@@ -107,11 +107,14 @@
                 const sRes = await fetch(`/api/users?organizerEmail=${user.email}&role=student`).then(r => r.json());
                 const students = sRes.users || [];
 
-                // Fetch all submissions and achievements for point calculation
-                const subRes = await fetch(`/api/submissions?organizerEmail=${user.email}`).then(r => r.json());
-                const allSubmissions = subRes.submissions || [];
-                const achRes = await fetch(`/api/achievements?organizerEmail=${user.email}`).then(r => r.json());
-                const allAchievements = achRes.achievements || [];
+                const [subRes, achRes, partRes] = await Promise.all([
+                    fetch(`/api/submissions?organizerEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/achievements?organizerEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/participations?organizerEmail=${user.email}`).then(r => r.json())
+                ]);
+                const submissions = subRes.submissions || [];
+                const achievements = achRes.achievements || [];
+                const participations = partRes.participations || [];
 
                 // Fetch Invitations to show pending mentors
                 const iRes = await fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json());
@@ -198,21 +201,29 @@
                                         <div style="font-size:0.65rem; color:var(--text-dim);">${s.email}</div>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:15px;">
-                                        <div style="display:flex; gap:8px;">
-                                            ${s.driveRootFolderId ? `<a href="https://drive.google.com/drive/folders/${s.driveRootFolderId}" target="_blank" title="AICTE Drive" style="text-decoration:none; font-size:1.1rem;">📂</a>` : '<span title="No AICTE" style="opacity:0.2; font-size:1.1rem;">📂</span>'}
-                                            ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" title="Achievements" style="text-decoration:none; font-size:1.1rem; filter: hue-rotate(45deg) saturate(2);">📂</a>` : '<span title="No ACH" style="opacity:0.2; font-size:1.1rem;">📂</span>'}
+                                        <div style="display:flex; gap:6px;">
+                                            ${s.driveRootFolderId ? `<a href="https://drive.google.com/drive/folders/${s.driveRootFolderId}" target="_blank" title="AICTE Drive" style="text-decoration:none; font-size:1rem;">📂</a>` : '<span style="opacity:0.1; font-size:1rem;">📂</span>'}
+                                            ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" title="Achievements" style="text-decoration:none; font-size:1rem; filter: hue-rotate(45deg) saturate(2);">📂</a>` : '<span style="opacity:0.1; font-size:1rem;">📂</span>'}
+                                            ${s.participationFolderId ? `<a href="https://drive.google.com/drive/folders/${s.participationFolderId}" target="_blank" title="Participation" style="text-decoration:none; font-size:1rem; filter: hue-rotate(200deg) saturate(2);">📂</a>` : '<span style="opacity:0.1; font-size:1rem;">📂</span>'}
                                         </div>
-                                        <div style="text-align:right; display:flex; gap:10px;">
+                                        <div style="text-align:right; display:flex; gap:8px;">
                                             <div>
-                                                <div style="font-size:0.8rem; font-weight:600; color:var(--accent);">${pts}</div>
-                                                <div style="font-size:0.45rem; color:var(--text-dim); text-transform:uppercase;">AICTE</div>
+                                                <div style="font-size:0.75rem; font-weight:600; color:var(--accent);">${pts}</div>
+                                                <div style="font-size:0.4rem; color:var(--text-dim); text-transform:uppercase;">AICTE</div>
                                             </div>
                                             <div>
-                                                <div style="font-size:0.8rem; font-weight:600; color:var(--gold);">${(() => {
+                                                <div style="font-size:0.75rem; font-weight:600; color:var(--gold);">${(() => {
                                                     const sAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'approved');
                                                     return sAchs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
                                                 })()}</div>
-                                                <div style="font-size:0.45rem; color:var(--text-dim); text-transform:uppercase;">ACH</div>
+                                                <div style="font-size:0.4rem; color:var(--text-dim); text-transform:uppercase;">ACH</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size:0.75rem; font-weight:600; color:#38bdf8;">${(() => {
+                                                    const sParts = participations.filter(p => p.studentEmail === s.email && p.status === 'approved');
+                                                    return sParts.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
+                                                })()}</div>
+                                                <div style="font-size:0.4rem; color:var(--text-dim); text-transform:uppercase;">PART</div>
                                             </div>
                                         </div>
                                     </div>

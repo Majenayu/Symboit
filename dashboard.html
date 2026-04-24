@@ -132,118 +132,108 @@
             const container = document.getElementById('feed-container');
             container.innerHTML = '';
             const all = [...subs.map(x => ({...x, type: 'AICTE'})), ...achs.map(x => ({...x, type: 'ACH'}))].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-            
-            all.slice(0, 10).forEach(s => {
+            [...subs, ...achs, ...parts].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 10).forEach(item => {
+                const type = item.rank ? 'ACH' : (item.activityTitle ? 'AICTE' : 'PART');
+                const color = type === 'AICTE' ? 'var(--primary)' : (type === 'ACH' ? 'var(--gold)' : '#38bdf8');
                 container.innerHTML += `
-                    <div class="feed-item">
-                        <div style="color:var(--text)">${s.studentEmail.split('@')[0]} <span style="font-size:0.5rem; color:var(--primary);">${s.type}</span></div>
-                        <div style="color:var(--text-dim)">${s.type === 'ACH' ? s.title : s.activityTitle}</div>
-                        <div style="font-size:0.6rem; color:var(--accent); margin-top:4px;">${new Date(s.submittedAt).toLocaleTimeString()}</div>
+                    <div class="feed-item" style="border-left:2px solid ${color};">
+                        <div style="color:var(--text)">${item.studentEmail.split('@')[0]} <span style="font-size:0.5rem; color:${color};">${type}</span></div>
+                        <div style="color:var(--text-dim)">${item.title || item.activityTitle || 'Certificate'}</div>
+                        <div style="font-size:0.6rem; color:var(--accent); margin-top:4px;">${new Date(item.submittedAt).toLocaleTimeString()}</div>
                     </div>`;
             });
         }
 
-        function renderStudents(students, submissions, achievements) {
+        function renderStudents(students, submissions, achievements, participations) {
             const container = document.getElementById('student-list');
             container.innerHTML = '';
             
             let totalPointsEarned = 0;
             const maxPointsPossible = students.length * 100;
 
-                students.forEach(s => {
-                    const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                    const points = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
-                    totalPointsEarned += points;
+            students.forEach(s => {
+                const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
+                const points = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
+                
+                const sAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'approved');
+                const achPoints = sAchs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
 
-                    const sAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'approved');
-                    const achPoints = sAchs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
-                    
-                    const perc = Math.min(100, (points / 100) * 100);
-                    const pending = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'pending');
-                    const pendingAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'pending');
-                    
-                    // Use folder ID from User model (always available after first login)
-                    const rootFolderId = s.driveRootFolderId;
+                const sParts = participations.filter(p => p.studentEmail === s.email && p.status === 'approved');
+                const partPoints = sParts.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
 
-                    container.innerHTML += `
-                        <div class="glass-card">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <div style="flex:1;">
-                                    <h4 style="font-size:1rem;">${s.name || s.email.split('@')[0]}</h4>
-                                    <p style="font-size:0.75rem; color:var(--text-dim);">${s.email}</p>
-                                </div>
-                                <div style="text-align:right; display:flex; align-items:center; gap:15px;">
-                                    <div style="display:flex; gap:10px;">
-                                        ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="No AICTE Drive" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
-                                        ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" title="Achievements Drive" style="color:var(--gold); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="No ACH Drive" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
-                                    </div>
-                                    <div style="display:flex; gap:15px;">
-                                        <div style="text-align:center;">
-                                            <div style="font-size:1.2rem; font-weight:600; color:var(--accent)">${points}</div>
-                                            <div style="font-size:0.5rem; color:var(--text-dim); text-transform:uppercase;">AICTE</div>
-                                        </div>
-                                        <div style="text-align:center;">
-                                            <div style="font-size:1.2rem; font-weight:600; color:var(--gold)">${achPoints}</div>
-                                            <div style="font-size:0.5rem; color:var(--text-dim); text-transform:uppercase;">ACH</div>
-                                        </div>
-                                    </div>
-                                </div>
+                totalPointsEarned += (points + achPoints + partPoints);
+
+                const perc = Math.min(100, ((points + achPoints + partPoints) / 100) * 100);
+                const pending = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'pending');
+                const pendingAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'pending');
+                const pendingParts = participations.filter(p => p.studentEmail === s.email && p.status === 'pending');
+                    
+                container.innerHTML += `
+                    <div class="glass-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="flex:1;">
+                                <h4 style="font-size:1rem;">${s.name || s.email.split('@')[0]}</h4>
+                                <p style="font-size:0.75rem; color:var(--text-dim);">${s.email}</p>
                             </div>
-                            <div class="progress-container" style="height:6px; margin-top:15px;"><div class="progress-bar" style="width:${perc}%"></div></div>
-                            
-                         </div>
-                         
-                         ${pending.length > 0 ? `
-                                <div style="margin-top:20px; background:rgba(99, 102, 241, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(99, 102, 241, 0.1);">
-                                     <p style="font-size:0.6rem; color:var(--primary); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">AICTE VERIFICATION PENDING (${pending.length})</p>
-                                     ${pending.map(p => `
-                                         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
-                                             <div>
-                                             <div style="font-size:0.8rem; font-weight:600;">${p.activityTitle}</div>
-                                             <div style="font-size:0.6rem; color:var(--primary); text-transform:uppercase; letter-spacing:1px;">
-                                                 ${p.milestone || 'Full Event'} • ${new Date(p.eventDate).toLocaleDateString()}
-                                             </div>
-                                             </div>
-                                             <div style="display:flex; gap:8px;">
-                                                 <div style="display:flex; flex-direction:column; gap:4px;">
-                                                     ${p.files.map((f, idx) => `<a href="${f.viewLink}" target="_blank" style="font-size:0.6rem; color:var(--primary); text-decoration:none; border:1px solid var(--primary); padding:1px 6px; border-radius:4px; text-align:center;">Proof ${idx + 1}</a>`).join('')}
-                                                 </div>
-                                                 <div style="display:flex; flex-direction:column; gap:4px;">
-                                                     <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
-                                                     <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     `).join('')}
-                                 </div>
-                            ` : ''}
-
-                         ${pendingAchs.length > 0 ? `
-                            <div style="margin-top:10px; background:rgba(251, 191, 36, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.1);">
-                                <p style="font-size:0.6rem; color:var(--gold); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">ACHIEVEMENTS PENDING (${pendingAchs.length})</p>
-                                ${pendingAchs.map(a => `
+                            <div style="display:flex; gap:12px;">
+                                <div style="display:flex; gap:8px; margin-right:10px;">
+                                    ${s.driveRootFolderId ? `<a href="https://drive.google.com/drive/folders/${s.driveRootFolderId}" target="_blank" title="AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.2rem;">📂</a>` : '<span title="No AICTE" style="opacity:0.1; font-size:1.2rem;">📂</span>'}
+                                    ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" title="Achievements" style="color:var(--gold); text-decoration:none; font-size:1.2rem;">📂</a>` : '<span title="No ACH" style="opacity:0.1; font-size:1.2rem;">📂</span>'}
+                                    ${s.participationFolderId ? `<a href="https://drive.google.com/drive/folders/${s.participationFolderId}" target="_blank" title="Participation" style="color:#38bdf8; text-decoration:none; font-size:1.2rem;">📂</a>` : '<span title="No PART" style="opacity:0.1; font-size:1.2rem;">📂</span>'}
+                                </div>
+                                <div style="text-align:center;"><div style="font-size:1rem; font-weight:600; color:var(--accent)">${points}</div><div style="font-size:0.45rem; color:var(--text-dim); text-transform:uppercase;">AICTE</div></div>
+                                <div style="text-align:center;"><div style="font-size:1rem; font-weight:600; color:var(--gold)">${achPoints}</div><div style="font-size:0.45rem; color:var(--text-dim); text-transform:uppercase;">ACH</div></div>
+                                <div style="text-align:center;"><div style="font-size:1rem; font-weight:600; color:#38bdf8">${partPoints}</div><div style="font-size:0.45rem; color:var(--text-dim); text-transform:uppercase;">PART</div></div>
+                            </div>
+                        </div>
+                        <div class="progress-container" style="height:6px; margin-top:15px;"><div class="progress-bar" style="width:${perc}%"></div></div>
+                        
+                        ${pending.length > 0 ? `
+                            <div style="margin-top:15px; background:rgba(99, 102, 241, 0.05); padding:10px; border-radius:12px; border:1px solid rgba(99, 102, 241, 0.1);">
+                                <p style="font-size:0.6rem; color:var(--primary); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">AICTE PENDING (${pending.length})</p>
+                                ${pending.map(p => `
                                     <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
-                                        <div>
-                                            <div style="font-size:0.8rem; font-weight:600;">${a.title}</div>
-                                            <div style="font-size:0.6rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px;">${a.genre} • ${new Date(a.eventDate).toLocaleDateString()}</div>
-                                        </div>
+                                        <div style="font-size:0.8rem;">${p.activityTitle}</div>
                                         <div style="display:flex; gap:8px;">
-                                            <div style="display:flex; flex-direction:column; gap:4px;">
-                                                ${a.files.map((f, idx) => `<a href="${f.viewLink}" target="_blank" style="font-size:0.6rem; color:var(--gold); text-decoration:none; border:1px solid var(--gold); padding:1px 6px; border-radius:4px; text-align:center;">Proof ${idx + 1}</a>`).join('')}
-                                            </div>
-                                            <div style="display:flex; flex-direction:column; gap:4px;">
-                                                <button onclick="verifyAch('${a._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
-                                                <button onclick="verifyAch('${a._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
-                                            </div>
+                                            <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
+                                            <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
                                         </div>
                                     </div>
                                 `).join('')}
-                            </div>
-                         ` : ''}
-                        </div>`;
-                });
+                            </div>` : ''}
 
-            // Update Organization Wide Progress
+                        ${pendingAchs.length > 0 ? `
+                            <div style="margin-top:15px; background:rgba(251, 191, 36, 0.05); padding:10px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.1);">
+                                <p style="font-size:0.6rem; color:var(--gold); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">ACH PENDING (${pendingAchs.length})</p>
+                                ${pendingAchs.map(a => `
+                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
+                                        <div style="font-size:0.8rem;">${a.title}</div>
+                                        <div style="display:flex; gap:8px;">
+                                            ${a.files.map((f, idx) => `<a href="https://drive.google.com/uc?id=${f}" target="_blank" style="font-size:0.6rem; color:var(--gold); text-decoration:none; border:1px solid var(--gold); padding:1px 6px; border-radius:4px; text-align:center;">Proof ${idx + 1}</a>`).join('')}
+                                            <button onclick="verifyAch('${a._id}', 'approved', '${a.title}')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
+                                            <button onclick="verifyAch('${a._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>` : ''}
+
+                        ${pendingParts.length > 0 ? `
+                            <div style="margin-top:15px; background:rgba(56, 189, 248, 0.05); padding:10px; border-radius:12px; border:1px solid rgba(56, 189, 248, 0.1);">
+                                <p style="font-size:0.6rem; color:#38bdf8; margin-bottom:8px; font-weight:bold; letter-spacing:1px;">PARTICIPATION PENDING (${pendingParts.length})</p>
+                                ${pendingParts.map(p => `
+                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
+                                        <div style="font-size:0.8rem;">${p.genre} Certificate</div>
+                                        <div style="display:flex; gap:8px;">
+                                            ${p.files.map((f, idx) => `<a href="https://drive.google.com/uc?id=${f}" target="_blank" style="font-size:0.6rem; color:#38bdf8; text-decoration:none; border:1px solid #38bdf8; padding:1px 6px; border-radius:4px; text-align:center;">Proof ${idx + 1}</a>`).join('')}
+                                            <button onclick="verifyPart('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
+                                            <button onclick="verifyPart('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>` : ''}
+                    </div>`;
+            });
+
             const orgPerc = maxPointsPossible > 0 ? Math.round((totalPointsEarned / maxPointsPossible) * 100) : 0;
             document.getElementById('org-bar').style.width = orgPerc + '%';
             document.getElementById('org-perc').innerText = orgPerc + '%';
@@ -256,26 +246,30 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, status, points: 10 })
                 }).then(r => r.json());
-                
-                if(res.success) {
-                    showMessage(`Activity ${status === 'approved' ? 'Verified ✓' : 'Rejected ✕'}`);
-                    sync();
-                }
-            } catch (e) { showMessage('Verification failed', true); }
+                if(res.success) { showMessage('Updated'); sync(); }
+            } catch (e) { showMessage('Failed', true); }
         }
 
-        async function verifyAch(id, status) {
+        async function verifyAch(id, status, rank) {
             try {
                 const res = await fetch('/api/verify-achievement', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, status, rank })
+                }).then(r => r.json());
+                if(res.success) { showMessage('Updated'); sync(); }
+            } catch (e) { showMessage('Failed', true); }
+        }
+
+        async function verifyPart(id, status) {
+            try {
+                const res = await fetch('/api/verify-participation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, status, points: 10 })
                 }).then(r => r.json());
-                if(res.success) {
-                    showMessage(`Achievement ${status === 'approved' ? 'Verified ✓' : 'Rejected ✕'}`);
-                    sync();
-                }
-            } catch (e) { showMessage('Verification failed', true); }
+                if(res.success) { showMessage('Updated'); sync(); }
+            } catch (e) { showMessage('Failed', true); }
         }
 
         async function sendInvite(role) {

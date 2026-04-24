@@ -64,6 +64,7 @@
         <div class="tabs">
             <div class="tab active" id="tab-aicte" onclick="switchTab('aicte')">AICTE Points</div>
             <div class="tab" id="tab-ach" onclick="switchTab('ach')">Achievement Node</div>
+            <div class="tab" id="tab-part" onclick="switchTab('part')">Participation Node</div>
         </div>        <div id="aicte-content">
             <div class="progress-section">
                 <div style="display:flex; justify-content:space-between; align-items:flex-end;">
@@ -174,17 +175,25 @@
                 rubrics = allGenres.filter(g => g.isRubric);
                 activities = allGenres.filter(g => !g.isRubric);
 
-                // Fetch student submissions and achievements
-                const [sRes, aRes] = await Promise.all([
+                // Fetch student submissions, achievements and participations
+                const [sRes, aRes, pRes] = await Promise.all([
                     fetch(`/api/submissions?studentEmail=${user.email}&organizerEmail=${user.organizerEmail}`),
-                    fetch(`/api/achievements?studentEmail=${user.email}`)
+                    fetch(`/api/achievements?studentEmail=${user.email}`),
+                    fetch(`/api/participations?studentEmail=${user.email}`)
                 ]);
                 const sData = await sRes.json();
                 const aData = await aRes.json();
+                const pData = await pRes.json();
                 submissions = sData.submissions || [];
                 const achievements = aData.achievements || [];
+                const participations = aData.participations || pData.participations || []; // Safety fallback
                 
+                if(freshUser.participationFolderId) {
+                    document.getElementById('part-drive-link').innerHTML = `<a href="https://drive.google.com/drive/folders/${freshUser.participationFolderId}" target="_blank" title="Open Participation Drive" style="color:#38bdf8; text-decoration:none; font-size:1.8rem;">📂</a>`;
+                }
+
                 renderAchLog(achievements);
+                renderPartLog(participations);
             } catch (e) { console.error(e); }
 
             const rGrid = document.getElementById('rubric-grid');
@@ -316,10 +325,10 @@
             const selector = document.getElementById('milestone-selector');
             selector.innerHTML = `
                 <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                    <div class="milestone-box" onclick="selectRank('1st Place')"><b>1st</b></div>
-                    <div class="milestone-box" onclick="selectRank('2nd Place')"><b>2nd</b></div>
-                    <div class="milestone-box" onclick="selectRank('3rd Place')"><b>3rd</b></div>
-                    <div class="milestone-box" onclick="selectRank('Special Prize')"><b>Special</b></div>
+                    <div class="milestone-box" onclick="selectRank('1st Place')"><b>1st</b><br><small>10 pts</small></div>
+                    <div class="milestone-box" onclick="selectRank('2nd Place')"><b>2nd</b><br><small>7 pts</small></div>
+                    <div class="milestone-box" onclick="selectRank('3rd Place')"><b>3rd</b><br><small>5 pts</small></div>
+                    <div class="milestone-box" onclick="selectRank('Special Prize')"><b>Special</b><br><small>3 pts</small></div>
                 </div>
             `;
             document.getElementById('upload-area').style.display = 'none';
@@ -367,11 +376,92 @@
             }
         }
 
+        }
+
+        async function renderPartLog(participations) {
+            const agRes = await fetch('/api/achievement-genres').then(r => r.json());
+            const ags = agRes.genres || [];
+            const pgGrid = document.getElementById('part-genre-grid');
+            pgGrid.innerHTML = '';
+            ags.forEach(g => {
+                pgGrid.innerHTML += `
+                    <div class="activity-card" style="border-color:#38bdf8; background:rgba(56, 189, 248, 0.02);" onclick="openPartModal('${g.name}')">
+                        <span class="badge" style="background:rgba(56, 189, 248, 0.1); color:#38bdf8;">GENRE</span>
+                        <h4 style="margin-bottom:10px; font-size:0.9rem;">${g.name}</h4>
+                        <div style="font-size:0.6rem; color:var(--text-dim);">CLICK TO UPLOAD PROOF</div>
+                    </div>`;
+            });
+
+            const partList = document.getElementById('part-log');
+            partList.innerHTML = '';
+            let totalPartPoints = 0;
+            participations.forEach(p => {
+                if(p.status === 'approved') totalPartPoints += (p.pointsAwarded || 10);
+                partList.innerHTML += `
+                    <div class="activity-card" style="cursor:default; border-color:${p.status === 'approved' ? 'var(--accent)' : 'rgba(255,255,255,0.05)'}">
+                        <span class="badge" style="color:#38bdf8; background:rgba(56, 189, 248, 0.1); border-radius:10px;">${p.genre}</span>
+                        <h4 style="font-size:0.9rem; margin-bottom:5px;">Participation</h4>
+                        <p style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase;">${new Date(p.eventDate).toLocaleDateString()}</p>
+                        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:0.6rem; font-weight:bold; color:${p.status === 'approved' ? 'var(--accent)' : (p.status === 'rejected' ? 'var(--danger)' : '#38bdf8')}">${p.status.toUpperCase()}</span>
+                            ${p.status === 'approved' ? `<span style="font-size:0.8rem; font-weight:600; color:#38bdf8;">+10 PTS</span>` : ''}
+                        </div>
+                    </div>`;
+            });
+            document.getElementById('part-pts').innerText = totalPartPoints;
+        }
+
+        let currentPartGenre = null;
+
+        function openPartModal(genre) {
+            currentPartGenre = genre;
+            document.getElementById('m-title').innerText = 'Participation: ' + genre;
+            document.getElementById('m-type').innerText = 'PARTICIPATION NODE';
+            document.getElementById('m-desc').innerText = 'Upload your participation certificate. You will receive 10 points upon verification.';
+            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('milestone-selector').innerHTML = '';
+            document.getElementById('upload-area').style.display = 'block';
+            document.getElementById('preview-container').innerHTML = '';
+            document.getElementById('file-input').value = '';
+            document.getElementById('submit-btn').onclick = handlePartSubmit;
+        }
+
+        async function handlePartSubmit() {
+            const files = document.getElementById('file-input').files;
+            const date = document.getElementById('event-date').value;
+            if(!date || files.length === 0) return alert('Select date and files.');
+
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = 'Uploading Certificate...'; btn.disabled = true;
+
+            const fd = new FormData();
+            fd.append('studentEmail', user.email);
+            fd.append('organizerEmail', user.organizerEmail);
+            fd.append('genre', currentPartGenre);
+            fd.append('title', 'Participation Certificate');
+            fd.append('eventDate', date);
+            Array.from(files).forEach(f => fd.append('files', f));
+
+            try {
+                const res = await fetch('/api/submit-participation', { method: 'POST', body: fd }).then(r => r.json());
+                if(res.success) {
+                    alert('Certificate Submitted!');
+                    closeModal();
+                    render();
+                } else alert(res.error);
+            } catch (e) { alert('Failed'); }
+            finally { 
+                btn.innerText = 'Upload to Drive'; btn.disabled = false;
+                document.getElementById('submit-btn').onclick = handleSubmit;
+            }
+        }
+
         function switchTab(t) {
             document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
             document.getElementById(`tab-${t}`).classList.add('active');
             document.getElementById('aicte-content').style.display = t === 'aicte' ? 'block' : 'none';
             document.getElementById('ach-content').style.display = t === 'ach' ? 'block' : 'none';
+            document.getElementById('part-content').style.display = t === 'part' ? 'block' : 'none';
         }
 
         function previewAch() {
@@ -382,46 +472,6 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.style.width = '100%'; img.style.height = '50px'; img.style.objectFit = 'cover'; img.style.borderRadius = '5px';
-                    container.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function submitAchievement() {
-            const genre = document.getElementById('ach-genre').value;
-            const title = document.getElementById('ach-title').value;
-            const date = document.getElementById('ach-date').value;
-            const files = document.getElementById('ach-files').files;
-
-            if(!genre || !title || !date || files.length === 0) return alert('Fill all fields and add proof.');
-            
-            const fd = new FormData();
-            fd.append('studentEmail', user.email);
-            fd.append('organizerEmail', user.organizerEmail);
-            fd.append('genre', genre);
-            fd.append('title', title);
-            fd.append('eventDate', date);
-            Array.from(files).forEach(f => fd.append('files', f));
-
-            const btn = event.currentTarget;
-            btn.innerText = 'Uploading...'; btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/submit-achievement', { method: 'POST', body: fd }).then(r => r.json());
-                if(res.success) {
-                    alert('Achievement Submitted!');
-                    document.getElementById('ach-title').value = '';
-                    document.getElementById('ach-files').value = '';
-                    document.getElementById('ach-preview').innerHTML = '';
-                    render();
-                } else alert(res.error);
-            } catch (e) { alert('Failed'); }
-            finally { btn.innerText = 'Upload Achievement'; btn.disabled = false; }
-        }
-
         async function addNewGenre() {
             const name = prompt("Enter the name of the new achievement genre:");
             if (!name) return;

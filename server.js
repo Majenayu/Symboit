@@ -49,6 +49,7 @@ const userSchema = new mongoose.Schema({
     refreshToken: String,
     driveRootFolderId: String, // Store the main AICTE folder ID
     achievementFolderId: String, // Store the main Achievements folder ID
+    participationFolderId: String, // Store the main Participation folder ID
     mentorEmail: String, // The mentor assigned to this student
 });
 
@@ -102,6 +103,19 @@ const achievementSchema = new mongoose.Schema({
 
 const Submission = mongoose.model('Submission', submissionSchema);
 const Achievement = mongoose.model('Achievement', achievementSchema);
+
+const participationSchema = new mongoose.Schema({
+    studentEmail: String,
+    organizerEmail: String,
+    genre: String,
+    title: String,
+    eventDate: Date,
+    files: [String], // Drive file IDs
+    status: { type: String, default: 'pending' }, // pending, approved, rejected
+    pointsAwarded: { type: Number, default: 0 },
+    submittedAt: { type: Date, default: Date.now }
+});
+const Participation = mongoose.model('Participation', participationSchema);
 
 const achievementGenreSchema = new mongoose.Schema({
     name: { type: String, unique: true },
@@ -803,10 +817,95 @@ app.post('/api/submit-achievement', upload.array('files'), async (req, res) => {
 });
 
 app.post('/api/verify-achievement', async (req, res) => {
-    const { id, status, points } = req.body;
+    const { id, status, rank } = req.body;
     try {
-        await Achievement.findByIdAndUpdate(id, { status, pointsAwarded: status === 'approved' ? points : 0 });
+        let pts = 0;
+        if(status === 'approved') {
+            if(rank === '1st Place') pts = 10;
+            else if(rank === '2nd Place') pts = 7;
+            else if(rank === '3rd Place') pts = 5;
+            else pts = 3; // Special Prize
+        }
+        await Achievement.findByIdAndUpdate(id, { status, pointsAwarded: pts });
         res.json({ success: true });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+});
+
+app.post('/api/verify-participation', async (req, res) => {
+    const { id, status } = req.body;
+    try {
+        await Participation.findByIdAndUpdate(id, { status, pointsAwarded: status === 'approved' ? 10 : 0 });
+        res.json({ success: true });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+});
+
+app.get('/api/participations', async (req, res) => {
+    const { studentEmail, organizerEmail, mentorEmail } = req.query;
+    try {
+        let query = {};
+        if (organizerEmail) query.organizerEmail = organizerEmail;
+        if (studentEmail) query.studentEmail = studentEmail;
+        else if (mentorEmail) {
+            const studentsWithField = await User.find({ mentorEmail, role: 'student' }).select('email');
+            const invites = await Invitation.find({ inviterEmail: mentorEmail, role: 'student', status: 'accepted' });
+            const studentEmails = [...new Set([...studentsWithField.map(s => s.email), ...invites.map(i => i.email)])];
+            query.studentEmail = { $in: studentEmails };
+        }
+        const participations = await Participation.find(query).sort({ submittedAt: -1 });
+        res.json({ success: true, participations });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+});
+
+app.post('/api/submit-participation', upload.array('files'), async (req, res) => {
+    const { studentEmail, organizerEmail, genre, title, eventDate } = req.body;
+    try {
+        const student = await User.findOne({ email: studentEmail });
+        if (!student || !student.refreshToken) return res.status(400).json({ success: false, error: 'Drive permissions missing.' });
+
+        const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+        oauth2Client.setCredentials({ refresh_token: student.refreshToken });
+        const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+        const date = new Date(eventDate);
+        const y = date.getFullYear().toString();
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const d = date.getDate().toString().padStart(2, '0');
+
+        const rootId = await getDriveFolder(drive, 'Participation');
+        const genreId = await getDriveFolder(drive, genre, rootId);
+        const yearId = await getDriveFolder(drive, y, genreId);
+        const monthId = await getDriveFolder(drive, m, yearId);
+        const dayId = await getDriveFolder(drive, d, monthId);
+
+        if (!student.participationFolderId) {
+            await User.findByIdAndUpdate(student._id, { participationFolderId: rootId });
+        }
+
+        const shareWith = [organizerEmail];
+        const mentorInvite = await Invitation.findOne({ email: studentEmail, status: 'accepted' });
+        if (mentorInvite && mentorInvite.inviterEmail !== organizerEmail) shareWith.push(mentorInvite.inviterEmail);
+
+        for (const email of shareWith) {
+            try {
+                await drive.permissions.create({
+                    fileId: rootId,
+                    requestBody: { role: 'reader', type: 'user', emailAddress: email }
+                });
+            } catch (e) {}
+        }
+
+        const files = [];
+        for (const file of req.files) {
+            const response = await drive.files.create({
+                requestBody: { name: file.originalname, parents: [dayId] },
+                media: { mimeType: file.mimetype, body: Readable.from(file.buffer) }
+            });
+            files.push(response.data.id);
+        }
+
+        const p = new Participation({ studentEmail, organizerEmail, genre, title, eventDate, files });
+        await p.save();
+        res.json({ success: true, participation: p });
     } catch (error) { res.status(500).json({ success: false, error: error.message }); }
 });
 
