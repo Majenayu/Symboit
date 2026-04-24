@@ -819,14 +819,43 @@ app.post('/api/submit-achievement', upload.array('files'), async (req, res) => {
 app.post('/api/verify-achievement', async (req, res) => {
     const { id, status, rank } = req.body;
     try {
+        const ach = await Achievement.findById(id);
+        if(!ach) return res.status(404).json({ success: false, error: 'Achievement not found' });
+
         let pts = 0;
         if(status === 'approved') {
             if(rank === '1st Place') pts = 10;
             else if(rank === '2nd Place') pts = 7;
             else if(rank === '3rd Place') pts = 5;
             else pts = 3; // Special Prize
+
+            // AUTO-CREATE PARTICIPATION (Achievement also counts as Participation)
+            const existingPart = await Participation.findOne({ 
+                studentEmail: ach.studentEmail, 
+                genre: ach.genre, 
+                eventDate: ach.eventDate,
+                title: 'Participation (from Achievement)'
+            });
+            
+            if(!existingPart) {
+                const p = new Participation({
+                    studentEmail: ach.studentEmail,
+                    organizerEmail: ach.organizerEmail,
+                    genre: ach.genre,
+                    title: 'Participation (from Achievement)',
+                    eventDate: ach.eventDate,
+                    files: ach.files.map(f => f.id),
+                    status: 'approved',
+                    pointsAwarded: 10
+                });
+                await p.save();
+            }
         }
-        await Achievement.findByIdAndUpdate(id, { status, pointsAwarded: pts });
+        
+        ach.status = status;
+        ach.pointsAwarded = pts;
+        await ach.save();
+        
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false, error: error.message }); }
 });
