@@ -11,7 +11,7 @@ const stream = require('stream');
 const cron = require('node-cron');
 const dotenv = require('dotenv');
 const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle } = require('docx');
-const puppeteer = require('puppeteer');
+const PDFDocument = require('pdfkit');
 dotenv.config();
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -1204,68 +1204,69 @@ app.post('/api/report/generate', async (req, res) => {
             return res.send(buffer);
 
         } else if (format === 'pdf') {
-            let html = `
-            <html>
-            <head>
-                <style>
-                    body { font-family: sans-serif; padding: 40px; }
-                    .page { page-break-after: always; min-height: 100vh; position: relative; }
-                    .header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 30px; }
-                    .title { text-align: center; font-size: 24px; font-weight: bold; margin: 40px 0; text-decoration: underline; }
-                    .details { line-height: 1.8; margin-bottom: 30px; }
-                    .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 40px; }
-                    .photo-single { text-align: center; margin-top: 40px; }
-                    img { max-width: 100%; border-radius: 8px; }
-                </style>
-            </head>
-            <body>`;
+            const doc = new PDFDocument({ margin: 40 });
+            const chunks = [];
+            doc.on('data', chunk => chunks.push(chunk));
+            
+            for (let i = 0; i < data.length; i++) {
+                const item = data[i];
+                if (i > 0) doc.addPage();
 
-            for (const item of data) {
+                // Header
+                doc.fontSize(12).font('Helvetica-Bold').text(student.name || studentEmail.split('@')[0], 40, 40);
+                doc.fontSize(10).font('Helvetica').text(studentEmail, 40, 40, { align: 'right' });
+                doc.moveDown(2);
+
+                // Title
+                doc.fontSize(18).font('Helvetica-Bold').text(reportTitle, { align: 'center', underline: true });
+                doc.moveDown(2);
+
+                // Details
+                doc.fontSize(10).font('Helvetica-Bold').text('Activity: ', { continued: true }).font('Helvetica').text(item.activityTitle || item.title || item.genre);
+                doc.font('Helvetica-Bold').text('Date: ', { continued: true }).font('Helvetica').text(new Date(item.eventDate).toLocaleDateString());
+                doc.font('Helvetica-Bold').text('Points Awarded: ', { continued: true }).font('Helvetica').text((item.pointsAwarded || 10).toString() + " PTS");
+                doc.moveDown();
+                doc.font('Helvetica-Bold').text('Description: ', { continued: true }).font('Helvetica').text("This activity confirms the student's involvement and verified contribution as per the institutional standards. The proof of work attached below has been reviewed and approved by the department mentor.");
+                doc.moveDown(2);
+
+                // Photos
                 const itemFiles = item.files || [];
-                const base64Photos = [];
+                const photoBuffers = [];
                 for (const f of itemFiles) {
                     const id = typeof f === 'string' ? f : f.id;
                     const buf = await fetchDriveImage(drive, id);
-                    if (buf) base64Photos.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
+                    if (buf) photoBuffers.push(buf);
                 }
 
-                html += `
-                <div class="page">
-                    <div class="header">
-                        <div style="font-weight:bold;">${student.name || studentEmail.split('@')[0]}</div>
-                        <div>${studentEmail}</div>
-                    </div>
-                    <div class="title">${reportTitle}</div>
-                    <div class="details">
-                        <b>Activity:</b> ${item.activityTitle || item.title || item.genre}<br>
-                        <b>Date:</b> ${new Date(item.eventDate).toLocaleDateString()}<br>
-                        <b>Points Awarded:</b> ${item.pointsAwarded || 10} PTS<br><br>
-                        <b>Description:</b> This activity confirms the student's involvement and verified contribution as per the institutional standards. The proof of work attached below has been reviewed and approved by the department mentor.
-                    </div>
-                    ${base64Photos.length === 1 ? `
-                        <div class="photo-single"><img src="${base64Photos[0]}" style="width: 80%;"></div>
-                    ` : `
-                        <div class="photo-grid">
-                            ${base64Photos.map(p => `<img src="${p}">`).join('')}
-                        </div>
-                    `}
-                </div>`;
+                if (photoBuffers.length > 0) {
+                    const imgWidth = 220;
+                    const imgHeight = 160;
+                    const startY = doc.y;
+                    
+                    for (let j = 0; j < photoBuffers.length; j++) {
+                        const col = j % 2;
+                        const row = Math.floor(j / 2);
+                        const x = 40 + col * (imgWidth + 20);
+                        const y = startY + row * (imgHeight + 20);
+                        
+                        try {
+                            doc.image(photoBuffers[j], x, y, { width: imgWidth, height: imgHeight });
+                        } catch (e) {
+                            console.error('PDF Image insertion error:', e.message);
+                        }
+                    }
+                }
             }
 
-            html += `</body></html>`;
-
-            const browser = await puppeteer.launch({ 
-                headless: "new",
-                args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+            doc.end();
+            
+            doc.on('end', () => {
+                const result = Buffer.concat(chunks);
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `attachment; filename=${type}_report.pdf`);
+                res.send(result);
             });
-            const page = await browser.newPage();
-            await page.setContent(html, { waitUntil: 'networkidle0' });
-            const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-            await browser.close();
-
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=${type}_report.pdf`);
-            return res.send(pdfBuffer);
+            return;
         }
 
     } catch (error) {
