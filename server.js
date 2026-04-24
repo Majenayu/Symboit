@@ -88,7 +88,7 @@ const submissionSchema = new mongoose.Schema({
     submittedAt: { type: Date, default: Date.now },
     status: { type: String, default: 'pending' },
     pointsAwarded: { type: Number, default: 0 },
-    files: [{ id: String, viewLink: String }]
+    files: [{ id: String, driveFileId: String, viewLink: String, name: String }]
 });
 
 const achievementSchema = new mongoose.Schema({
@@ -1092,7 +1092,7 @@ app.post('/api/report/generate', async (req, res) => {
             data = await Submission.find({ 
                 studentEmail: studentEmail.toLowerCase(), 
                 status: 'approved' 
-            }).sort({ eventDate: 1 });
+            }).lean().sort({ eventDate: 1 });
         } else {
             const query = { 
                 studentEmail: studentEmail.toLowerCase(), 
@@ -1102,10 +1102,10 @@ app.post('/api/report/generate', async (req, res) => {
 
             if (type === 'ach') {
                 reportTitle = "Achievement Node Report";
-                data = await Achievement.find(query).sort({ eventDate: 1 });
+                data = await Achievement.find(query).lean().sort({ eventDate: 1 });
             } else if (type === 'part') {
                 reportTitle = "Participation Node Report";
-                data = await Participation.find(query).sort({ eventDate: 1 });
+                data = await Participation.find(query).lean().sort({ eventDate: 1 });
             }
         }
 
