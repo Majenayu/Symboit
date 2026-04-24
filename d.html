@@ -35,7 +35,7 @@
         .list-item { background: rgba(255,255,255,0.02); padding: 18px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
 
         /* Mobile Container */
-        .mobile-container { display: block; padding: 1rem 1.5rem 7.5rem 1.5rem; }
+        .mobile-container { display: block; padding: 1rem 1.5rem 8.5rem 1.5rem; }
         .header-mobile { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0 2rem 0; }
         .view { display: none; }
         .view.active { display: block; }
@@ -49,16 +49,17 @@
         .student-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05); }
 
         /* Advanced Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(3, 0, 20, 0.95); backdrop-filter: blur(25px); height: 80px; display: flex; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; padding: 0 10px; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-dim); text-decoration: none; font-size: 0.65rem; cursor: pointer; transition: 0.3s; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(3, 0, 20, 0.98); backdrop-filter: blur(25px); height: 90px; display: flex; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; padding: 0 10px; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-dim); text-decoration: none; font-size: 0.75rem; cursor: pointer; transition: 0.3s; }
         .nav-item.active { color: var(--primary); }
+        .nav-item span:first-child { font-size: 1.6rem; } /* Larger Icons */
         
         /* Central Button */
-        .center-btn-wrap { position: relative; width: 80px; height: 80px; margin-top: -40px; }
-        .center-btn { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #ec4899); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.5); border: 5px solid #030014; cursor: pointer; position: absolute; left: 50%; transform: translateX(-50%); transition: 0.2s; }
+        .center-btn-wrap { position: relative; width: 90px; height: 90px; margin-top: -45px; }
+        .center-btn { width: 75px; height: 75px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #ec4899); display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 30px rgba(139, 92, 246, 0.5); border: 5px solid #030014; cursor: pointer; position: absolute; left: 50%; transform: translateX(-50%); transition: 0.2s; }
         .center-btn:active { transform: translateX(-50%) scale(0.9); }
-        .center-btn span { font-size: 1.8rem; }
-        .center-label { position: absolute; bottom: -25px; width: 100%; text-align: center; font-size: 0.7rem; font-weight: 600; color: var(--text-dim); }
+        .center-btn span { font-size: 2rem; }
+        .center-label { position: absolute; bottom: -30px; width: 100%; text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
 
         /* Shared Components */
         #message { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; z-index: 3000; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -119,42 +120,53 @@
     <!-- MOBILE VIEW -->
     <div class="mobile-container">
         <div class="header-mobile">
-            <div style="font-weight:600; font-size:1.1rem; letter-spacing:1px;">Symboit <span style="font-weight:300; color:var(--primary)">Org</span></div>
-            <a href="javascript:logout()" style="color:var(--danger); text-decoration:none; font-size:0.8rem; font-weight:600;">Logout</a>
+            <div style="font-weight:600; font-size:1.3rem; letter-spacing:1px;">Symboit <span style="font-weight:300; color:var(--primary)">Org</span></div>
+            <a href="javascript:logout()" style="color:var(--danger); text-decoration:none; font-size:1rem; font-weight:600;">Logout</a>
         </div>
 
         <div id="mob-view-aicte" class="view active">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
-                <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); font-weight:600;">AICTE PROGRESS</p>
-                <button onclick="openReportModal()" style="background:rgba(139, 92, 246, 0.1); border:1px solid rgba(139, 92, 246, 0.2); color:var(--primary); padding:6px 12px; border-radius:8px; font-size:0.65rem; font-weight:600; cursor:pointer;">📊 REPORTS</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                <p style="font-size:0.75rem; letter-spacing:2px; color:var(--primary); font-weight:600;">AICTE PROGRESS</p>
+                <button onclick="openReportModal()" style="background:rgba(139, 92, 246, 0.15); border:1px solid rgba(139, 92, 246, 0.3); color:var(--primary); padding:8px 16px; border-radius:10px; font-size:0.7rem; font-weight:600;">📊 REPORTS</button>
             </div>
             <div id="mob-aicte-list"></div>
         </div>
         
         <div id="mob-view-portfolio" class="view">
-            <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.2rem; font-weight:600;">PORTFOLIO NETWORK</p>
+            <p style="font-size:0.75rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.5rem; font-weight:600;">PORTFOLIO NETWORK</p>
             <div id="mob-portfolio-list"></div>
         </div>
         
         <div id="mob-view-mentors" class="view">
-            <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.2rem; font-weight:600;">MENTOR NETWORK</p>
-            <div class="mentor-card-mob" style="padding:1.2rem;">
-                <h4 style="margin-bottom:1rem; font-weight:400;">Invite Mentor</h4>
-                <input type="email" id="mob-invite-email" placeholder="Mentor Email" style="margin-bottom:10px;">
-                <button class="btn-primary" style="width:100%; border-radius:10px; padding:10px; justify-content:center;" onclick="sendInvite('mob')">Send Invitation</button>
+            <p style="font-size:0.75rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.5rem; font-weight:600;">MENTOR NETWORK</p>
+            <div class="mentor-card-mob" style="padding:1.5rem;">
+                <h4 style="margin-bottom:1rem; font-weight:400; font-size:1.1rem;">Invite Mentor</h4>
+                <input type="email" id="mob-invite-email" placeholder="Mentor Email" style="margin-bottom:12px;">
+                <button class="btn-primary" style="width:100%; border-radius:12px; padding:12px; justify-content:center;" onclick="sendInvite('mob')">Send Invitation</button>
             </div>
             <div id="mob-mentor-mgmt-list"></div>
         </div>
 
         <div id="mob-view-curr" class="view">
-            <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.2rem; font-weight:600;">CURRICULUM</p>
-            <div class="mentor-card-mob" style="padding:1.2rem;">
-                <h4 style="margin-bottom:1rem; font-weight:400;">Add Activity</h4>
+            <p style="font-size:0.75rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.5rem; font-weight:600;">CURRICULUM</p>
+            <div class="mentor-card-mob" style="padding:1.5rem;">
+                <h4 style="margin-bottom:1rem; font-weight:400; font-size:1.1rem;">Manage Activity</h4>
                 <form onsubmit="saveGenre(event, 'mob')">
                     <input type="hidden" id="mob-genre-id">
                     <input type="text" id="mob-g-title" placeholder="Title" required>
-                    <input type="number" id="mob-g-pts" placeholder="Points" required>
-                    <button type="submit" class="btn-primary" style="width:100%; border-radius:10px; padding:10px; justify-content:center;">Save</button>
+                    <textarea id="mob-g-desc" placeholder="Description" rows="2" style="margin-bottom:12px;"></textarea>
+                    <div style="display:flex; gap:10px;">
+                        <input type="number" id="mob-g-pts" placeholder="Points" required>
+                        <select id="mob-g-type">
+                            <option value="weeks">2-Week</option>
+                            <option value="event">Event</option>
+                        </select>
+                    </div>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; margin-bottom:15px;">
+                        <input type="checkbox" id="mob-g-rubric"> Priority Rubric
+                    </label>
+                    <button type="submit" class="btn-primary" style="width:100%; border-radius:12px; padding:12px; justify-content:center;">Save Activity</button>
+                    <button type="button" class="btn" style="width:100%; margin-top:8px; background:transparent; color:var(--text-dim); justify-content:center;" onclick="resetForm()">Cancel</button>
                 </form>
             </div>
             <div id="mob-genre-list"></div>
@@ -167,7 +179,7 @@
         <div class="nav-item" onclick="switchMobView('portfolio', this)"><span>🌟</span><span>Portfolio</span></div>
         
         <div class="center-btn-wrap">
-            <div class="center-btn" onclick="alert('Manage Events Triggered')"><span>📅</span></div>
+            <div class="center-btn" onclick="openReportModal()"><span>📅</span></div>
             <div class="center-label">EVENTS</div>
         </div>
         
@@ -252,7 +264,7 @@
                 if(myS.length === 0) return '';
                 const total = myS.reduce((acc, s) => acc + subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a, c) => a + (c.pointsAwarded || 10), 0), 0);
                 const perc = Math.min(100, Math.round((total / (myS.length * 100)) * 100));
-                return `<div class="mentor-card-mob"><div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;"><div class="circle-progress" style="--perc:${perc}%"><div class="circle-val">${perc}%</div></div><div><div style="font-weight:600; font-size:0.9rem;">${m.name||m.email.split('@')[0]}</div><div style="font-size:0.65rem; color:var(--text-dim);">Mentor • ${myS.length} Students</div></div></div>${myS.map(s => `<div class="student-row"><div style="font-size:0.8rem;">${s.name||s.email.split('@')[0]}</div><div style="display:flex; align-items:center; gap:10px;"><div style="font-size:0.75rem; font-weight:600; color:var(--primary);">${subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0)} PTS</div><a href="${s.driveRootFolderId?'https://drive.google.com/drive/folders/'+s.driveRootFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.driveRootFolderId?1:0.1}">📁</a></div></div>`).join('')}</div>`;
+                return `<div class="mentor-card-mob"><div style="display:flex; align-items:center; gap:1.2rem; margin-bottom:1.2rem;"><div class="circle-progress" style="--perc:${perc}%"><div class="circle-val">${perc}%</div></div><div><div style="font-weight:600; font-size:1rem;">${m.name||m.email.split('@')[0]}</div><div style="font-size:0.7rem; color:var(--text-dim);">Mentor • ${myS.length} Students</div></div></div>${myS.map(s => `<div class="student-row"><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:var(--primary);">${subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0)} PTS</div><a href="${s.driveRootFolderId?'https://drive.google.com/drive/folders/'+s.driveRootFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.driveRootFolderId?1:0.1}; font-size:1.4rem;">📁</a></div></div>`).join('')}</div>`;
             }).join('');
 
             // Portfolio (Merged ACH & PART)
@@ -260,35 +272,45 @@
                 const myS = students.filter(s => s.mentorEmail === m.email);
                 if(myS.length === 0) return '';
                 return `<div class="mentor-card-mob">
-                    <div style="font-weight:600; font-size:0.9rem; margin-bottom:1.2rem;">${m.name||m.email.split('@')[0]}</div>
+                    <div style="font-weight:600; font-size:1rem; margin-bottom:1.5rem;">${m.name||m.email.split('@')[0]}</div>
                     
-                    <p style="font-size:0.6rem; color:var(--gold); font-weight:600; margin-bottom:10px; letter-spacing:1px;">ACHIEVEMENTS</p>
+                    <p style="font-size:0.65rem; color:var(--gold); font-weight:600; margin-bottom:12px; letter-spacing:1px;">ACHIEVEMENTS</p>
                     ${myS.map(s => {
                         const pts = achs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                        return `<div class="student-row"><div><div style="font-size:0.8rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:10px;"><div style="font-size:0.75rem; font-weight:600; color:var(--gold);">${pts} PTS</div><a href="${s.achievementFolderId?'https://drive.google.com/drive/folders/'+s.achievementFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.achievementFolderId?1:0.1}">📁</a></div></div>`;
+                        return `<div class="student-row"><div><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:var(--gold);">${pts} PTS</div><a href="${s.achievementFolderId?'https://drive.google.com/drive/folders/'+s.achievementFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.achievementFolderId?1:0.1}; font-size:1.4rem;">📁</a></div></div>`;
                     }).join('')}
 
-                    <p style="font-size:0.6rem; color:#38bdf8; font-weight:600; margin:20px 0 10px 0; letter-spacing:1px;">PARTICIPATIONS</p>
+                    <p style="font-size:0.65rem; color:#38bdf8; font-weight:600; margin:25px 0 12px 0; letter-spacing:1px;">PARTICIPATIONS</p>
                     ${myS.map(s => {
                         const pts = parts.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                        return `<div class="student-row"><div><div style="font-size:0.8rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:10px;"><div style="font-size:0.75rem; font-weight:600; color:#38bdf8;">${pts} PTS</div><a href="${s.participationFolderId?'https://drive.google.com/drive/folders/'+s.participationFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.participationFolderId?1:0.1}">📁</a></div></div>`;
+                        return `<div class="student-row"><div><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:#38bdf8;">${pts} PTS</div><a href="${s.participationFolderId?'https://drive.google.com/drive/folders/'+s.participationFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.participationFolderId?1:0.1}; font-size:1.4rem;">📁</a></div></div>`;
                     }).join('')}
                 </div>`;
             }).join('');
 
             // Mentors Management (Mobile)
             document.getElementById('mob-mentor-mgmt-list').innerHTML = mentors.map(m => `
-                <div class="mentor-card-mob" style="padding:15px; display:flex; justify-content:space-between; align-items:center;">
-                    <div><div style="font-weight:600; font-size:0.9rem;">${m.name||m.email}</div><div style="font-size:0.65rem; color:var(--accent);">ACTIVE</div></div>
-                    <button class="btn-danger" style="padding:5px 10px; font-size:0.6rem; border-radius:8px;" onclick="deleteUser('${m._id}')">Remove</button>
+                <div class="mentor-card-mob" style="padding:18px; display:flex; justify-content:space-between; align-items:center;">
+                    <div><div style="font-weight:600; font-size:1rem;">${m.name||m.email}</div><div style="font-size:0.75rem; color:var(--accent);">ACTIVE</div></div>
+                    <button class="btn-danger" style="padding:6px 12px; font-size:0.75rem; border-radius:10px;" onclick="deleteUser('${m._id}')">Remove</button>
                 </div>`).join('') + invites.filter(i => i.status === 'pending').map(i => `
-                <div class="mentor-card-mob" style="padding:15px; display:flex; justify-content:space-between; align-items:center; border:1px dashed var(--gold);">
-                    <div><div style="font-weight:600; font-size:0.9rem; color:var(--text-dim);">${i.email}</div><div style="font-size:0.6rem; color:var(--gold);">PENDING</div></div>
-                    <button class="btn-danger" style="padding:5px 10px; font-size:0.6rem; border-radius:8px;" onclick="deleteInvite('${i._id}')">Cancel</button>
+                <div class="mentor-card-mob" style="padding:18px; display:flex; justify-content:space-between; align-items:center; border:1px dashed var(--gold);">
+                    <div><div style="font-weight:600; font-size:1rem; color:var(--text-dim);">${i.email}</div><div style="font-size:0.7rem; color:var(--gold);">PENDING</div></div>
+                    <button class="btn-danger" style="padding:6px 12px; font-size:0.75rem; border-radius:10px;" onclick="deleteInvite('${i._id}')">Cancel</button>
                 </div>`).join('');
 
-            // Curriculum
-            document.getElementById('mob-genre-list').innerHTML = genres.map(g => `<div class="mentor-card-mob" style="padding:12px 15px; display:flex; justify-content:space-between; align-items:center;"><div style="font-size:0.8rem; font-weight:600;">${g.title}</div><button onclick="editGenre('${g._id}','${g.title}','',${g.pts},'','','mob')" style="background:none; border:none; color:var(--primary); font-size:0.75rem;">Edit</button></div>`).join('');
+            // Curriculum (Mobile) - Updated to show more details and delete
+            document.getElementById('mob-genre-list').innerHTML = genres.map(g => `
+                <div class="mentor-card-mob" style="padding:15px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:600; font-size:1rem; margin-bottom:4px;">${g.title} <span style="color:var(--primary); font-size:0.8rem;">${g.pts} PTS</span></div>
+                        <div style="font-size:0.75rem; color:var(--text-dim);">${g.type === 'weeks' ? '2-Week' : 'Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
+                    </div>
+                    <div style="display:flex; gap:15px;">
+                        <button onclick="editGenre('${g._id}','${g.title}','${g.desc}',${g.pts},'${g.type}',${g.isRubric},'mob')" style="background:none; border:none; color:var(--primary); font-size:0.85rem; font-weight:600;">Edit</button>
+                        <button onclick="deleteGenre('${g._id}')" style="background:none; border:none; color:var(--danger); font-size:0.85rem; font-weight:600;">Del</button>
+                    </div>
+                </div>`).join('');
         }
 
         async function saveGenre(e, prefix) {
@@ -297,28 +319,25 @@
             const data = {
                 organizerEmail: user.email,
                 title: document.getElementById(`${prefix}-g-title`).value,
-                desc: prefix === 'desk' ? document.getElementById('desk-g-desc').value : '',
+                desc: document.getElementById(`${prefix}-g-desc`).value,
                 pts: document.getElementById(`${prefix}-g-pts`).value,
-                type: prefix === 'desk' ? document.getElementById('desk-g-type').value : 'event',
-                isRubric: prefix === 'desk' ? document.getElementById('desk-g-rubric').checked : false
+                type: document.getElementById(`${prefix}-g-type`).value,
+                isRubric: document.getElementById(`${prefix}-g-rubric`).checked
             };
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/genres/${id}` : '/api/genres';
             await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            document.getElementById(`${prefix}-genre-id`).value = '';
-            if(prefix==='mob') document.getElementById('mob-g-title').value = '';
-            sync(); showMessage('Saved! ✨');
+            resetForm();
+            sync(); showMessage('Activity Saved! ✨');
         }
 
         function editGenre(id, title, desc, pts, type, isRubric, prefix) {
             document.getElementById(`${prefix}-genre-id`).value = id;
             document.getElementById(`${prefix}-g-title`).value = title;
+            document.getElementById(`${prefix}-g-desc`).value = desc || '';
             document.getElementById(`${prefix}-g-pts`).value = pts;
-            if(prefix === 'desk') {
-                document.getElementById('desk-g-desc').value = desc;
-                document.getElementById('desk-g-type').value = type;
-                document.getElementById('desk-g-rubric').checked = isRubric;
-            }
+            document.getElementById(`${prefix}-g-type`).value = type || 'weeks';
+            document.getElementById(`${prefix}-g-rubric`).checked = isRubric || false;
             window.scrollTo(0,0);
         }
 
@@ -358,6 +377,22 @@
                 closeReportModal(); showMessage('Report Downloaded! 📊');
             } catch(e) { showMessage('Error generating report'); }
             finally { btn.innerText = "Generate Portfolio Report"; btn.disabled = false; }
+        }
+
+        function resetForm() {
+            ['desk', 'mob'].forEach(p => {
+                const idEl = document.getElementById(`${p}-genre-id`);
+                if(idEl) idEl.value = '';
+                const form = document.getElementById(`${p}-genre-form`);
+                if(form) form.reset();
+                // Individual fields for mob as it doesn't have a formal form wrap for all fields
+                if(p === 'mob') {
+                    document.getElementById('mob-g-title').value = '';
+                    document.getElementById('mob-g-desc').value = '';
+                    document.getElementById('mob-g-pts').value = '';
+                    document.getElementById('mob-g-rubric').checked = false;
+                }
+            });
         }
 
         function showMessage(txt) { const m = document.getElementById('message'); m.innerText = txt; m.style.display = 'block'; m.style.background = 'var(--primary)'; m.style.color = 'white'; setTimeout(()=>m.style.display='none',3000); }
