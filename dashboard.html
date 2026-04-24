@@ -190,8 +190,11 @@
 
         <!-- Tab 5: Feed -->
         <div id="tab-feed" class="tab-content">
-            <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin-bottom:15px;">MY FEED</p>
-            <div id="live-feed-list"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin:0;">GLOBAL FEED</p>
+                <button onclick="openEventModal()" style="background:rgba(139, 92, 246, 0.15); border:1px solid rgba(139, 92, 246, 0.3); color:var(--primary); padding:8px 16px; border-radius:10px; font-size:0.7rem; font-weight:600;">+ POST</button>
+            </div>
+            <div id="live-feed-list" style="display:flex; flex-direction:column; gap:20px;"></div>
         </div>
     </div>
 
@@ -249,6 +252,18 @@
         </div>
     </div>
 
+    <!-- Event Posting Modal -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content" style="border:1px solid var(--primary);">
+            <span class="close-btn" onclick="closeEventModal()">&times;</span>
+            <h2 style="margin-bottom:1.5rem; font-weight:400;">Post to Global Feed</h2>
+            <textarea id="event-desc" placeholder="What's happening?" rows="3" style="width:100%; padding:15px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; font-family:inherit; margin-bottom:15px;"></textarea>
+            <label style="font-size:0.75rem; color:var(--primary); font-weight:600; display:block; margin-bottom:8px;">ATTACH IMAGE (REQUIRED)</label>
+            <input type="file" id="event-img" accept="image/*" style="width:100%; padding:15px; background:rgba(0,0,0,0.4); border:1px dashed rgba(255,255,255,0.2); border-radius:12px; color:white; margin-bottom:20px;">
+            <button class="btn-primary" id="post-event-btn" style="width:100%; justify-content:center; padding:15px; border-radius:12px;" onclick="postEvent()">Post Event</button>
+        </div>
+    </div>
+
     <script>
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'mentor') window.location.href = '/';
@@ -263,12 +278,13 @@
 
         async function sync() {
             try {
-                const [uRes, sRes, aRes, pRes, iRes] = await Promise.all([
+                const [uRes, sRes, aRes, pRes, iRes, evRes] = await Promise.all([
                     fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student&mentorEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/submissions?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/achievements?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/participations?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json()),
-                    fetch(`/api/invitations?organizerEmail=${user.organizerEmail}&inviterEmail=${user.email}`).then(r => r.json())
+                    fetch(`/api/invitations?organizerEmail=${user.organizerEmail}&inviterEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/global-events?organizerEmail=${user.organizerEmail}`).then(r => r.json())
                 ]);
                 
                 const students = uRes.users || [];
@@ -276,11 +292,12 @@
                 const achs = aRes.achievements || [];
                 const parts = pRes.participations || [];
                 const invites = iRes.invites || [];
+                const events = evRes.events || [];
 
                 renderAICTE(students, subs);
                 renderPortfolio(students, achs, parts);
                 renderNetwork(invites);
-                renderFeed(subs, achs, parts);
+                renderFeed(events);
 
                 // Mentor Progress
                 const totalEarned = [...subs, ...achs, ...parts].filter(i => i.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
@@ -383,15 +400,23 @@
                 </div>`).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No pending invitations.</p>';
         }
 
-        function renderFeed(subs, achs, parts) {
-            const feed = [...subs, ...achs, ...parts].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 15);
-            document.getElementById('live-feed-list').innerHTML = feed.map(item => {
-                const t = item.rank ? 'ACH' : (item.activityTitle ? 'AICTE' : 'PART');
-                return `<div style="padding:12px; border-bottom:1px solid var(--border);">
-                    <div style="font-size:0.85rem;"><b>${item.studentEmail.split('@')[0]}</b>: ${item.title || item.activityTitle || 'Proof'}</div>
-                    <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px;">${new Date(item.submittedAt).toLocaleTimeString()} • ${t}</div>
-                </div>`;
-            }).join('');
+        function renderFeed(events) {
+            document.getElementById('live-feed-list').innerHTML = events.map(ev => `
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; overflow:hidden;">
+                    <div style="padding:15px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1.2rem;">${ev.authorName.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <div style="font-weight:600;">${ev.authorName}</div>
+                            <div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">${ev.authorRole} • ${new Date(ev.createdAt).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    <div style="padding:15px; font-size:0.9rem; line-height:1.5;">${ev.description}</div>
+                    ${ev.viewLink ? `<img src="${ev.viewLink.replace('view?usp=drivesdk', 'preview')}" style="width:100%; max-height:400px; object-fit:cover; border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05);">` : ''}
+                    <div style="padding:15px; display:flex; justify-content:flex-end;">
+                        ${ev.downloadLink ? `<a href="${ev.downloadLink}" target="_blank" style="text-decoration:none; color:var(--primary); font-size:0.8rem; font-weight:600; padding:8px 16px; background:rgba(139, 92, 246, 0.1); border-radius:8px;">📥 Download Image</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
         }
 
         async function verify(id, status, type, title) {
@@ -409,6 +434,40 @@
         }
 
         async function deleteInvite(id) { if(confirm('Cancel invite?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); sync(); } }
+        
+        function openEventModal() { document.getElementById('event-modal').style.display = 'flex'; }
+        function closeEventModal() { document.getElementById('event-modal').style.display = 'none'; }
+
+        async function postEvent() {
+            const desc = document.getElementById('event-desc').value;
+            const img = document.getElementById('event-img').files[0];
+            if (!desc || !img) return alert("Description and Image are required!");
+
+            const btn = document.getElementById('post-event-btn');
+            btn.innerText = 'Posting...'; btn.disabled = true;
+
+            const fd = new FormData();
+            fd.append('organizerEmail', user.organizerEmail);
+            fd.append('authorEmail', user.email);
+            fd.append('authorName', user.name || user.email.split('@')[0]);
+            fd.append('authorRole', 'mentor');
+            fd.append('description', desc);
+            fd.append('image', img);
+
+            try {
+                await fetch('/api/global-events', { method: 'POST', body: fd });
+                closeEventModal();
+                sync();
+                showMessage('Event Posted Successfully! 🎉');
+            } catch (e) {
+                console.error(e);
+                alert("Failed to post event");
+            } finally {
+                btn.innerText = 'Post Event'; btn.disabled = false;
+                document.getElementById('event-desc').value = '';
+                document.getElementById('event-img').value = '';
+            }
+        }
         function openReportModal() { 
             document.getElementById('report-modal').style.display = 'flex'; 
             const now = new Date();

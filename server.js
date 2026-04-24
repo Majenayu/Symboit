@@ -126,6 +126,19 @@ const achievementGenreSchema = new mongoose.Schema({
 });
 const AchievementGenre = mongoose.model('AchievementGenre', achievementGenreSchema);
 
+const globalEventSchema = new mongoose.Schema({
+    organizerEmail: String,
+    authorEmail: String,
+    authorName: String,
+    authorRole: String, // organizer, mentor, student
+    description: String,
+    driveFileId: String,
+    viewLink: String,
+    downloadLink: String,
+    createdAt: { type: Date, default: Date.now }
+});
+const GlobalEvent = mongoose.model('GlobalEvent', globalEventSchema);
+
 // Initialize Default Achievement Genres
 async function initAchGenres() {
     const defaults = [
@@ -1328,6 +1341,76 @@ app.post('/api/report/generate', async (req, res) => {
 
     } catch (error) {
         console.error('Report generation error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- GLOBAL EVENTS FEED ---
+
+app.post('/api/global-events', upload.single('image'), async (req, res) => {
+    const { organizerEmail, authorEmail, authorName, authorRole, description } = req.body;
+    try {
+        // 1. Get Organizer's Refresh Token
+        const organizer = await User.findOne({ email: organizerEmail, role: 'organizer' });
+        if (!organizer || !organizer.refreshToken) {
+            return res.status(400).json({ success: false, error: 'Organizer has not granted Drive permissions.' });
+        }
+
+        const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+        oauth2Client.setCredentials({ refresh_token: organizer.refreshToken });
+        const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+        // 2. Get/Create "Events" Folder
+        const eventsFolderId = await getDriveFolder(drive, 'Events');
+
+        // 3. Upload Image
+        let driveFileId = null;
+        let viewLink = null;
+        let downloadLink = null;
+
+        if (req.file) {
+            const bufferStream = new stream.PassThrough();
+            bufferStream.end(req.file.buffer);
+
+            const driveRes = await drive.files.create({
+                requestBody: {
+                    name: `${authorName.replace(/\s+/g,'_')}_${Date.now()}_Event`,
+                    parents: [eventsFolderId]
+                },
+                media: { mimeType: req.file.mimetype, body: bufferStream },
+                fields: 'id, webViewLink, webContentLink'
+            });
+
+            driveFileId = driveRes.data.id;
+            viewLink = driveRes.data.webViewLink;
+            downloadLink = driveRes.data.webContentLink; // direct download
+
+            // Make public to ANYONE with link
+            await drive.permissions.create({
+                fileId: driveFileId,
+                requestBody: { type: 'anyone', role: 'reader' }
+            });
+        }
+
+        // 4. Save to DB
+        const newEvent = new GlobalEvent({
+            organizerEmail, authorEmail, authorName, authorRole, description, driveFileId, viewLink, downloadLink
+        });
+        await newEvent.save();
+
+        res.json({ success: true, event: newEvent });
+    } catch (error) {
+        console.error('[EVENTS] Posting error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/global-events', async (req, res) => {
+    const { organizerEmail } = req.query;
+    try {
+        const events = await GlobalEvent.find({ organizerEmail }).sort({ createdAt: -1 });
+        res.json({ success: true, events });
+    } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });

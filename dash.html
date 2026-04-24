@@ -133,6 +133,14 @@
                 <div class="section-title">Your Participation Log</div>
                 <div id="part-log" class="activity-grid"></div>
             </div>
+
+            <div id="events-content" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <h2 style="font-weight:400; font-size:1.5rem;">Global Events Feed</h2>
+                    <button class="btn" style="background:var(--primary); color:white; padding:10px 20px; font-weight:600; border-radius:12px;" onclick="openEventModal()">+ Post Event</button>
+                </div>
+                <div id="desk-event-feed" style="display:flex; flex-direction:column; gap:20px; max-width:800px;"></div>
+            </div>
         </div>
     </div>
 
@@ -168,8 +176,11 @@
                 <div id="m-ach-log"></div>
             </div>
             <div id="m-view-events" class="mobile-tab-view">
-                <div class="section-title">Institutional Events</div>
-                <div id="m-event-list"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <div class="section-title" style="margin:0;">Global Feed</div>
+                    <button class="btn" style="background:rgba(139, 92, 246, 0.15); color:var(--primary); border:1px solid rgba(139, 92, 246, 0.3); padding:8px 16px; font-weight:600; border-radius:10px; font-size:0.75rem;" onclick="openEventModal()">+ POST</button>
+                </div>
+                <div id="m-event-feed" style="display:flex; flex-direction:column; gap:20px;"></div>
             </div>
             <div id="m-view-part" class="mobile-tab-view">
                 <div class="progress-section" style="padding:1.2rem; border-color:var(--blue);">
@@ -240,6 +251,18 @@
         </div>
     </div>
 
+    <!-- Event Posting Modal -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content" style="border:1px solid var(--primary);">
+            <span class="close-btn" onclick="closeEventModal()">&times;</span>
+            <h2 style="margin-bottom:1.5rem; font-weight:400;">Post to Global Feed</h2>
+            <textarea id="event-desc" placeholder="What's happening?" rows="3" style="width:100%; padding:15px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; font-family:inherit; margin-bottom:15px;"></textarea>
+            <label style="font-size:0.75rem; color:var(--primary); font-weight:600; display:block; margin-bottom:8px;">ATTACH IMAGE (REQUIRED)</label>
+            <input type="file" id="event-img" accept="image/*" style="width:100%; padding:15px; background:rgba(0,0,0,0.4); border:1px dashed rgba(255,255,255,0.2); border-radius:12px; color:white; margin-bottom:20px;">
+            <button class="btn" id="post-event-btn" style="width:100%; justify-content:center; padding:15px; background:var(--primary); color:white; border-radius:12px; font-weight:600; border:none; cursor:pointer;" onclick="postEvent()">Post Event</button>
+        </div>
+    </div>
+
     <script>
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'student') window.location.href = '/';
@@ -250,8 +273,8 @@
 
         function switchTab(t) {
             document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-            document.getElementById(`tab-${t}`).classList.add('active');
-            ['aicte','ach','part'].forEach(v => document.getElementById(`${v}-content`).style.display = v === t ? 'block' : 'none');
+            if(document.getElementById(`tab-${t}`)) document.getElementById(`tab-${t}`).classList.add('active');
+            ['aicte','ach','part','events'].forEach(v => document.getElementById(`${v}-content`).style.display = v === t ? 'block' : 'none');
         }
 
         function switchMView(v, el) {
@@ -263,12 +286,13 @@
 
         async function sync() {
             try {
-                const [gRes, sRes, aRes, pRes, agRes] = await Promise.all([
+                const [gRes, sRes, aRes, pRes, agRes, evRes] = await Promise.all([
                     fetch(`/api/genres?organizerEmail=${user.organizerEmail}`).then(r => r.json()),
                     fetch(`/api/submissions?studentEmail=${user.email}&organizerEmail=${user.organizerEmail}`).then(r => r.json()),
                     fetch(`/api/achievements?studentEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/participations?studentEmail=${user.email}`).then(r => r.json()),
-                    fetch(`/api/achievement-genres`).then(r => r.json())
+                    fetch(`/api/achievement-genres`).then(r => r.json()),
+                    fetch(`/api/global-events?organizerEmail=${user.organizerEmail}`).then(r => r.json())
                 ]);
                 
                 rubrics = (gRes.genres || []).filter(g => g.isRubric);
@@ -277,9 +301,11 @@
                 achievements = aRes.achievements || [];
                 participations = pRes.participations || [];
                 achievementGenres = agRes.genres || [];
+                const events = evRes.events || [];
 
                 renderDesktop();
                 renderMobile();
+                renderFeed(events);
             } catch (e) { console.error(e); }
         }
 
@@ -333,6 +359,62 @@
             document.getElementById('m-part-val').innerText = participations.filter(p=>p.status==='approved').length * 10;
             document.getElementById('m-event-list').innerHTML = rubrics.map(r => `<div class="activity-card" onclick="openModal('${r._id}', true)"><h4>${r.title}</h4></div>`).join('');
         }
+
+        function renderFeed(events) {
+            const html = events.map(ev => `
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; overflow:hidden;">
+                    <div style="padding:15px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1.2rem;">${ev.authorName.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <div style="font-weight:600;">${ev.authorName}</div>
+                            <div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">${ev.authorRole} • ${new Date(ev.createdAt).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    <div style="padding:15px; font-size:0.9rem; line-height:1.5;">${ev.description}</div>
+                    ${ev.viewLink ? `<img src="${ev.viewLink.replace('view?usp=drivesdk', 'preview')}" style="width:100%; max-height:400px; object-fit:cover; border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05);">` : ''}
+                    <div style="padding:15px; display:flex; justify-content:flex-end;">
+                        ${ev.downloadLink ? `<a href="${ev.downloadLink}" target="_blank" style="text-decoration:none; color:var(--primary); font-size:0.8rem; font-weight:600; padding:8px 16px; background:rgba(139, 92, 246, 0.1); border-radius:8px;">📥 Download Image</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('desk-event-feed').innerHTML = html;
+            document.getElementById('m-event-feed').innerHTML = html;
+        }
+
+        async function postEvent() {
+            const desc = document.getElementById('event-desc').value;
+            const img = document.getElementById('event-img').files[0];
+            if (!desc || !img) return alert("Description and Image are required!");
+
+            const btn = document.getElementById('post-event-btn');
+            btn.innerText = 'Posting...'; btn.disabled = true;
+
+            const fd = new FormData();
+            fd.append('organizerEmail', user.organizerEmail);
+            fd.append('authorEmail', user.email);
+            fd.append('authorName', user.name || user.email.split('@')[0]);
+            fd.append('authorRole', 'student');
+            fd.append('description', desc);
+            fd.append('image', img);
+
+            try {
+                await fetch('/api/global-events', { method: 'POST', body: fd });
+                closeEventModal();
+                sync();
+                showMessage('Event Posted Successfully! 🎉');
+            } catch (e) {
+                console.error(e);
+                alert("Failed to post event");
+            } finally {
+                btn.innerText = 'Post Event'; btn.disabled = false;
+                document.getElementById('event-desc').value = '';
+                document.getElementById('event-img').value = '';
+            }
+        }
+
+        function openEventModal() { document.getElementById('event-modal').style.display = 'flex'; }
+        function closeEventModal() { document.getElementById('event-modal').style.display = 'none'; }
 
         async function addNewGenre() {
             const name = prompt("Genre Name:"); if(!name) return;
