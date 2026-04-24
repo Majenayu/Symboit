@@ -1372,7 +1372,12 @@ app.post('/api/global-events', upload.single('image'), async (req, res) => {
             const bufferStream = new stream.PassThrough();
             bufferStream.end(req.file.buffer);
 
-            const ext = req.file.originalname.substring(req.file.originalname.lastIndexOf('.'));
+            let ext = '';
+            if (req.file.originalname && req.file.originalname.includes('.')) {
+                ext = req.file.originalname.substring(req.file.originalname.lastIndexOf('.'));
+            } else if (req.file.mimetype) {
+                ext = '.' + req.file.mimetype.split('/')[1].replace('jpeg', 'jpg');
+            }
             const driveRes = await drive.files.create({
                 requestBody: {
                     name: `${authorName.replace(/\s+/g,'_')}_${Date.now()}_Event${ext}`,
