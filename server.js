@@ -681,8 +681,7 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
             }
 
             uploadedFiles.push({
-                name: file.originalname,
-                driveFileId: driveRes.data.id,
+                id: driveRes.data.id,
                 viewLink: driveRes.data.webViewLink
             });
         }
@@ -1123,9 +1122,15 @@ app.post('/api/report/generate', async (req, res) => {
                 const itemFiles = item.files || [];
                 const photoBuffers = [];
                 for (const f of itemFiles) {
-                    const id = typeof f === 'string' ? f : f.id;
+                    const id = typeof f === 'string' ? f : (f.id || f.driveFileId);
+                    if (!id) {
+                        console.warn(`[REPORT] No ID found for file entry:`, f);
+                        continue;
+                    }
                     const buf = await fetchDriveImage(drive, id);
-                    if (buf) photoBuffers.push(buf);
+                    if (buf) {
+                        photoBuffers.push(buf);
+                    }
                 }
 
                 const children = [
@@ -1249,7 +1254,11 @@ app.post('/api/report/generate', async (req, res) => {
                 const itemFiles = item.files || [];
                 const photoBuffers = [];
                 for (const f of itemFiles) {
-                    const id = typeof f === 'string' ? f : f.id;
+                    const id = typeof f === 'string' ? f : (f.id || f.driveFileId);
+                    if (!id) {
+                        console.warn(`[REPORT] No ID found for file entry:`, f);
+                        continue;
+                    }
                     const buf = await fetchDriveImage(drive, id);
                     if (buf) {
                         photoBuffers.push(buf);
