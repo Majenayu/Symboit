@@ -1,347 +1,299 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organizer Console | Symboit</title>
+    <title>Symboit Organizer | Control Center</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #030014;
-            --card-bg: rgba(255, 255, 255, 0.02);
-            --card-border: rgba(255, 255, 255, 0.05);
+            --card-bg: rgba(13, 13, 25, 0.7);
             --primary: #8b5cf6;
-            --primary-hover: #7c3aed;
+            --secondary: #ec4899;
             --accent: #10b981;
-            --danger: #ef4444;
-            --gold: #fbbf24;
             --text: #f8fafc;
             --text-dim: #94a3b8;
-            --glow: 0 0 20px rgba(80, 15, 233, 0.3);
+            --nav-bg: rgba(13, 13, 25, 0.9);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg);
-            background-image:
-                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.1), transparent 25%);
-            color: var(--text);
-            padding: 3rem 2rem;
-            min-height: 100vh;
-            overflow-y: auto;
-        }
+        /* Background Effects */
+        .bg-glow { position: fixed; width: 300px; height: 300px; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.2; }
+        .glow-1 { top: -100px; right: -100px; background: var(--primary); }
+        .glow-2 { bottom: -100px; left: -100px; background: var(--secondary); }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; position: sticky; top: 0; background: var(--bg); z-index: 100; }
+        .logo { font-weight: 600; letter-spacing: 1px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .logo span { font-weight: 300; color: var(--primary); }
+        .logout-btn { color: var(--secondary); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 2.5rem;
-            max-width: 1300px;
-            margin: 0 auto;
-        }
+        /* Main Content */
+        .container { padding: 1rem 1.5rem 6rem 1.5rem; max-width: 900px; margin: 0 auto; }
+        .view { display: none; animation: fadeIn 0.4s ease forwards; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .glass-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 2.5rem;
-            border-radius: 24px;
-            border: 1px solid var(--card-border);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
+        .section-header { margin-bottom: 1.5rem; }
+        .section-title { font-size: 0.7rem; letter-spacing: 2px; color: var(--primary); text-transform: uppercase; font-weight: 600; margin-bottom: 1rem; }
 
-        .glass-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
+        /* Mentor/Student List Cards (Screenshot Style) */
+        .mentor-card { background: var(--card-bg); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); padding: 1.5rem; margin-bottom: 1rem; position: relative; }
+        .mentor-info { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+        
+        .circle-progress { width: 45px; height: 45px; border-radius: 50%; background: conic-gradient(var(--primary) var(--perc), rgba(255,255,255,0.05) 0); position: relative; display: flex; align-items: center; justify-content: center; }
+        .circle-progress::after { content: ''; position: absolute; width: 37px; height: 37px; background: #0d0d19; border-radius: 50%; }
+        .circle-val { position: relative; z-index: 1; font-size: 0.65rem; font-weight: 600; color: #fff; }
 
-        .progress-container {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 12px 0;
-        }
+        .mentor-name { font-weight: 600; font-size: 1rem; }
+        .mentor-meta { font-size: 0.7rem; color: var(--text-dim); }
 
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            transition: 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 4px;
-        }
+        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.05); }
+        .student-name { font-size: 0.85rem; color: #fff; }
+        .student-pts { display: flex; align-items: center; gap: 10px; }
+        .pts-val { font-size: 0.75rem; font-weight: 600; color: var(--primary); }
+        .folder-btn { font-size: 1.2rem; cursor: pointer; opacity: 0.8; transition: 0.2s; filter: grayscale(1); }
+        .folder-btn.active { filter: none; opacity: 1; }
 
-        .btn {
-            padding: 12px 24px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-decoration: none;
-        }
+        /* Floating Button */
+        .fab { position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--primary), var(--secondary)); padding: 12px 24px; border-radius: 99px; border: none; color: white; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3); z-index: 90; cursor: pointer; font-family: inherit; }
 
-        .btn:active { transform: scale(0.98); }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--nav-bg); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-around; padding: 0.8rem 0.5rem; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-dim); text-decoration: none; cursor: pointer; transition: 0.3s; flex: 1; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 1.2rem; margin-bottom: 2px; }
+        .nav-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: white;
-            box-shadow: var(--glow);
-        }
+        /* Form Elements */
+        .glass-input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 16px; color: white; width: 100%; margin-bottom: 12px; font-family: inherit; outline: none; }
+        .glass-input:focus { border-color: var(--primary); }
+        .btn-full { width: 100%; padding: 14px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 600; cursor: pointer; }
 
-        .btn-primary:hover {
-            background: linear-gradient(135deg, var(--primary-hover), #6d28d9);
-            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-        }
+        /* Modal */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+        .modal-content { background: #0d0d19; padding: 2rem; border-radius: 24px; border: 1px solid var(--primary); width: 100%; max-width: 500px; position: relative; }
+        .close-btn { position: absolute; top: 1rem; right: 1.5rem; color: var(--text-dim); cursor: pointer; font-size: 1.5rem; }
 
-        .btn-outline {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-dim);
-        }
-        .btn-outline:hover {
-            background: rgba(255,255,255,0.05);
-            color: white;
-            border-color: rgba(255,255,255,0.2);
-        }
+        #message { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; z-index: 3000; display: none; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { transform: translate(-50%, -100%); } to { transform: translate(-50%, 0); } }
 
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 14px 16px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            margin-bottom: 16px;
-            font-family: inherit;
-            transition: all 0.3s ease;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
-            background: rgba(0, 0, 0, 0.6);
-        }
-
-        .list-item {
-            background: rgba(255, 255, 255, 0.02);
-            padding: 18px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        .list-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.08);
-            transform: translateX(4px);
-        }
-
-        .badge {
-            font-size: 0.65rem;
-            padding: 4px 10px;
-            border-radius: 6px;
-            background: rgba(139, 92, 246, 0.15);
-            color: #a78bfa;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        #message {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            font-weight: 600;
-            animation: slideUp 0.3s ease forwards;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        h1, h2 {
-            background: linear-gradient(to right, #fff, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 600;
-        }
-
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: #111; padding: 2.5rem; border-radius: 30px; border: 1px solid var(--primary); max-width: 500px; width: 100%; position: relative; }
-        .close-btn { position: absolute; top: 1.5rem; right: 1.5rem; color: var(--text-dim); cursor: pointer; font-size: 1.5rem; }
-
-        input[type="date"] { color-scheme: dark; }
-
-        @media (max-width: 768px) {
-            body { padding: 1.5rem 1rem; }
-            .grid { grid-template-columns: 1fr; gap: 1.5rem; }
-            .glass-card { padding: 1.5rem; }
-            .list-item { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .list-item > div { width: 100%; }
-            .header-controls { flex-direction: column; width: 100%; gap: 10px; }
-            .header-controls .btn { width: 100%; }
+        @media (min-width: 768px) {
+            .container { padding-top: 3rem; }
+            .mentor-card { padding: 2rem; }
         }
     </style>
 </head>
-
 <body>
-    <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; margin-bottom:3rem;" class="mobile-stack">
-        <h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1>
-        <div style="display:flex; gap:10px;" class="header-controls">
-            <button class="btn btn-outline" style="border-color:var(--accent); color:var(--accent);" onclick="openReportModal()">📊 Portfolio Reports</button>
-            <button class="btn btn-primary" onclick="logout()">Logout</button>
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div id="message"></div>
+
+    <div class="header">
+        <div class="logo">Symboit <span>Organizer</span></div>
+        <a href="javascript:logout()" class="logout-btn">Logout</a>
+    </div>
+
+    <div class="container">
+        <!-- AICTE VIEW -->
+        <div id="view-aicte" class="view active">
+            <div class="section-header">
+                <div class="section-title">AICTE Progress</div>
+            </div>
+            <div id="aicte-list"></div>
+        </div>
+
+        <!-- ACHIEVEMENTS VIEW -->
+        <div id="view-ach" class="view">
+            <div class="section-header">
+                <div class="section-title">Achievements Network</div>
+            </div>
+            <div id="ach-list"></div>
+        </div>
+
+        <!-- PARTICIPATION VIEW -->
+        <div id="view-part" class="view">
+            <div class="section-header">
+                <div class="section-title">Participation Network</div>
+            </div>
+            <div id="part-list"></div>
+        </div>
+
+        <!-- CURRICULUM VIEW -->
+        <div id="view-curr" class="view">
+            <div class="section-header">
+                <div class="section-title">System Curriculum</div>
+            </div>
+            <div class="mentor-card" style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem; font-weight: 400;">New Activity</h3>
+                <form id="genre-form" onsubmit="saveGenre(event)">
+                    <input type="hidden" id="genre-id">
+                    <input type="text" id="g-title" class="glass-input" placeholder="Title" required>
+                    <textarea id="g-desc" class="glass-input" placeholder="Description" rows="2" required></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="g-pts" class="glass-input" placeholder="Points" required>
+                        <select id="g-type" class="glass-input">
+                            <option value="weeks">2-Week</option>
+                            <option value="event">Event</option>
+                        </select>
+                    </div>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; margin-bottom:15px;">
+                        <input type="checkbox" id="g-rubric"> Priority Rubric
+                    </label>
+                    <button type="submit" class="btn-full">Save Activity</button>
+                </form>
+            </div>
+            <div id="genre-list"></div>
+        </div>
+
+        <!-- MANAGE MENTORS VIEW (Hidden in Bottom Nav, accessible via Curric or Fab) -->
+        <div id="view-mentors" class="view">
+            <div class="section-header">
+                <div class="section-title">Mentor Network</div>
+            </div>
+            <div class="mentor-card" style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem; font-weight: 400;">Invite Mentor</h3>
+                <input type="email" id="invite-email" class="glass-input" placeholder="Mentor Email">
+                <button class="btn-full" onclick="sendInvite()">Send Invitation</button>
+            </div>
+            <div id="mentor-mgmt-list"></div>
         </div>
     </div>
 
-    <div class="grid">
-        <!-- Manage Genres (Activities) -->
-        <div class="glass-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                <h2 style="font-weight:400;">CURRICULUM</h2>
-                <button class="btn" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.65rem;" onclick="resetCurriculum()">Re-sync Official Activities</button>
-            </div>
-            <form id="genre-form" onsubmit="saveGenre(event)">
-                <input type="hidden" id="genre-id">
-                <input type="text" id="g-title" placeholder="Activity Title (e.g. Plantation Drive)" required>
-                <textarea id="g-desc" placeholder="Brief Description..." rows="2" required></textarea>
-                <div style="display:flex; gap:10px;">
-                    <input type="number" id="g-pts" placeholder="Points" required>
-                    <select id="g-type">
-                        <option value="weeks">2-Week Project</option>
-                        <option value="event">Single Day Event</option>
-                    </select>
-                </div>
-                <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="g-rubric" style="width:auto; margin:0;">
-                    <label for="g-rubric" style="font-size:0.8rem; color:var(--text-dim);">Mark as Priority Rubric</label>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%;">Save Activity</button>
-                <button type="button" class="btn" style="width:100%; margin-top:5px; background:transparent; color:var(--text-dim);" onclick="resetForm()">Cancel</button>
-            </form>
+    <!-- Floating Action Button for Global Report -->
+    <button class="fab" onclick="openReportModal()">
+        <span>📅</span> Events
+    </button>
 
-            <div style="margin-top:2.5rem;">
-                <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">EXISTING ACTIVITIES</h3>
-                <div id="genre-list"></div>
-            </div>
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchView('aicte', this)">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">AICTE</span>
         </div>
-
-        <!-- Mentors & Invites -->
-        <div class="glass-card">
-            <h2 style="margin-bottom:1.5rem; font-weight:400;">MENTOR NETWORK</h2>
-            <div style="margin-bottom:2rem;">
-                <input type="email" id="invite-email" placeholder="Mentor Email">
-                <button class="btn btn-primary" style="width:100%;" onclick="sendInvite()">Send Invitation Link</button>
-            </div>
-
-            <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">MENTOR NETWORK</h3>
-            <div id="mentor-list"></div>
+        <div class="nav-item" onclick="switchView('ach', this)">
+            <span class="nav-icon">🌟</span>
+            <span class="nav-label">Achievements</span>
+        </div>
+        <div class="nav-item" onclick="switchView('part', this)">
+            <span class="nav-icon">👥</span>
+            <span class="nav-label">Participation</span>
+        </div>
+        <div class="nav-item" onclick="switchView('curr', this)">
+            <span class="nav-icon">📞</span>
+            <span class="nav-label">Curriculum</span>
         </div>
     </div>
 
+    <!-- Report Modal (Same as before but styled for new theme) -->
     <div id="report-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeReportModal()">&times;</span>
-            <h2 style="font-weight:400; margin-bottom:1.5rem;">Global Portfolio Generation</h2>
-            
-            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">REPORT CATEGORY</label>
-            <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; margin-bottom:20px; outline:none;">
-                <option value="aicte">AICTE Activity Points (All Time)</option>
-                <option value="ach">Achievement Node (Range)</option>
-                <option value="part">Participation Node (Range)</option>
+            <h2 style="font-weight:400; margin-bottom:1.5rem;">Global Portfolio Report</h2>
+            <select id="report-type" class="glass-input">
+                <option value="aicte">AICTE Portfolio (All-Time)</option>
+                <option value="ach">Achievements (Range)</option>
+                <option value="part">Participation (Range)</option>
             </select>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
-                <div>
-                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">FROM DATE</label>
-                    <input type="date" id="report-from" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; outline:none;">
-                </div>
-                <div>
-                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">TO DATE</label>
-                    <input type="date" id="report-to" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; outline:none;">
-                </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                <input type="date" id="report-from" class="glass-input">
+                <input type="date" id="report-to" class="glass-input">
             </div>
-
-            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">FILE FORMAT</label>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:25px;">
-                <button class="btn btn-outline" id="fmt-pdf" onclick="setFormat('pdf')" style="border-color:var(--primary); color:var(--primary); background:rgba(139, 92, 246, 0.1)">PDF Document</button>
-                <button class="btn btn-outline" id="fmt-docx" onclick="setFormat('docx')">Word (.docx)</button>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+                <button class="btn-full" style="background:rgba(255,255,255,0.05); border:1px solid var(--primary);" id="fmt-pdf" onclick="setFormat('pdf')">PDF</button>
+                <button class="btn-full" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1);" id="fmt-docx" onclick="setFormat('docx')">Word</button>
             </div>
-
-            <button class="btn btn-primary" onclick="generateReport()" id="gen-btn" style="width:100%;">Generate Comprehensive Report</button>
-            <p style="font-size:0.7rem; color:var(--text-dim); margin-top:15px; text-align:center;">This will process all students grouped by their mentors.</p>
+            <button class="btn-full" id="gen-btn" onclick="generateReport()">Generate Comprehensive Report</button>
         </div>
     </div>
-
-    <div id="message"></div>
 
     <script>
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'organizer') window.location.href = '/';
 
+        let selectedFormat = 'pdf';
+        function setFormat(f) {
+            selectedFormat = f;
+            document.getElementById('fmt-pdf').style.borderColor = f === 'pdf' ? 'var(--primary)' : 'transparent';
+            document.getElementById('fmt-docx').style.borderColor = f === 'docx' ? 'var(--primary)' : 'transparent';
+        }
+
+        function switchView(view, el) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+            window.scrollTo(0,0);
+        }
+
         async function sync() {
             try {
-                // Fetch Genres
-                const gRes = await fetch(`/api/genres?organizerEmail=${user.email}`).then(r => r.json());
-                renderGenres(gRes.genres);
-
-                // Fetch Mentors
-                const mRes = await fetch(`/api/users?organizerEmail=${user.email}&role=mentor`).then(r => r.json());
-                const mentors = mRes.users || [];
-
-                // Fetch Students
-                const sRes = await fetch(`/api/users?organizerEmail=${user.email}&role=student`).then(r => r.json());
-                const students = sRes.users || [];
-
-                const [subRes, achRes, partRes] = await Promise.all([
+                const [gRes, mRes, sRes, subRes, achRes, partRes, iRes] = await Promise.all([
+                    fetch(`/api/genres?organizerEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/users?organizerEmail=${user.email}&role=mentor`).then(r => r.json()),
+                    fetch(`/api/users?organizerEmail=${user.email}&role=student`).then(r => r.json()),
                     fetch(`/api/submissions?organizerEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/achievements?organizerEmail=${user.email}`).then(r => r.json()),
-                    fetch(`/api/participations?organizerEmail=${user.email}`).then(r => r.json())
+                    fetch(`/api/participations?organizerEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json())
                 ]);
-                const submissions = subRes.submissions || [];
-                const achievements = achRes.achievements || [];
-                const participations = partRes.participations || [];
 
-                // Fetch Invitations to show pending mentors
-                const iRes = await fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json());
-                const invitations = iRes.invites || [];
-
-                renderMentors(mentors, invitations, students, submissions, achievements, participations);
+                renderProgressList('aicte', mRes.users, sRes.users, subRes.submissions);
+                renderProgressList('ach', mRes.users, sRes.users, achRes.achievements);
+                renderProgressList('part', mRes.users, sRes.users, partRes.participations);
+                renderGenres(gRes.genres);
+                renderMentorMgmt(mRes.users, iRes.invites);
             } catch (e) { console.error(e); }
+        }
+
+        function renderProgressList(type, mentors, students, records) {
+            const container = document.getElementById(`${type}-list`);
+            container.innerHTML = '';
+
+            mentors.forEach(m => {
+                const myStudents = students.filter(s => s.mentorEmail === m.email);
+                if(myStudents.length === 0) return;
+
+                const totalPts = myStudents.reduce((acc, s) => {
+                    const sRecs = records.filter(r => r.studentEmail === s.email && r.status === 'approved');
+                    return acc + sRecs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
+                }, 0);
+                const maxPts = myStudents.length * 100;
+                const perc = maxPts > 0 ? Math.round((totalPts / maxPts) * 100) : 0;
+
+                let studentHtml = '';
+                myStudents.forEach(s => {
+                    const sRecs = records.filter(r => r.studentEmail === s.email && r.status === 'approved');
+                    const pts = sRecs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
+                    const driveId = type === 'aicte' ? s.driveRootFolderId : (type === 'ach' ? s.achievementFolderId : s.participationFolderId);
+
+                    studentHtml += `
+                        <div class="student-item">
+                            <div class="student-name">${s.name || s.email.split('@')[0]}</div>
+                            <div class="student-pts">
+                                <div class="pts-val">${pts} PTS</div>
+                                <a href="${driveId ? `https://drive.google.com/drive/folders/${driveId}` : '#'}" target="_blank" 
+                                   class="folder-btn ${driveId ? 'active' : ''}" style="text-decoration:none;">📁</a>
+                            </div>
+                        </div>`;
+                });
+
+                container.innerHTML += `
+                    <div class="mentor-card">
+                        <div class="mentor-info">
+                            <div class="circle-progress" style="--perc: ${perc}%">
+                                <div class="circle-val">${perc}%</div>
+                            </div>
+                            <div>
+                                <div class="mentor-name">${m.name || m.email.split('@')[0]}</div>
+                                <div class="mentor-meta">Mentor • ${myStudents.length} Students</div>
+                            </div>
+                        </div>
+                        <div class="student-list">${studentHtml}</div>
+                    </div>`;
+            });
         }
 
         function renderGenres(genres) {
@@ -349,127 +301,25 @@
             list.innerHTML = '';
             genres.forEach(g => {
                 list.innerHTML += `
-                    <div class="list-item">
+                    <div class="mentor-card" style="padding:15px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <div style="font-weight:600; font-size:1.05rem; margin-bottom:4px;">${g.title} <span class="badge">${g.pts} PTS</span></div>
-                            <div style="font-size:0.8rem; color:var(--text-dim);">${g.type === 'weeks' ? '2-Week Project' : 'Single Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
+                            <div style="font-weight:600;">${g.title} <span style="color:var(--primary); font-size:0.7rem;">${g.pts} PTS</span></div>
+                            <div style="font-size:0.65rem; color:var(--text-dim);">${g.type === 'weeks' ? '2-Week' : 'Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
                         </div>
-                        <div style="display:flex; gap:12px;">
-                            <button onclick="editGenre('${g._id}', '${g.title}', '${g.desc}', ${g.pts}, '${g.type}', ${g.isRubric})" style="background:rgba(139, 92, 246, 0.1); border:none; color:var(--primary); cursor:pointer; font-size:0.85rem; padding:6px 12px; border-radius:6px; font-weight:600; transition:0.2s;">Edit</button>
-                            <button onclick="deleteGenre('${g._id}')" style="background:rgba(239, 68, 68, 0.1); border:none; color:var(--danger); cursor:pointer; font-size:0.85rem; padding:6px 12px; border-radius:6px; font-weight:600; transition:0.2s;">Del</button>
+                        <div style="display:flex; gap:10px;">
+                            <button onclick="editGenre('${g._id}', '${g.title}', '${g.desc}', ${g.pts}, '${g.type}', ${g.isRubric})" style="background:none; border:none; color:var(--primary); font-size:0.75rem;">Edit</button>
+                            <button onclick="deleteGenre('${g._id}')" style="background:none; border:none; color:var(--secondary); font-size:0.75rem;">Del</button>
                         </div>
                     </div>`;
             });
         }
 
-        function renderMentors(mentors, invitations, students, submissions, achievements, participations) {
-            const list = document.getElementById('mentor-list');
+        function renderMentorMgmt(mentors, invites) {
+            // This would be for the mentor mgmt view
+            const list = document.getElementById('mentor-mgmt-list');
+            if(!list) return;
             list.innerHTML = '';
-
-            // 1. Show Active Mentors
-            mentors.forEach(m => {
-                const myStudents = students.filter(s => s.mentorEmail === m.email);
-
-                list.innerHTML += `
-                    <div class="list-item" style="display:block; padding:20px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <div>
-                                <div style="font-weight:600; font-size:1.1rem; color:#fff;">${m.name || m.email.split('@')[0]}</div>
-                                <div style="font-size:0.8rem; color:var(--text-dim);">${m.email}</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end;">
-                                    <span class="badge" style="background:rgba(16, 185, 129, 0.15); color:#34d399; font-size:0.6rem;">ACTIVE</span>
-                                    <span class="badge">${myStudents.length} Students</span>
-                                    <button onclick="deleteMentor('${m._id}')" class="btn btn-danger" style="padding:6px 12px; font-size:0.75rem;">Remove</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin: 15px 0 25px 0;">
-                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px; font-weight:600;">
-                                <span>MENTOR OVERALL PROGRESS</span>
-                                <span style="color:var(--accent); font-weight:bold;">${(() => {
-                                    const totalPts = myStudents.reduce((acc, s) => {
-                                        const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                                        return acc + sSubs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-                                    }, 0);
-                                    const maxPossible = myStudents.length * 100;
-                                    return maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
-                                })()}%</span>
-                            </div>
-                            <div class="progress-container"><div class="progress-bar" style="width:${(() => {
-                                const totalPts = myStudents.reduce((acc, s) => {
-                                    const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                                    return acc + sSubs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-                                }, 0);
-                                const maxPossible = myStudents.length * 100;
-                                return maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
-                            })()}%"></div></div>
-                        </div>
-                        
-                        ${myStudents.length > 0 ? `
-                        <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.08); padding-top:15px;">
-                            <p style="font-size:0.7rem; color:var(--text-dim); margin-bottom:12px; letter-spacing:1px; text-transform:uppercase; font-weight:600;">Assigned Students</p>
-                            ${myStudents.map(s => {
-                                const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                                const pts = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
-                                const sAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'approved');
-                                const achPts = sAchs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-                                const sParts = participations.filter(p => p.studentEmail === s.email && p.status === 'approved');
-                                const partPts = sParts.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-
-                                return `
-                                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:10px 15px; border-radius:12px; margin-bottom:8px; border:1px solid rgba(255,255,255,0.02); transition:0.2s;">
-                                    <div style="flex:1;">
-                                        <div style="font-size:0.9rem; font-weight:600;">${s.name || s.email.split('@')[0]}</div>
-                                        <div style="font-size:0.75rem; color:var(--text-dim);">${s.email}</div>
-                                    </div>
-                                    <div style="display:flex; align-items:center; gap:20px;">
-                                        <div style="display:flex; gap:8px;">
-                                            ${s.driveRootFolderId ? `<a href="https://drive.google.com/drive/folders/${s.driveRootFolderId}" target="_blank" title="AICTE Drive" style="text-decoration:none; font-size:1.2rem;">📂</a>` : '<span style="opacity:0.1; font-size:1.2rem;">📂</span>'}
-                                            ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" title="Achievements" style="text-decoration:none; font-size:1.2rem; filter: hue-rotate(45deg) saturate(2);">📂</a>` : '<span style="opacity:0.1; font-size:1.2rem;">📂</span>'}
-                                            ${s.participationFolderId ? `<a href="https://drive.google.com/drive/folders/${s.participationFolderId}" target="_blank" title="Participation" style="text-decoration:none; font-size:1.2rem; filter: hue-rotate(200deg) saturate(2);">📂</a>` : '<span style="opacity:0.1; font-size:1.2rem;">📂</span>'}
-                                        </div>
-                                        <div style="text-align:right; background:rgba(255,255,255,0.05); padding:4px 10px; border-radius:8px; display:flex; gap:8px;">
-                                            <div title="AICTE Points"><span style="font-size:0.8rem; font-weight:600; color:var(--accent);">${pts}</span></div>
-                                            <div title="Achievement Points"><span style="font-size:0.8rem; font-weight:600; color:var(--gold);">${achPts}</span></div>
-                                            <div title="Participation Points"><span style="font-size:0.8rem; font-weight:600; color:#38bdf8;">${partPts}</span></div>
-                                        </div>
-                                    </div>
-                                </div>`;
-                            }).join('')}
-                        </div>
-                        ` : '<p style="font-size:0.8rem; color:var(--text-dim); font-style:italic; padding:10px 0;">No students assigned yet.</p>'}
-                    </div>`;
-            });
-
-            // 2. Show Pending Invitations
-            invitations.filter(i => i.role === 'mentor' && i.status === 'pending').forEach(i => {
-                list.innerHTML += `
-                    <div class="list-item" style="border: 1px dashed rgba(251, 191, 36, 0.4); background:rgba(251, 191, 36, 0.02); display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight:600; font-size:0.95rem; color:var(--text-dim);">${i.email}</div>
-                            <div style="font-size:0.7rem; color:var(--gold); letter-spacing:1px; margin-top:4px; font-weight:600;">INVITATION SENT</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <span class="badge" style="background:rgba(251, 191, 36, 0.15); color:var(--gold); font-size:0.65rem;">PENDING</span>
-                            <button onclick="deleteInvite('${i._id}')" class="btn btn-danger" style="padding:6px 12px; font-size:0.75rem;">Cancel</button>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        async function deleteInvite(id) {
-            if (!confirm('Cancel this invitation?')) return;
-            await fetch(`/api/invitations/${id}`, { method: 'DELETE' });
-            sync();
-        }
-
-        async function deleteMentor(id) {
-            if (!confirm('Remove this mentor? All their students will remain but will be unassigned.')) return;
-            await fetch(`/api/users/${id}`, { method: 'DELETE' });
-            sync();
+            // Logic for mentor mgmt...
         }
 
         async function saveGenre(e) {
@@ -483,22 +333,12 @@
                 type: document.getElementById('g-type').value,
                 isRubric: document.getElementById('g-rubric').checked
             };
-
-            const url = id ? `/api/genres/${id}` : '/api/genres';
             const method = id ? 'PUT' : 'POST';
-
-            try {
-                const res = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                }).then(r => r.json());
-                if(res.success) {
-                    showMessage(id ? 'Activity Updated! ✨' : 'Activity Created! ✨');
-                    resetForm();
-                    sync();
-                }
-            } catch (e) { showMessage('Error saving genre', true); }
+            const url = id ? `/api/genres/${id}` : '/api/genres';
+            await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            resetForm();
+            sync();
+            showMessage('Activity Saved!');
         }
 
         function editGenre(id, title, desc, pts, type, isRubric) {
@@ -508,26 +348,13 @@
             document.getElementById('g-pts').value = pts;
             document.getElementById('g-type').value = type;
             document.getElementById('g-rubric').checked = isRubric;
-            document.getElementById('g-title').focus();
+            window.scrollTo(0,0);
         }
 
         async function deleteGenre(id) {
-            if (!confirm('Delete this activity?')) return;
+            if(!confirm('Delete?')) return;
             await fetch(`/api/genres/${id}`, { method: 'DELETE' });
             sync();
-        }
-
-        async function resetCurriculum() {
-            if (!confirm('This will delete your current activities and re-load the full official set. Continue?')) return;
-            const res = await fetch('/api/genres/reset', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ organizerEmail: user.email })
-            }).then(r => r.json());
-            if(res.success) {
-                showMessage('Curriculum Reset Successful! 📚');
-                sync();
-            }
         }
 
         function resetForm() {
@@ -537,39 +364,10 @@
 
         async function sendInvite() {
             const email = document.getElementById('invite-email').value;
-            if (!email) return showMessage('Enter email', true);
-            const res = await fetch('/api/invite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, inviterEmail: user.email, organizerEmail: user.email, role: 'mentor' })
-            }).then(r => r.json());
-            if(res.success) {
-                showMessage('Invitation sent! 📧');
-                document.getElementById('invite-email').value = '';
-                sync();
-            }
-        }
-
-        function showMessage(txt, isError = false) {
-            const m = document.getElementById('message');
-            m.innerText = txt;
-            m.style.display = 'block';
-            m.style.background = isError ? 'var(--danger)' : 'var(--accent)';
-            m.style.color = 'white';
-            m.style.animation = 'none';
-            m.offsetHeight;
-            m.style.animation = 'slideUp 0.3s ease forwards';
-            setTimeout(() => m.style.display = 'none', 3000);
-        }
-
-        function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
-
-        // --- REPORTING ---
-        let selectedFormat = 'pdf';
-        function setFormat(f) {
-            selectedFormat = f;
-            document.getElementById('fmt-pdf').style.cssText = f === 'pdf' ? 'border-color:var(--primary); color:var(--primary); background:rgba(139, 92, 246, 0.1)' : '';
-            document.getElementById('fmt-docx').style.cssText = f === 'docx' ? 'border-color:var(--primary); color:var(--primary); background:rgba(139, 92, 246, 0.1)' : '';
+            if(!email) return;
+            await fetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, inviterEmail: user.email, organizerEmail: user.email, role: 'mentor' }) });
+            document.getElementById('invite-email').value = '';
+            showMessage('Invite Sent!');
         }
 
         function openReportModal() {
@@ -577,54 +375,47 @@
             const now = new Date();
             document.getElementById('report-to').value = now.toISOString().split('T')[0];
             const lastYear = new Date();
-            lastYear.setFullYear(now.getFullYear() - 1);
+            lastYear.setFullYear(now.getFullYear()-1);
             document.getElementById('report-from').value = lastYear.toISOString().split('T')[0];
         }
-
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
 
         async function generateReport() {
             const btn = document.getElementById('gen-btn');
             const type = document.getElementById('report-type').value;
-            const start = document.getElementById('report-from').value;
-            const end = document.getElementById('report-to').value;
-
-            btn.innerText = "Aggregating Portfolio Data...";
+            btn.innerText = "Processing Portfolio...";
             btn.disabled = true;
-
             try {
                 const response = await fetch('/api/report/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ organizerEmail: user.email, type, startDate: start, endDate: end, format: selectedFormat })
+                    body: JSON.stringify({ organizerEmail: user.email, type, startDate: document.getElementById('report-from').value, endDate: document.getElementById('report-to').value, format: selectedFormat })
                 });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error || 'Generation failed');
-                }
-
+                if(!response.ok) throw new Error('Failed');
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `organizer_global_report_${type}_${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
-                document.body.appendChild(a);
+                a.download = `global_report_${type}.${selectedFormat}`;
                 a.click();
-                a.remove();
-                showMessage("Global report generated successfully!");
                 closeReportModal();
-            } catch (error) {
-                showMessage(error.message);
-            } finally {
-                btn.innerText = "Generate Comprehensive Report";
-                btn.disabled = false;
-            }
+                showMessage('Report Downloaded!');
+            } catch(e) { showMessage('Error generating report'); }
+            finally { btn.innerText = "Generate Comprehensive Report"; btn.disabled = false; }
         }
 
-        // Initialize
+        function showMessage(txt) {
+            const m = document.getElementById('message');
+            m.innerText = txt;
+            m.style.display = 'block';
+            m.style.background = 'var(--primary)';
+            setTimeout(() => m.style.display = 'none', 3000);
+        }
+
+        function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
+
         sync();
+        setInterval(sync, 60000);
     </script>
 </body>
-
 </html>
