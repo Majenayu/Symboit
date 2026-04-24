@@ -79,7 +79,7 @@
                 <button class="btn btn-primary" style="width:100%;" onclick="sendInvite()">Send Invitation Link</button>
             </div>
             
-            <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">ACTIVE MENTORS</h3>
+            <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">MENTOR NETWORK</h3>
             <div id="mentor-list"></div>
         </div>
     </div>
@@ -108,7 +108,11 @@
                 const subRes = await fetch(`/api/submissions?organizerEmail=${user.email}`).then(r => r.json());
                 const allSubmissions = subRes.submissions || [];
 
-                renderMentors(mentors, students, allSubmissions);
+                // Fetch Invitations to show pending mentors
+                const iRes = await fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json());
+                const invitations = iRes.invites || [];
+
+                renderMentors(mentors, invitations, students, allSubmissions);
             } catch (e) { console.error(e); }
         }
 
@@ -130,9 +134,11 @@
             });
         }
 
-        function renderMentors(mentors, students, submissions) {
+        function renderMentors(mentors, invitations, students, submissions) {
             const list = document.getElementById('mentor-list');
             list.innerHTML = '';
+
+            // 1. Show Active Mentors
             mentors.forEach(m => {
                 const myStudents = students.filter(s => s.mentorEmail === m.email);
                 
@@ -144,7 +150,8 @@
                                 <div style="font-size:0.75rem; color:var(--text-dim);">${m.email}</div>
                             </div>
                             <div style="display:flex; align-items:center; gap:10px;">
-                                <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--accent);">${myStudents.length} Students</span>
+                                <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--accent); font-size:0.55rem;">ACTIVE</span>
+                                <span class="badge" style="background:rgba(99, 102, 241, 0.1); color:var(--primary);">${myStudents.length} Students</span>
                                 <button onclick="deleteMentor('${m._id}')" class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;">Remove</button>
                             </div>
                         </div>
@@ -174,6 +181,34 @@
                         ` : '<p style="font-size:0.7rem; color:var(--text-dim); font-style:italic;">No students assigned yet.</p>'}
                     </div>`;
             });
+            });
+
+            // 2. Show Pending Invitations (for mentors)
+            invitations.filter(i => i.role === 'mentor' && i.status === 'pending').forEach(i => {
+                list.innerHTML += `
+                    <div class="list-item" style="border: 1px dashed rgba(251, 191, 36, 0.3); opacity: 0.8; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--text-dim);">${i.email}</div>
+                            <div style="font-size:0.6rem; color:var(--gold); letter-spacing:1px; margin-top:4px;">INVITATION SENT</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="badge" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.55rem;">PENDING</span>
+                            <button onclick="deleteInvite('${i._id}')" class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;">Cancel</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function deleteInvite(id) {
+            if(!confirm('Cancel this invitation?')) return;
+            await fetch(`/api/invitations/${id}`, { method: 'DELETE' });
+            sync();
+        }
+
+        async function deleteMentor(id) {
+            if(!confirm('Remove this mentor? All their students will remain but will be unassigned.')) return;
+            await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            sync();
         }
 
         async function saveGenre(e) {
