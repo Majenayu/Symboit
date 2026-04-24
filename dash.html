@@ -213,30 +213,28 @@
     </div>
 
     <div class="modal" id="report-modal">
-        <div class="modal-content" style="border:1px solid var(--gold);">
+        <div class="modal-content">
             <span class="close-btn" onclick="closeReportModal()">✕</span>
-            <h2 style="margin-bottom:10px; font-weight:400;">Workspace Reports</h2>
-            <p style="color:var(--text-dim); font-size:0.8rem; margin-bottom:20px;">Select report type and date range for your formal export.</p>
+            <h2 style="font-weight:400; margin-bottom:1.5rem;">Student Portfolio Report</h2>
+            <p style="color:var(--text-dim); font-size:0.8rem; margin-bottom:1.5rem;">Select report type and date range for your formal export.</p>
             
-            <label style="font-size:0.7rem; color:var(--gold); display:block; margin-bottom:8px; font-weight:600;">REPORT TYPE</label>
-            <select id="report-type">
+            <select id="report-type" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:12px; border-radius:10px; width:100%; color:white; margin-bottom:15px;">
                 <option value="aicte">AICTE Portfolio (All-Time)</option>
                 <option value="ach">Achievements (Range)</option>
                 <option value="part">Participation (Range)</option>
             </select>
             
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
-                <div>
-                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">FROM</label>
-                    <input type="date" id="report-from">
-                </div>
-                <div>
-                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">TO</label>
-                    <input type="date" id="report-to">
-                </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+                <input type="date" id="report-from" style="padding:10px; border-radius:8px; border:none; background:rgba(255,255,255,0.05); color:white;">
+                <input type="date" id="report-to" style="padding:10px; border-radius:8px; border:none; background:rgba(255,255,255,0.05); color:white;">
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+                <button class="btn" style="justify-content:center; background:var(--primary); color:white;" onclick="setFormat('pdf')" id="btn-pdf">PDF</button>
+                <button class="btn" style="justify-content:center; background:rgba(255,255,255,0.05); color:white;" onclick="setFormat('docx')" id="btn-docx">Word</button>
             </div>
             
-            <button class="btn" id="gen-btn" onclick="generateReport()" style="width:100%; padding:15px; background:var(--gold); color:black; font-weight:600; border-radius:12px; border:none; cursor:pointer;">Download Master Report</button>
+            <button class="btn" id="gen-btn" onclick="generateReport()" style="width:100%; justify-content:center; padding:15px; background:var(--gold); color:black; font-weight:600; border-radius:12px; border:none; cursor:pointer;">Generate Portfolio Report</button>
         </div>
     </div>
 
@@ -246,7 +244,13 @@
         document.getElementById('u-name').innerText = user.name || user.email.split('@')[0];
 
         let rubrics = [], activities = [], submissions = [], achievements = [], participations = [], achievementGenres = [];
-        let currentActivity = null, selectedMilestone = null;
+        let currentActivity = null, selectedMilestone = null, selectedFmt = 'pdf';
+
+        function setFormat(f) {
+            selectedFmt = f;
+            document.getElementById('btn-pdf').style.background = f === 'pdf' ? 'var(--primary)' : 'rgba(255,255,255,0.05)';
+            document.getElementById('btn-docx').style.background = f === 'docx' ? 'var(--primary)' : 'rgba(255,255,255,0.05)';
+        }
 
         function switchTab(t) {
             document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
@@ -383,7 +387,7 @@
                         type: document.getElementById('report-type').value, 
                         startDate: document.getElementById('report-from').value, 
                         endDate: document.getElementById('report-to').value, 
-                        format: 'pdf' 
+                        format: selectedFmt 
                     }) 
                 });
                 if(!res.ok) throw new Error('Failed');
@@ -391,7 +395,7 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a'); 
                 a.href = url; 
-                a.download = `student_report.pdf`; 
+                a.download = `student_report.${selectedFmt}`; 
                 document.body.appendChild(a); 
                 a.click(); 
                 a.remove();
