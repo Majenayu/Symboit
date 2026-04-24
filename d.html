@@ -52,7 +52,7 @@
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(3, 0, 20, 0.98); backdrop-filter: blur(25px); height: 90px; display: flex; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; padding: 0 10px; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-dim); text-decoration: none; font-size: 0.75rem; cursor: pointer; transition: 0.3s; }
         .nav-item.active { color: var(--primary); }
-        .nav-item span:first-child { font-size: 1.6rem; } /* Larger Icons */
+        .nav-item span:first-child { font-size: 1.6rem; }
         
         /* Central Button */
         .center-btn-wrap { position: relative; width: 90px; height: 90px; margin-top: -45px; }
@@ -264,7 +264,7 @@
                 if(myS.length === 0) return '';
                 const total = myS.reduce((acc, s) => acc + subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a, c) => a + (c.pointsAwarded || 10), 0), 0);
                 const perc = Math.min(100, Math.round((total / (myS.length * 100)) * 100));
-                return `<div class="mentor-card-mob"><div style="display:flex; align-items:center; gap:1.2rem; margin-bottom:1.2rem;"><div class="circle-progress" style="--perc:${perc}%"><div class="circle-val">${perc}%</div></div><div><div style="font-weight:600; font-size:1rem;">${m.name||m.email.split('@')[0]}</div><div style="font-size:0.7rem; color:var(--text-dim);">Mentor • ${myS.length} Students</div></div></div>${myS.map(s => `<div class="student-row"><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:var(--primary);">${subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0)} PTS</div><a href="${s.driveRootFolderId?'https://drive.google.com/drive/folders/'+s.driveRootFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.driveRootFolderId?1:0.1}; font-size:1.4rem;">📁</a></div></div>`).join('')}</div>`;
+                return `<div class="mentor-card-mob"><div style="display:flex; align-items:center; gap:1.2rem; margin-bottom:1.2rem;"><div class="circle-progress" style="--perc:${perc}%"><div class="circle-val">${perc}%</div></div><div><div style="font-weight:600; font-size:1rem;">${m.name||m.email.split('@')[0]}</div><div style="font-size:0.7rem; color:var(--text-dim);">Mentor • ${myS.length} Students</div></div></div>${myS.map(s => `<div class="student-row"><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:var(--primary);">${subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0)} PTS</div><a href="${s.driveRootFolderId ? 'https://drive.google.com/drive/folders/' + s.driveRootFolderId : 'javascript:void(0)'}" ${s.driveRootFolderId ? 'target="_blank"' : ''} style="text-decoration:none; opacity:${s.driveRootFolderId?1:0.1}; font-size:1.4rem;">📁</a></div></div>`).join('')}</div>`;
             }).join('');
 
             // Portfolio (Merged ACH & PART)
@@ -277,18 +277,20 @@
                     <p style="font-size:0.65rem; color:var(--gold); font-weight:600; margin-bottom:12px; letter-spacing:1px;">ACHIEVEMENTS</p>
                     ${myS.map(s => {
                         const pts = achs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                        return `<div class="student-row"><div><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:var(--gold);">${pts} PTS</div><a href="${s.achievementFolderId?'https://drive.google.com/drive/folders/'+s.achievementFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.achievementFolderId?1:0.1}; font-size:1.4rem;">📁</a></div></div>`;
+                        const fid = s.achievementFolderId;
+                        return `<div class="student-row"><div><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:var(--gold);">${pts} PTS</div><a href="${fid ? 'https://drive.google.com/drive/folders/' + fid : 'javascript:void(0)'}" ${fid ? 'target="_blank"' : ''} style="text-decoration:none; opacity:${fid?1:0.1}; font-size:1.4rem;">📁</a></div></div>`;
                     }).join('')}
 
                     <p style="font-size:0.65rem; color:#38bdf8; font-weight:600; margin:25px 0 12px 0; letter-spacing:1px;">PARTICIPATIONS</p>
                     ${myS.map(s => {
                         const pts = parts.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                        return `<div class="student-row"><div><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:#38bdf8;">${pts} PTS</div><a href="${s.participationFolderId?'https://drive.google.com/drive/folders/'+s.participationFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.participationFolderId?1:0.1}; font-size:1.4rem;">📁</a></div></div>`;
+                        const fid = s.participationFolderId;
+                        return `<div class="student-row"><div><div style="font-size:0.9rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:12px;"><div style="font-size:0.8rem; font-weight:600; color:#38bdf8;">${pts} PTS</div><a href="${fid ? 'https://drive.google.com/drive/folders/' + fid : 'javascript:void(0)'}" ${fid ? 'target="_blank"' : ''} style="text-decoration:none; opacity:${fid?1:0.1}; font-size:1.4rem;">📁</a></div></div>`;
                     }).join('')}
                 </div>`;
             }).join('');
 
-            // Mentors Management (Mobile)
+            // Mentors Management
             document.getElementById('mob-mentor-mgmt-list').innerHTML = mentors.map(m => `
                 <div class="mentor-card-mob" style="padding:18px; display:flex; justify-content:space-between; align-items:center;">
                     <div><div style="font-weight:600; font-size:1rem;">${m.name||m.email}</div><div style="font-size:0.75rem; color:var(--accent);">ACTIVE</div></div>
@@ -299,7 +301,7 @@
                     <button class="btn-danger" style="padding:6px 12px; font-size:0.75rem; border-radius:10px;" onclick="deleteInvite('${i._id}')">Cancel</button>
                 </div>`).join('');
 
-            // Curriculum (Mobile) - Updated to show more details and delete
+            // Curriculum
             document.getElementById('mob-genre-list').innerHTML = genres.map(g => `
                 <div class="mentor-card-mob" style="padding:15px 20px; display:flex; justify-content:space-between; align-items:center;">
                     <div>
@@ -327,8 +329,7 @@
             const method = id ? 'PUT' : 'POST';
             const url = id ? `/api/genres/${id}` : '/api/genres';
             await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-            resetForm();
-            sync(); showMessage('Activity Saved! ✨');
+            resetForm(); sync(); showMessage('Activity Saved! ✨');
         }
 
         function editGenre(id, title, desc, pts, type, isRubric, prefix) {
@@ -381,11 +382,7 @@
 
         function resetForm() {
             ['desk', 'mob'].forEach(p => {
-                const idEl = document.getElementById(`${p}-genre-id`);
-                if(idEl) idEl.value = '';
-                const form = document.getElementById(`${p}-genre-form`);
-                if(form) form.reset();
-                // Individual fields for mob as it doesn't have a formal form wrap for all fields
+                const idEl = document.getElementById(`${p}-genre-id`); if(idEl) idEl.value = '';
                 if(p === 'mob') {
                     document.getElementById('mob-g-title').value = '';
                     document.getElementById('mob-g-desc').value = '';
