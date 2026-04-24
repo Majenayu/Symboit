@@ -56,7 +56,6 @@
             background: linear-gradient(to right, #fff, var(--primary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: 1px;
         }
         header .header-actions { display: flex; align-items: center; gap: 12px; }
         .report-pill { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: var(--primary); padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
@@ -68,14 +67,14 @@
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Mentor Progress Bar */
-        .mentor-progress-card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-bottom: 25px; }
+        /* Progress Card */
+        .progress-card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-bottom: 25px; }
         .bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; margin-top: 15px; }
         .bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: 1s ease; }
 
         /* Student Card */
         .student-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 18px; margin-bottom: 12px; }
-        .pending-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-top: 10px; }
+        .student-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.05); }
 
         /* Bottom Navigation */
         nav { 
@@ -141,15 +140,10 @@
     <div id="content">
         <!-- Tab 1: AICTE (ONLY AICTE) -->
         <div id="tab-aicte" class="tab-content active">
-            <div class="mentor-progress-card">
+            <div class="progress-card">
                 <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                    <div>
-                        <h2 style="font-weight:400; font-size:1.4rem;">Mentor Progress</h2>
-                        <p style="color:var(--text-dim); font-size:0.75rem; margin-top:5px;">Overall network completion</p>
-                    </div>
-                    <div style="text-align:right;">
-                        <span id="m-perc" style="font-size:1.8rem; font-weight:600; color:var(--accent);">0%</span>
-                    </div>
+                    <div><h2 style="font-weight:400; font-size:1.4rem;">Mentor Progress</h2><p style="color:var(--text-dim); font-size:0.75rem; margin-top:5px;">Overall network completion</p></div>
+                    <div style="text-align:right;"><span id="m-perc" style="font-size:1.8rem; font-weight:600; color:var(--accent);">0%</span></div>
                 </div>
                 <div class="bar-bg"><div class="bar-fill" id="m-bar" style="width:0%"></div></div>
             </div>
@@ -161,13 +155,13 @@
             <div id="aicte-student-list"></div>
         </div>
 
-        <!-- Tab 2: Portfolio (Merged ACH + PART) -->
+        <!-- Tab 2: Portfolio (Same style as d.html) -->
         <div id="tab-portfolio" class="tab-content">
-            <p style="font-size:0.7rem; color:var(--gold); font-weight:600; letter-spacing:2px; margin-bottom:15px;">PORTFOLIO VERIFICATION</p>
-            <div id="portfolio-pending-list"></div>
+            <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.5rem; font-weight:600;">PORTFOLIO NETWORK</p>
+            <div id="portfolio-list"></div>
 
-            <p style="font-size:0.7rem; color:var(--gold); font-weight:600; letter-spacing:2px; margin:25px 0 15px 0;">STUDENT PORTFOLIO VIEW</p>
-            <div id="portfolio-student-list"></div>
+            <p style="font-size:0.7rem; color:var(--gold); font-weight:600; letter-spacing:2px; margin:25px 0 15px 0;">PORTFOLIO VERIFICATION</p>
+            <div id="portfolio-pending-list"></div>
         </div>
 
         <!-- Tab 4: Network (Add Student + Status) -->
@@ -215,12 +209,11 @@
         </div>
     </nav>
 
-    <!-- Report Modal (From d.html reference) -->
     <div id="report-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeReportModal()">&times;</span>
             <h2 style="margin-bottom:10px; font-weight:400;">Network Reports</h2>
-            <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; color:white; margin-bottom:15px; font-family:inherit;">
+            <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; color:white; margin-bottom:15px;">
                 <option value="aicte">AICTE Portfolio (All-Time)</option>
                 <option value="ach">Achievements (Range)</option>
                 <option value="part">Participation (Range)</option>
@@ -266,9 +259,9 @@
                 renderNetwork(invites);
                 renderFeed(subs, achs, parts);
 
-                // Mentor Progress Calculation
+                // Mentor Progress
                 const totalEarned = [...subs, ...achs, ...parts].filter(i => i.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                const totalPossible = students.length * 150; // AICTE(100) + ACH(50) approximate
+                const totalPossible = students.length * 150; 
                 const perc = totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 0;
                 document.getElementById('m-perc').innerText = perc + '%';
                 document.getElementById('m-bar').style.width = perc + '%';
@@ -277,14 +270,10 @@
 
         function renderAICTE(students, subs) {
             const pList = document.getElementById('aicte-pending-list');
-            const pending = subs.filter(s => s.status === 'pending');
-            pList.innerHTML = pending.map(p => `
+            pList.innerHTML = subs.filter(s => s.status === 'pending').map(p => `
                 <div class="student-card">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div>
-                            <h4 style="font-size:0.9rem;">${p.activityTitle}</h4>
-                            <p style="font-size:0.65rem; color:var(--text-dim);">${p.studentEmail.split('@')[0]}</p>
-                        </div>
+                        <div><h4 style="font-size:0.9rem;">${p.activityTitle}</h4><p style="font-size:0.65rem; color:var(--text-dim);">${p.studentEmail.split('@')[0]}</p></div>
                         <div style="display:flex; gap:8px;">
                             <button class="btn" style="background:var(--accent); color:white; padding:5px 10px; font-size:0.65rem;" onclick="verify('${p._id}', 'approved', 'AICTE', '${p.activityTitle}')">Verify</button>
                             <button class="btn-danger" style="padding:5px 10px; font-size:0.65rem;" onclick="verify('${p._id}', 'rejected', 'AICTE')">✕</button>
@@ -295,16 +284,19 @@
             const sList = document.getElementById('aicte-student-list');
             sList.innerHTML = students.map(s => {
                 const pts = subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                const perc = Math.min(100, (pts / 100) * 100);
                 return `<div class="student-card">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div><h4 style="font-size:0.9rem;">${s.name || s.email.split('@')[0]}</h4></div>
                         <div style="font-size:1.1rem; font-weight:600; color:var(--primary);">${pts} <span style="font-size:0.5rem; color:var(--text-dim);">PTS</span></div>
                     </div>
+                    <div class="bar-bg"><div class="bar-fill" style="width:${perc}%; background:var(--primary);"></div></div>
                 </div>`;
             }).join('');
         }
 
         function renderPortfolio(students, achs, parts) {
+            // Pending Verification (Verification Section)
             const pList = document.getElementById('portfolio-pending-list');
             const allPending = [
                 ...achs.filter(a => a.status === 'pending').map(a => ({...a, type: 'ACH'})),
@@ -314,11 +306,7 @@
             pList.innerHTML = allPending.map(p => `
                 <div class="student-card">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                        <div>
-                            <p style="font-size:0.55rem; color:${p.type==='ACH'?'var(--gold)':'var(--blue)'}; font-weight:700;">${p.type}</p>
-                            <h4 style="font-size:0.9rem;">${p.title || p.genre}</h4>
-                            <p style="font-size:0.65rem; color:var(--text-dim);">${p.studentEmail.split('@')[0]}</p>
-                        </div>
+                        <div><p style="font-size:0.55rem; color:${p.type==='ACH'?'var(--gold)':'var(--blue)'}; font-weight:700;">${p.type}</p><h4 style="font-size:0.9rem;">${p.title || p.genre}</h4><p style="font-size:0.65rem; color:var(--text-dim);">${p.studentEmail.split('@')[0]}</p></div>
                         <div style="display:flex; gap:8px;">
                             <button class="btn" style="background:var(--accent); color:white; padding:5px 10px; font-size:0.65rem;" onclick="verify('${p._id}', 'approved', '${p.type}', '${p.title||p.genre}')">Verify</button>
                             <button class="btn-danger" style="padding:5px 10px; font-size:0.65rem;" onclick="verify('${p._id}', 'rejected', '${p.type}')">✕</button>
@@ -327,24 +315,38 @@
                     <div style="display:flex; gap:8px;">${(p.files||[]).map((f,i) => `<a href="https://drive.google.com/uc?id=${f.id || f}" target="_blank" style="font-size:0.6rem; color:var(--text-dim); text-decoration:none; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px;">Proof ${i+1}</a>`).join('')}</div>
                 </div>`).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No pending portfolio items.</p>';
 
-            const sList = document.getElementById('portfolio-student-list');
-            sList.innerHTML = students.map(s => {
-                const achPts = achs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                const partPts = parts.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                return `<div class="student-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <h4 style="font-size:0.9rem;">${s.name || s.email.split('@')[0]}</h4>
-                        <div style="display:flex; gap:8px;">
-                            ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" style="text-decoration:none; font-size:1.1rem;">🌟</a>` : ''}
-                            ${s.participationFolderId ? `<a href="https://drive.google.com/drive/folders/${s.participationFolderId}" target="_blank" style="text-decoration:none; font-size:1.1rem;">👥</a>` : ''}
-                        </div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-dim);">
-                        <span>Achievements: <b style="color:var(--gold);">${achPts}</b></span>
-                        <span>Participation: <b style="color:var(--blue);">${partPts}</b></span>
-                    </div>
+            // Portfolio Network (The d.html style card)
+            const pNetwork = document.getElementById('portfolio-list');
+            pNetwork.innerHTML = `
+                <div class="student-card" style="padding:1.5rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:24px;">
+                    <div style="font-weight:600; font-size:1.1rem; margin-bottom:1.5rem; color:var(--text);">${user.name || user.email.split('@')[0]}</div>
+                    
+                    <p style="font-size:0.65rem; color:var(--gold); font-weight:600; margin-bottom:12px; letter-spacing:1px; text-transform:uppercase;">ACHIEVEMENTS</p>
+                    ${students.map(s => {
+                        const pts = achs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                        const fid = s.achievementFolderId;
+                        return `<div class="student-row">
+                            <div style="font-size:0.95rem; font-weight:400;">${s.name || s.email.split('@')[0]}</div>
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <div style="font-size:0.85rem; font-weight:600; color:var(--gold);">${pts} PTS</div>
+                                <a href="${fid ? 'https://drive.google.com/drive/folders/' + fid : 'javascript:void(0)'}" ${fid ? 'target="_blank"' : ''} style="text-decoration:none; opacity:${fid?1:0.1}; font-size:1.4rem; color:var(--gold);">📂</a>
+                            </div>
+                        </div>`;
+                    }).join('')}
+
+                    <p style="font-size:0.65rem; color:var(--blue); font-weight:600; margin:25px 0 12px 0; letter-spacing:1px; text-transform:uppercase;">PARTICIPATIONS</p>
+                    ${students.map(s => {
+                        const pts = parts.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                        const fid = s.participationFolderId;
+                        return `<div class="student-row">
+                            <div style="font-size:0.95rem; font-weight:400;">${s.name || s.email.split('@')[0]}</div>
+                            <div style="display:flex; align-items:center; gap:15px;">
+                                <div style="font-size:0.85rem; font-weight:600; color:var(--blue);">${pts} PTS</div>
+                                <a href="${fid ? 'https://drive.google.com/drive/folders/' + fid : 'javascript:void(0)'}" ${fid ? 'target="_blank"' : ''} style="text-decoration:none; opacity:${fid?1:0.1}; font-size:1.4rem; color:var(--blue);">📂</a>
+                            </div>
+                        </div>`;
+                    }).join('')}
                 </div>`;
-            }).join('');
         }
 
         function renderNetwork(invites) {
@@ -352,7 +354,7 @@
             list.innerHTML = invites.filter(i => i.status === 'pending').map(i => `
                 <div class="student-card" style="border:1px dashed var(--gold); background:transparent;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div><div style="font-size:0.85rem; color:var(--text-dim);">${i.email}</div><div style="font-size:0.55rem; color:var(--gold);">PENDING ACCEPTANCE</div></div>
+                        <div><div style="font-size:0.85rem; color:var(--text-dim);">${i.email}</div><div style="font-size:0.55rem; color:var(--gold);">PENDING</div></div>
                         <button class="btn-danger" style="padding:4px 8px; font-size:0.6rem;" onclick="deleteInvite('${i._id}')">Cancel</button>
                     </div>
                 </div>`).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No pending invitations.</p>';
