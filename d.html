@@ -198,7 +198,10 @@
                                         <div style="font-size:0.65rem; color:var(--text-dim);">${s.email}</div>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:15px;">
-                                        ${s.driveRootFolderId ? `<a href="https://drive.google.com/drive/folders/${s.driveRootFolderId}" target="_blank" title="View Drive" style="text-decoration:none; font-size:1.2rem;">📂</a>` : '<span title="No Drive Yet" style="opacity:0.2; font-size:1.2rem;">📂</span>'}
+                                        <div style="display:flex; gap:8px;">
+                                            ${s.driveRootFolderId ? `<a href="https://drive.google.com/drive/folders/${s.driveRootFolderId}" target="_blank" title="AICTE Drive" style="text-decoration:none; font-size:1.1rem;">📂</a>` : '<span title="No AICTE" style="opacity:0.2; font-size:1.1rem;">📂</span>'}
+                                            ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" title="Achievements" style="text-decoration:none; font-size:1.1rem; filter: hue-rotate(45deg) saturate(2);">📂</a>` : '<span title="No ACH" style="opacity:0.2; font-size:1.1rem;">📂</span>'}
+                                        </div>
                                         <div style="text-align:right; display:flex; gap:10px;">
                                             <div>
                                                 <div style="font-size:0.8rem; font-weight:600; color:var(--accent);">${pts}</div>

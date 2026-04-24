@@ -174,10 +174,17 @@
                 rubrics = allGenres.filter(g => g.isRubric);
                 activities = allGenres.filter(g => !g.isRubric);
 
-                // Fetch student submissions
-                const res = await fetch(`/api/submissions?studentEmail=${user.email}&organizerEmail=${user.organizerEmail}`);
-                const data = await res.json();
-                submissions = data.submissions || [];
+                // Fetch student submissions and achievements
+                const [sRes, aRes] = await Promise.all([
+                    fetch(`/api/submissions?studentEmail=${user.email}&organizerEmail=${user.organizerEmail}`),
+                    fetch(`/api/achievements?studentEmail=${user.email}`)
+                ]);
+                const sData = await sRes.json();
+                const aData = await aRes.json();
+                submissions = sData.submissions || [];
+                const achievements = aData.achievements || [];
+                
+                renderAchLog(achievements);
             } catch (e) { console.error(e); }
 
             const rGrid = document.getElementById('rubric-grid');
@@ -251,7 +258,11 @@
             const max = parseInt(document.getElementById('p-max').innerText) || 100;
             document.getElementById('p-bar').style.width = Math.min(100, (totalPoints / max) * 100) + '%';
 
-            // Render Achievement Genres
+            document.getElementById('p-bar').style.width = Math.min(100, (totalPoints / max) * 100) + '%';
+        }
+
+        async function renderAchLog(achievements) {
+            // Sync Achievement Genres
             const agRes = await fetch('/api/achievement-genres').then(r => r.json());
             const ags = agRes.genres || [];
             const agGrid = document.getElementById('ach-genre-grid');

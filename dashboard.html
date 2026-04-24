@@ -173,7 +173,10 @@
                                     <p style="font-size:0.75rem; color:var(--text-dim);">${s.email}</p>
                                 </div>
                                 <div style="text-align:right; display:flex; align-items:center; gap:15px;">
-                                    ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="Open AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="Awaiting first login" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
+                                    <div style="display:flex; gap:10px;">
+                                        ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="No AICTE Drive" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
+                                        ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" title="Achievements Drive" style="color:var(--gold); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="No ACH Drive" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
+                                    </div>
                                     <div style="display:flex; gap:15px;">
                                         <div style="text-align:center;">
                                             <div style="font-size:1.2rem; font-weight:600; color:var(--accent)">${points}</div>
