@@ -418,7 +418,7 @@
                         </div>
                     </div>
                     <div style="padding:15px; font-size:0.9rem; line-height:1.5;">${ev.description}</div>
-                    ${ev.viewLink ? `<img src="${ev.viewLink.replace('view?usp=drivesdk', 'preview')}" style="width:100%; max-height:400px; object-fit:cover; border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05);">` : ''}
+                    ${ev.viewLink ? `<img src="${ev.driveFileId ? `https://drive.google.com/thumbnail?id=${ev.driveFileId}&sz=w800` : ev.viewLink}" style="width:100%; max-height:400px; object-fit:cover; border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05);">` : ''}
                     <div style="padding:15px; display:flex; justify-content:flex-end;">
                         ${ev.downloadLink ? `<a href="${ev.downloadLink}" target="_blank" style="text-decoration:none; color:var(--primary); font-size:0.8rem; font-weight:600; padding:8px 16px; background:rgba(139, 92, 246, 0.1); border-radius:8px;">📥 Download Image</a>` : ''}
                     </div>
