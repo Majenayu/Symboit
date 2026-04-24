@@ -124,10 +124,16 @@
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: var(--text-dim); }
 
         #message { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; z-index: 3000; display: none; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        /* LOADER */
+        .loader-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div id="message"></div>
+    <div id="loader" class="loader-overlay"><div class="spinner"></div><div style="color:white; font-weight:600; letter-spacing:1px;">GENERATING REPORT...</div></div>
 
     <header>
         <div class="app-name">Symboit <span style="font-weight:300; opacity:0.6;">Mentor</span></div>
@@ -393,12 +399,33 @@
             const type = document.getElementById('report-type').value;
             const from = document.getElementById('report-from').value;
             const to = document.getElementById('report-to').value;
-            showMessage('Generating...');
-            const res = await fetch('/api/report/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mentorEmail: user.email, type, startDate: from, endDate: to, format: 'pdf' }) });
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `mentor_report.pdf`; a.click();
-            closeReportModal(); showMessage('Downloaded!');
+            const loader = document.getElementById('loader');
+            loader.style.display = 'flex';
+            
+            try {
+                const res = await fetch('/api/report/generate', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ mentorEmail: user.email, type, startDate: from, endDate: to, format: 'pdf' }) 
+                });
+                if(!res.ok) throw new Error('Failed');
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a'); 
+                a.href = url; 
+                a.download = `mentor_report_${user.email.split('@')[0]}.pdf`; 
+                document.body.appendChild(a);
+                a.click(); 
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                closeReportModal(); 
+                showMessage('Report Downloaded! 📄');
+            } catch (e) {
+                console.error(e);
+                alert('Report generation failed.');
+            } finally {
+                loader.style.display = 'none';
+            }
         }
 
         function showMessage(txt) {

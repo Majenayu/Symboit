@@ -66,10 +66,16 @@
             .desktop-wrapper { display: none; }
             .mobile-container { display: flex; }
         }
+
+        /* LOADER */
+        .loader-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; }
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div id="message"></div>
+    <div id="loader" class="loader-overlay"><div class="spinner"></div><div style="color:white; font-weight:600; letter-spacing:1px;">GENERATING REPORT...</div></div>
 
     <div class="desktop-wrapper">
         <div style="max-width: 1200px; margin: 0 auto;">
@@ -356,16 +362,42 @@
         function openReportModal() { document.getElementById('report-modal').style.display = 'flex'; }
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
         async function generateReport() {
-            const btn = document.getElementById('gen-btn'); btn.innerText = 'Processing...'; btn.disabled = true;
+            const btn = document.getElementById('gen-btn'); 
+            const loader = document.getElementById('loader');
+            loader.style.display = 'flex';
+            btn.disabled = true;
             try {
-                const res = await fetch('/api/report/generate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ studentEmail: user.email, organizerEmail: user.organizerEmail, type: document.getElementById('report-type').value, startDate: document.getElementById('report-from').value, endDate: document.getElementById('report-to').value, format: 'pdf' }) });
+                const res = await fetch('/api/report/generate', { 
+                    method: 'POST', 
+                    headers: {'Content-Type':'application/json'}, 
+                    body: JSON.stringify({ 
+                        studentEmail: user.email, 
+                        organizerEmail: user.organizerEmail, 
+                        type: document.getElementById('report-type').value, 
+                        startDate: document.getElementById('report-from').value, 
+                        endDate: document.getElementById('report-to').value, 
+                        format: 'pdf' 
+                    }) 
+                });
                 if(!res.ok) throw new Error('Failed');
                 const blob = await res.blob();
                 const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = 'student_report.pdf'; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);
-                closeReportModal(); showMessage('Downloaded! 📄');
-            } catch (e) { alert('Report generation failed.'); }
-            finally { btn.innerText = 'Download Master Report'; btn.disabled = false; }
+                const a = document.createElement('a'); 
+                a.href = url; 
+                a.download = `student_report.pdf`; 
+                document.body.appendChild(a); 
+                a.click(); 
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                closeReportModal();
+                showMessage('Report Downloaded! 📄');
+            } catch (e) { 
+                console.error(e);
+                alert('Report generation failed.'); 
+            } finally { 
+                loader.style.display = 'none';
+                btn.disabled = false; 
+            }
         }
 
         function showMessage(t) { const m = document.getElementById('message'); m.innerText = t; m.style.display = 'block'; m.style.background = 'var(--primary)'; setTimeout(()=>m.style.display='none',3000); }
