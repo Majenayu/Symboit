@@ -6,110 +6,161 @@
     <title>Organizer Console | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --danger: #ef4444; --gold: #fbbf24; --text: #fff; --text-dim: #94a3b8; }
+        :root { 
+            --bg: #050505; 
+            --card: rgba(255,255,255,0.03); 
+            --primary: #6366f1; 
+            --primary-dark: #4f46e5;
+            --accent: #10b981; 
+            --danger: #ef4444; 
+            --gold: #fbbf24; 
+            --text: #fff; 
+            --text-dim: #94a3b8; 
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; overflow-y: auto; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
-        .glass-card { background: var(--card); backdrop-filter: blur(12px); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
+        /* Layout Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
+        .glass-header { max-width: 1200px; margin: 0 auto 2rem auto; background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .glass-card { background: var(--card); backdrop-filter: blur(12px); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); height: fit-content; }
         
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto 2rem auto; }
+        .stat-card { background: var(--card); padding: 1.5rem; border-radius: 18px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .stat-val { font-size: 2.2rem; font-weight: 600; color: var(--primary); }
+        .ai-card { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.1)); display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--accent); letter-spacing: 2px; }
+
+        /* Progress Bar */
         .progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; margin: 10px 0; }
         .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: 1s ease; }
         
-        .btn { padding: 10px 20px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: inherit; }
+        /* Buttons */
+        .btn { padding: 10px 20px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
+        .btn-outline:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
         
-        input, select, textarea { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; margin-bottom: 15px; font-family: inherit; }
+        /* Inputs */
+        input, select, textarea { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 15px; font-family: inherit; outline: none; }
+        input:focus { border-color: var(--primary); }
         
-        .list-item { background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .badge { font-size: 0.6rem; padding: 2px 8px; border-radius: 5px; background: rgba(99, 102, 241, 0.1); color: var(--primary); }
+        /* Lists */
+        .list-item { background: rgba(255,255,255,0.02); padding: 1.2rem; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1rem; }
+        .badge { font-size: 0.6rem; padding: 3px 10px; border-radius: 6px; background: rgba(99, 102, 241, 0.1); color: var(--primary); font-weight: bold; }
+        .status-pill { font-size: 0.65rem; padding: 3px 10px; border-radius: 6px; font-weight: bold; }
+        .status-active { background: rgba(16, 185, 129, 0.1); color: var(--accent); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: var(--gold); border: 1px solid rgba(245, 158, 11, 0.2); }
 
-        #message { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 12px; display: none; z-index: 1000; }
+        #message { position: fixed; top: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 14px; display: none; z-index: 2000; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
+        /* Modal */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
         .modal-content { background: #111; padding: 2.5rem; border-radius: 30px; border: 1px solid var(--primary); max-width: 500px; width: 100%; position: relative; }
         .close-btn { position: absolute; top: 1.5rem; right: 1.5rem; color: var(--text-dim); cursor: pointer; font-size: 1.5rem; }
-
         input[type="date"] { color-scheme: dark; }
 
         @media (max-width: 768px) {
             body { padding: 1rem; }
             .grid { grid-template-columns: 1fr; gap: 1rem; }
+            .glass-header { padding: 1rem; flex-direction: column; text-align: center; gap: 10px; }
             .glass-card { padding: 1.5rem; }
-            .list-item { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .list-item > div { width: 100%; }
+            .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .btn { width: 100%; }
         }
     </style>
 </head>
 <body>
-    <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; margin-bottom:3rem;">
-        <h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1>
-        <button class="btn btn-primary" onclick="logout()">Logout</button>
+    <div id="message"></div>
+
+    <div class="glass-header">
+        <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1></div>
+        <div style="text-align:right;">
+            <div id="u-name" style="font-weight:600;">Loading...</div>
+            <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-val" id="m-count">0</div>
+            <div style="font-size:0.8rem; color:var(--text-dim)">Active Mentors</div>
+        </div>
+        <div class="stat-card ai-card">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:8px; height:8px; background:var(--accent); border-radius:50%; box-shadow: 0 0 10px var(--accent);"></div>
+                ENTERPRISE AI
+            </div>
+        </div>
     </div>
 
     <div class="grid">
-        <!-- Manage Genres (Activities) -->
+        <!-- AICTE Section (Curriculum) -->
         <div class="glass-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                <h2 style="font-weight:400;">CURRICULUM</h2>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn" style="background:rgba(16, 185, 129, 0.1); color:var(--accent); font-size:0.65rem;" onclick="openReportModal('aicte')">📊 Report</button>
-                    <button class="btn" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.65rem;" onclick="resetCurriculum()">Re-sync</button>
+                <h2 style="font-weight:400; font-size:1.1rem; letter-spacing:1px;">AICTE CURRICULUM</h2>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-primary" style="padding:6px 12px; font-size:0.7rem; background:rgba(16, 185, 129, 0.1); color:var(--accent); border:1px solid rgba(16,185,129,0.2);" onclick="openReportModal('aicte')">📊 Report</button>
+                    <button class="btn" style="padding:6px 12px; font-size:0.7rem; background:rgba(251, 191, 36, 0.1); color:var(--gold); border:1px solid rgba(251,191,36,0.2);" onclick="resetCurriculum()">Resync</button>
                 </div>
             </div>
-            <form id="genre-form" onsubmit="saveGenre(event)">
+            
+            <form id="genre-form" onsubmit="saveGenre(event)" style="background:rgba(255,255,255,0.02); padding:1.5rem; border-radius:18px; border:1px solid rgba(255,255,255,0.05); margin-bottom:2rem;">
                 <input type="hidden" id="genre-id">
-                <input type="text" id="g-title" placeholder="Activity Title (e.g. Plantation Drive)" required>
-                <textarea id="g-desc" placeholder="Brief Description..." rows="2" required></textarea>
-                <div style="display:flex; gap:10px;">
+                <input type="text" id="g-title" placeholder="Activity Title" required>
+                <textarea id="g-desc" placeholder="Activity Description..." rows="2" required></textarea>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <input type="number" id="g-pts" placeholder="Points" required>
                     <select id="g-type">
                         <option value="weeks">2-Week Project</option>
                         <option value="event">Single Day Event</option>
                     </select>
                 </div>
-                <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px;">
+                <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px; font-size:0.8rem;">
                     <input type="checkbox" id="g-rubric" style="width:auto; margin:0;">
-                    <label for="g-rubric" style="font-size:0.8rem; color:var(--text-dim);">Mark as Priority Rubric</label>
+                    <label for="g-rubric" style="color:var(--text-dim);">Mark as Priority Rubric</label>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width:100%;">Save Activity</button>
-                <button type="button" class="btn" style="width:100%; margin-top:5px; background:transparent; color:var(--text-dim);" onclick="resetForm()">Cancel</button>
             </form>
 
-            <div style="margin-top:2.5rem;">
-                <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">EXISTING ACTIVITIES</h3>
-                <div id="genre-list"></div>
-            </div>
+            <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1.5rem; letter-spacing:1px; text-transform:uppercase;">Existing Activities</h3>
+            <div id="genre-list" style="max-height: 400px; overflow-y: auto; padding-right: 5px;"></div>
         </div>
 
-        <!-- Mentors & Invites -->
+        <!-- Network Section (Mentors/Achievements/Participation) -->
         <div class="glass-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                <h2 style="font-weight:400;">NETWORK</h2>
+                <h2 style="font-weight:400; font-size:1.1rem; letter-spacing:1px;">MENTOR NETWORK</h2>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.65rem;" onclick="openReportModal('ach')">🏆 Ach</button>
-                    <button class="btn" style="background:rgba(56, 189, 248, 0.1); color:#38bdf8; font-size:0.65rem;" onclick="openReportModal('part')">🤝 Part</button>
+                    <button class="btn" style="padding:6px 12px; font-size:0.7rem; background:rgba(251, 191, 36, 0.1); color:var(--gold); border:1px solid rgba(251,191,36,0.2);" onclick="openReportModal('ach')">🏆 Ach</button>
+                    <button class="btn" style="padding:6px 12px; font-size:0.7rem; background:rgba(56, 189, 248, 0.1); color:#38bdf8; border:1px solid rgba(56,189,248,0.2);" onclick="openReportModal('part')">🤝 Part</button>
                 </div>
             </div>
+
             <div style="margin-bottom:2rem;">
-                <input type="email" id="invite-email" placeholder="Mentor Email">
-                <button class="btn btn-primary" style="width:100%;" onclick="sendInvite()">Send Invitation Link</button>
+                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:10px;">INVITE NEW MENTOR</p>
+                <div style="display:flex; gap:10px;">
+                    <input type="email" id="invite-email" placeholder="Enter mentor email..." style="margin:0;">
+                    <button class="btn btn-primary" onclick="sendInvite()" style="padding: 12px;">Invite</button>
+                </div>
             </div>
             
-            <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">MENTOR NETWORK</h3>
+            <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1.5rem; letter-spacing:1px; text-transform:uppercase;">Mentor Performance</h3>
             <div id="mentor-list"></div>
         </div>
-
     </div>
 
+    <!-- Report Modal -->
     <div id="report-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeReportModal()">&times;</span>
-            <h2 style="font-weight:400; margin-bottom:1.5rem;">Global Portfolio Generation</h2>
+            <h2 style="font-weight:400; margin-bottom:1.5rem; letter-spacing:1px;">PORTFOLIO GENERATOR</h2>
             
-            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">REPORT CATEGORY</label>
-            <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; margin-bottom:20px; outline:none;">
+            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">REPORT CATEGORY</label>
+            <select id="report-type" disabled style="background:rgba(255,255,255,0.05); color:var(--text-dim);">
                 <option value="aicte">AICTE Activity Points (All Time)</option>
                 <option value="ach">Achievement Node (Range)</option>
                 <option value="part">Participation Node (Range)</option>
@@ -117,61 +168,47 @@
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
                 <div>
-                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">FROM DATE</label>
-                    <input type="date" id="report-from" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; outline:none;">
+                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">FROM DATE</label>
+                    <input type="date" id="report-from">
                 </div>
                 <div>
-                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">TO DATE</label>
-                    <input type="date" id="report-to" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; outline:none;">
+                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">TO DATE</label>
+                    <input type="date" id="report-to">
                 </div>
             </div>
 
-            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">FILE FORMAT</label>
+            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">FILE FORMAT</label>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:25px;">
-                <button class="btn btn-outline" id="fmt-pdf" onclick="setFormat('pdf')" style="border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)">PDF Document</button>
-                <button class="btn btn-outline" id="fmt-docx" onclick="setFormat('docx')">Word (.docx)</button>
+                <button class="btn btn-outline" id="fmt-pdf" onclick="setFormat('pdf')" style="border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)">PDF</button>
+                <button class="btn btn-outline" id="fmt-docx" onclick="setFormat('docx')">Word</button>
             </div>
 
-            <button class="btn btn-primary" onclick="generateReport()" id="gen-btn">Generate Comprehensive Report</button>
-            <p style="font-size:0.7rem; color:var(--text-dim); margin-top:15px; text-align:center;">This will process all students grouped by their mentors.</p>
+            <button class="btn btn-primary" onclick="generateReport()" id="gen-btn" style="width:100%; height:50px;">Download Comprehensive Report</button>
+            <p style="font-size:0.7rem; color:var(--text-dim); margin-top:15px; text-align:center; line-height:1.4;">This will process all students grouped by their mentors and fetch images dynamically.</p>
         </div>
     </div>
-
-    <div id="message"></div>
 
     <script>
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'organizer') window.location.href = '/';
+        document.getElementById('u-name').innerText = user.name || user.email.split('@')[0];
 
         async function sync() {
             try {
-                // Fetch Genres
-                const gRes = await fetch(`/api/genres?organizerEmail=${user.email}`).then(r => r.json());
-                renderGenres(gRes.genres);
-
-                // Fetch Mentors
-                const mRes = await fetch(`/api/users?organizerEmail=${user.email}&role=mentor`).then(r => r.json());
-                const mentors = mRes.users || [];
-
-                // Fetch Students
-                const sRes = await fetch(`/api/users?organizerEmail=${user.email}&role=student`).then(r => r.json());
-                const students = sRes.users || [];
-
-                const [subRes, achRes, partRes] = await Promise.all([
+                const [gRes, mRes, sRes, subRes, achRes, partRes, iRes] = await Promise.all([
+                    fetch(`/api/genres?organizerEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/users?organizerEmail=${user.email}&role=mentor`).then(r => r.json()),
+                    fetch(`/api/users?organizerEmail=${user.email}&role=student`).then(r => r.json()),
                     fetch(`/api/submissions?organizerEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/achievements?organizerEmail=${user.email}`).then(r => r.json()),
-                    fetch(`/api/participations?organizerEmail=${user.email}`).then(r => r.json())
+                    fetch(`/api/participations?organizerEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json())
                 ]);
-                const submissions = subRes.submissions || [];
-                const achievements = achRes.achievements || [];
-                const participations = partRes.participations || [];
 
-                // Fetch Invitations to show pending mentors
-                const iRes = await fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json());
-                const invitations = iRes.invites || [];
-
-                renderMentors(mentors, invitations, students, submissions, achievements, participations);
-            } catch (e) { console.error(e); }
+                renderGenres(gRes.genres || []);
+                renderMentors(mRes.users || [], iRes.invites || [], sRes.users || [], subRes.submissions || [], achRes.achievements || [], partRes.participations || []);
+                document.getElementById('m-count').innerText = (mRes.users || []).length;
+            } catch (e) { console.error('Sync failed', e); }
         }
 
         function renderGenres(genres) {
@@ -179,14 +216,14 @@
             list.innerHTML = '';
             genres.forEach(g => {
                 list.innerHTML += `
-                    <div class="list-item">
+                    <div class="list-item" style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <div style="font-weight:600; font-size:0.9rem;">${g.title} <span class="badge">${g.pts} PTS</span></div>
-                            <div style="font-size:0.7rem; color:var(--text-dim);">${g.type === 'weeks' ? '2-Week' : 'Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
+                            <div style="font-weight:600; font-size:0.9rem;">${g.title} <span class="badge" style="margin-left:5px;">${g.pts} PTS</span></div>
+                            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:3px;">${g.type === 'weeks' ? '2-Week' : 'Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
                         </div>
                         <div style="display:flex; gap:10px;">
-                            <button onclick="editGenre('${g._id}', '${g.title}', '${g.desc}', ${g.pts}, '${g.type}', ${g.isRubric})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.8rem;">Edit</button>
-                            <button onclick="deleteGenre('${g._id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.8rem;">Del</button>
+                            <button onclick="editGenre('${g._id}', '${g.title}', '${g.desc}', ${g.pts}, '${g.type}', ${g.isRubric})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.75rem;">Edit</button>
+                            <button onclick="deleteGenre('${g._id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.75rem;">Del</button>
                         </div>
                     </div>`;
             });
@@ -196,122 +233,73 @@
             const list = document.getElementById('mentor-list');
             list.innerHTML = '';
 
-            // 1. Show Active Mentors
             mentors.forEach(m => {
                 const myStudents = students.filter(s => s.mentorEmail === m.email);
-                
+                const progress = (() => {
+                    const totalPts = myStudents.reduce((acc, s) => {
+                        const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
+                        return acc + sSubs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
+                    }, 0);
+                    const maxPossible = myStudents.length * 100;
+                    return maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
+                })();
+
                 list.innerHTML += `
-                    <div class="list-item" style="display:block;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div class="list-item">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                             <div>
                                 <div style="font-weight:600; font-size:1rem;">${m.name || m.email.split('@')[0]}</div>
-                                <div style="font-size:0.75rem; color:var(--text-dim);">${m.email}</div>
+                                <div style="font-size:0.7rem; color:var(--text-dim);">${m.email}</div>
                             </div>
-                            <div style="text-align:right;">
-                                <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end;">
-                                    <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--accent); font-size:0.55rem;">ACTIVE</span>
-                                    <span class="badge" style="background:rgba(99, 102, 241, 0.1); color:var(--primary);">${myStudents.length} Students</span>
-                                    <button onclick="deleteMentor('${m._id}')" class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;">Remove</button>
-                                </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span class="status-pill status-active">ACTIVE</span>
+                                <button onclick="deleteMentor('${m._id}')" class="btn btn-danger" style="padding:4px 8px; font-size:0.6rem; border-radius:6px;">✕</button>
                             </div>
                         </div>
                         
-                        <div style="margin: 10px 0 20px 0;">
+                        <div style="margin-bottom:15px;">
                             <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-dim); margin-bottom:5px;">
-                                <span>MENTOR OVERALL PROGRESS</span>
-                                <span style="color:var(--accent); font-weight:bold;">${(() => {
-                                    const totalPts = myStudents.reduce((acc, s) => {
-                                        const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                                        return acc + sSubs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-                                    }, 0);
-                                    const maxPossible = myStudents.length * 100;
-                                    return maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
-                                })()}%</span>
+                                <span>NET PROGRESS</span>
+                                <span style="color:var(--accent); font-weight:bold;">${progress}%</span>
                             </div>
-                            <div class="progress-container"><div class="progress-bar" style="width:${(() => {
-                                const totalPts = myStudents.reduce((acc, s) => {
-                                    const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                                    return acc + sSubs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-                                }, 0);
-                                const maxPossible = myStudents.length * 100;
-                                return maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
-                            })()}%"></div></div>
+                            <div class="progress-container"><div class="progress-bar" style="width:${progress}%"></div></div>
                         </div>
-                        
-                        ${myStudents.length > 0 ? `
-                        <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
-                            <p style="font-size:0.6rem; color:var(--text-dim); margin-bottom:10px; letter-spacing:1px; text-transform:uppercase;">Student Progress</p>
-                            ${myStudents.map(s => {
-                                const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                                const pts = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
-                                return `
-                                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:8px 12px; border-radius:10px; margin-bottom:5px;">
-                                    <div style="flex:1;">
-                                        <div style="font-size:0.8rem; font-weight:600;">${s.name || s.email.split('@')[0]}</div>
-                                        <div style="font-size:0.65rem; color:var(--text-dim);">${s.email}</div>
-                                    </div>
-                                    <div style="display:flex; align-items:center; gap:15px;">
-                                        <div style="display:flex; gap:6px;">
-                                            ${s.driveRootFolderId ? `<a href="https://drive.google.com/drive/folders/${s.driveRootFolderId}" target="_blank" title="AICTE Drive" style="text-decoration:none; font-size:1rem;">📂</a>` : '<span style="opacity:0.1; font-size:1rem;">📂</span>'}
-                                            ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" title="Achievements" style="text-decoration:none; font-size:1rem; filter: hue-rotate(45deg) saturate(2);">📂</a>` : '<span style="opacity:0.1; font-size:1rem;">📂</span>'}
-                                            ${s.participationFolderId ? `<a href="https://drive.google.com/drive/folders/${s.participationFolderId}" target="_blank" title="Participation" style="text-decoration:none; font-size:1rem; filter: hue-rotate(200deg) saturate(2);">📂</a>` : '<span style="opacity:0.1; font-size:1rem;">📂</span>'}
-                                        </div>
-                                        <div style="text-align:right; display:flex; gap:8px;">
-                                            <div>
-                                                <div style="font-size:0.75rem; font-weight:600; color:var(--accent);">${pts}</div>
-                                                <div style="font-size:0.4rem; color:var(--text-dim); text-transform:uppercase;">AICTE</div>
-                                            </div>
-                                            <div>
-                                                <div style="font-size:0.75rem; font-weight:600; color:var(--gold);">${(() => {
-                                                    const sAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'approved');
-                                                    return sAchs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-                                                })()}</div>
-                                                <div style="font-size:0.4rem; color:var(--text-dim); text-transform:uppercase;">ACH</div>
-                                            </div>
-                                            <div>
-                                                <div style="font-size:0.75rem; font-weight:600; color:#38bdf8;">${(() => {
-                                                    const sParts = participations.filter(p => p.studentEmail === s.email && p.status === 'approved');
-                                                    return sParts.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-                                                })()}</div>
-                                                <div style="font-size:0.4rem; color:var(--text-dim); text-transform:uppercase;">PART</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>`;
-                            }).join('')}
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; text-align:center;">
+                            <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:10px;">
+                                <div style="font-size:0.8rem; font-weight:600;">${myStudents.length}</div>
+                                <div style="font-size:0.5rem; color:var(--text-dim);">STUDENTS</div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:10px;">
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--gold);">${achievements.filter(a => myStudents.some(s=>s.email===a.studentEmail) && a.status==='approved').length}</div>
+                                <div style="font-size:0.5rem; color:var(--text-dim);">ACHIEVEMENTS</div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:10px;">
+                                <div style="font-size:0.8rem; font-weight:600; color:#38bdf8;">${participations.filter(p => myStudents.some(s=>s.email===p.studentEmail) && p.status==='approved').length}</div>
+                                <div style="font-size:0.5rem; color:var(--text-dim);">PARTICIPATION</div>
+                            </div>
                         </div>
-                        ` : '<p style="font-size:0.7rem; color:var(--text-dim); font-style:italic;">No students assigned yet.</p>'}
                     </div>`;
             });
 
-            // 2. Show Pending Invitations (for mentors)
             invitations.filter(i => i.role === 'mentor' && i.status === 'pending').forEach(i => {
                 list.innerHTML += `
-                    <div class="list-item" style="border: 1px dashed rgba(251, 191, 36, 0.3); opacity: 0.8; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight:600; font-size:0.9rem; color:var(--text-dim);">${i.email}</div>
-                            <div style="font-size:0.6rem; color:var(--gold); letter-spacing:1px; margin-top:4px;">INVITATION SENT</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span class="badge" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.55rem;">PENDING</span>
-                            <button onclick="deleteInvite('${i._id}')" class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;">Cancel</button>
+                    <div class="list-item" style="border-style:dashed; opacity:0.8;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-weight:600; font-size:0.9rem;">${i.email}</div>
+                                <div style="font-size:0.6rem; color:var(--gold); margin-top:3px;">INVITATION PENDING</div>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button onclick="copyLink('${window.location.origin}?invite=${i.token}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.75rem;">Link</button>
+                                <button onclick="deleteInvite('${i._id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.75rem;">✕</button>
+                            </div>
                         </div>
                     </div>`;
             });
         }
 
-        async function deleteInvite(id) {
-            if(!confirm('Cancel this invitation?')) return;
-            await fetch(`/api/invitations/${id}`, { method: 'DELETE' });
-            sync();
-        }
-
-        async function deleteMentor(id) {
-            if(!confirm('Remove this mentor? All their students will remain but will be unassigned.')) return;
-            await fetch(`/api/users/${id}`, { method: 'DELETE' });
-            sync();
-        }
-
+        // --- CORE FUNCTIONS ---
         async function saveGenre(e) {
             e.preventDefault();
             const id = document.getElementById('genre-id').value;
@@ -323,22 +311,12 @@
                 type: document.getElementById('g-type').value,
                 isRubric: document.getElementById('g-rubric').checked
             };
-
-            const url = id ? `/api/genres/${id}` : '/api/genres';
-            const method = id ? 'PUT' : 'POST';
-
-            try {
-                const res = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                }).then(r => r.json());
-                if(res.success) {
-                    showMessage(id ? 'Activity Updated!' : 'Activity Created!');
-                    resetForm();
-                    sync();
-                }
-            } catch (e) { showMessage('Error saving genre', true); }
+            const res = await fetch(id ? `/api/genres/${id}` : '/api/genres', {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(r => r.json());
+            if(res.success) { showMessage(id ? 'Updated!' : 'Created!'); resetForm(); sync(); }
         }
 
         function editGenre(id, title, desc, pts, type, isRubric) {
@@ -348,31 +326,12 @@
             document.getElementById('g-pts').value = pts;
             document.getElementById('g-type').value = type;
             document.getElementById('g-rubric').checked = isRubric;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function deleteGenre(id) {
-            if(!confirm('Delete this activity?')) return;
-            await fetch(`/api/genres/${id}`, { method: 'DELETE' });
-            sync();
-        }
-
-        async function resetCurriculum() {
-            if(!confirm('This will delete your current activities and re-load the full 24-activity official set. Continue?')) return;
-            const res = await fetch('/api/genres/reset', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ organizerEmail: user.email })
-            }).then(r => r.json());
-            if(res.success) {
-                showMessage('Curriculum Reset Successful! ✨');
-                sync();
-            }
-        }
-
-        function resetForm() {
-            document.getElementById('genre-id').value = '';
-            document.getElementById('genre-form').reset();
-        }
+        async function deleteGenre(id) { if(confirm('Delete activity?')) { await fetch(`/api/genres/${id}`, { method: 'DELETE' }); sync(); } }
+        async function resetCurriculum() { if(confirm('Reset to official set?')) { await fetch('/api/genres/reset', { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({organizerEmail:user.email}) }); sync(); } }
+        function resetForm() { document.getElementById('genre-id').value = ''; document.getElementById('genre-form').reset(); }
 
         async function sendInvite() {
             const email = document.getElementById('invite-email').value;
@@ -380,48 +339,31 @@
             const res = await fetch('/api/invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, inviterEmail: user.email, organizerEmail: user.email, role: 'mentor' })
+                body: JSON.stringify({ email, role: 'mentor', inviterEmail: user.email, organizerEmail: user.email })
             }).then(r => r.json());
-            if(res.success) {
-                showMessage('Invitation sent! 📧');
-                document.getElementById('invite-email').value = '';
-            }
+            if(res.success) { showMessage('Invited!'); document.getElementById('invite-email').value = ''; sync(); }
         }
 
-        function showMessage(txt, isError = false) {
-            const m = document.getElementById('message');
-            m.innerText = txt;
-            m.style.display = 'block';
-            m.style.background = isError ? 'var(--danger)' : 'var(--accent)';
-            m.style.color = 'white';
-            setTimeout(() => m.style.display = 'none', 3000);
-        }
+        async function deleteMentor(id) { if(confirm('Remove mentor?')) { await fetch(`/api/users/${id}`, { method: 'DELETE' }); sync(); } }
+        async function deleteInvite(id) { if(confirm('Cancel invite?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); sync(); } }
+        function copyLink(link) { navigator.clipboard.writeText(link).then(()=>alert('Link Copied!')); }
 
-        function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
         // --- REPORTING ---
         let selectedFormat = 'pdf';
-        let targetStudent = null;
-
         function setFormat(f) {
             selectedFormat = f;
             document.getElementById('fmt-pdf').style.cssText = f === 'pdf' ? 'border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)' : '';
             document.getElementById('fmt-docx').style.cssText = f === 'docx' ? 'border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)' : '';
         }
-
-        function openReportModal(type = 'aicte', studentEmail = null) {
-            targetStudent = studentEmail;
+        function openReportModal(type) {
             document.getElementById('report-modal').style.display = 'flex';
             document.getElementById('report-type').value = type;
-            
             const now = new Date();
             document.getElementById('report-to').value = now.toISOString().split('T')[0];
             const lastYear = new Date();
             lastYear.setFullYear(now.getFullYear() - 1);
             document.getElementById('report-from').value = lastYear.toISOString().split('T')[0];
-
-            document.getElementById('gen-btn').innerText = targetStudent ? `Generate For ${targetStudent.split('@')[0]}` : "Generate Comprehensive Report";
         }
-
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
 
         async function generateReport() {
@@ -429,43 +371,32 @@
             const type = document.getElementById('report-type').value;
             const start = document.getElementById('report-from').value;
             const end = document.getElementById('report-to').value;
-
-            btn.innerText = "Processing Data...";
-            btn.disabled = true;
-
+            btn.innerText = "Processing Cloud Data..."; btn.disabled = true;
             try {
-                const body = { organizerEmail: user.email, type, startDate: start, endDate: end, format: selectedFormat };
-                if (targetStudent) body.studentEmail = targetStudent;
-
                 const response = await fetch('/api/report/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                    body: JSON.stringify({ organizerEmail: user.email, type, startDate: start, endDate: end, format: selectedFormat })
                 });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error || 'Generation failed');
-                }
-
+                if(!response.ok) throw new Error('Generation failed');
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
-                a.download = `${targetStudent ? targetStudent.split('@')[0] : 'global'}_report_${type}_${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                showMessage("Report generated successfully!");
-                closeReportModal();
-            } catch (error) {
-                showMessage(error.message);
-            } finally {
-                btn.innerText = targetStudent ? "Generate For Student" : "Generate Comprehensive Report";
-                btn.disabled = false;
-            }
+                a.href = url; a.download = `comprehensive_report_${type}.${selectedFormat}`;
+                document.body.appendChild(a); a.click(); a.remove();
+                showMessage("Success!"); closeReportModal();
+            } catch (e) { showMessage("Generation failed", true); } finally { btn.innerText = "Download Comprehensive Report"; btn.disabled = false; }
         }
 
+        function showMessage(txt, isErr=false) {
+            const m = document.getElementById('message');
+            m.innerText = txt; m.style.display = 'block';
+            m.style.background = isErr ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)';
+            m.style.color = 'white';
+            setTimeout(() => m.style.display = 'none', 3000);
+        }
+
+        function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
         sync();
     </script>
 </body>
