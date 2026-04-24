@@ -471,7 +471,7 @@ app.get('/api/users', async (req, res) => {
 // --- Genre / Activity Config Endpoints ---
 
 app.get('/api/genres', async (req, res) => {
-    const { organizerEmail } = req.query;
+    const organizerEmail = (req.query.organizerEmail || "").toLowerCase();
     try {
         let genres = await Genre.find({ organizerEmail });
         
@@ -517,7 +517,7 @@ app.get('/api/genres', async (req, res) => {
 });
 
 app.post('/api/genres/reset', async (req, res) => {
-    const { organizerEmail } = req.body;
+    const organizerEmail = (req.body.organizerEmail || "").toLowerCase();
     try {
         await Genre.deleteMany({ organizerEmail });
         // The next GET /api/genres will trigger the re-seed

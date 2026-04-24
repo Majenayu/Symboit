@@ -179,33 +179,56 @@
         if(!user || user.role !== 'organizer') window.location.href = '/';
         document.getElementById('u-name').innerText = user.name || user.email.split('@')[0];
 
+        let activities = [];
+
         async function sync() {
             try {
+                console.log(`[SYNC] Fetching for: ${user.email}`);
+                const email = (user.email || "").toLowerCase();
                 const [gRes, mRes, iRes] = await Promise.all([
-                    fetch(`/api/genres?organizerEmail=${user.email}`).then(r => r.json()),
-                    fetch(`/api/users?organizerEmail=${user.email}&role=mentor`).then(r => r.json()),
-                    fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json())
+                    fetch(`/api/genres?organizerEmail=${email}`).then(r => r.json()),
+                    fetch(`/api/users?organizerEmail=${email}&role=mentor`).then(r => r.json()),
+                    fetch(`/api/invitations?organizerEmail=${email}`).then(r => r.json())
                 ]);
                 
-                renderGenres(gRes.genres || []);
+                activities = gRes.genres || [];
+                renderGenres(activities);
                 renderMentors(mRes.users || [], iRes.invites || []);
                 document.getElementById('m-count').innerText = (mRes.users || []).length;
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error("[SYNC ERROR]", e);
+                showMessage("Sync error, check console", true);
+            }
         }
 
         function renderGenres(genres) {
             const list = document.getElementById('genre-list');
-            list.innerHTML = genres.map(g => `
+            if (!genres.length) {
+                list.innerHTML = `<p style="font-size:0.75rem; color:var(--text-dim); font-style:italic;">No activities found. Use Resync to load defaults.</p>`;
+                return;
+            }
+            list.innerHTML = genres.map((g, idx) => `
                 <div class="list-item">
                     <div>
                         <div style="font-weight:600; font-size:0.9rem;">${g.title} <span class="badge">${g.pts} PTS</span></div>
                         <div style="font-size:0.7rem; color:var(--text-dim);">${g.type === 'weeks' ? '2-Week' : 'Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
                     </div>
                     <div style="display:flex; gap:12px;">
-                        <button class="btn-action" onclick="editGenre('${g._id}', '${g.title}', '${g.desc.replace(/'/g, "\\'")}', ${g.pts}, '${g.type}', ${g.isRubric})">Edit</button>
+                        <button class="btn-action" onclick="prepareEdit(${idx})">Edit</button>
                         <button class="btn-action" onclick="deleteGenre('${g._id}')" style="color:var(--danger)">Del</button>
                     </div>
                 </div>`).join('');
+        }
+
+        function prepareEdit(idx) {
+            const g = activities[idx];
+            document.getElementById('genre-id').value = g._id;
+            document.getElementById('g-title').value = g.title;
+            document.getElementById('g-desc').value = g.desc;
+            document.getElementById('g-pts').value = g.pts;
+            document.getElementById('g-type').value = g.type;
+            document.getElementById('g-rubric').checked = g.isRubric;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function renderMentors(mentors, invites) {
