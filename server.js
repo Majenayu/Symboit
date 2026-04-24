@@ -624,17 +624,10 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
         oauth2Client.setCredentials({ refresh_token: student.refreshToken });
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-        const date = new Date(eventDate);
-        const y = date.getFullYear().toString();
-        const m = (date.getMonth() + 1).toString().padStart(2, '0');
-        const d = date.getDate().toString().padStart(2, '0');
-
-        // 1. Ensure Folder Structure: AICTE -> [Activity Title] -> [Year] -> [Month] -> [Day]
+        // 1. Ensure Folder Structure: AICTE -> [Activity Title] -> [Milestone]
         const aicteFolderId = await getDriveFolder(drive, 'AICTE');
         const activityFolderId = await getDriveFolder(drive, activityTitle, aicteFolderId);
-        const yearId = await getDriveFolder(drive, y, activityFolderId);
-        const monthId = await getDriveFolder(drive, m, yearId);
-        const dayId = await getDriveFolder(drive, d, monthId);
+        const milestoneFolderId = await getDriveFolder(drive, milestone || 'General', activityFolderId);
 
         // 2. Grant Permissions to Mentor and Organizer
         const shareWith = [organizerEmail];
@@ -659,7 +652,7 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
             const driveRes = await drive.files.create({
                 requestBody: {
                     name: `${studentEmail.split('@')[0]}_${milestone}_${Date.now()}_${file.originalname}`,
-                    parents: [dayId] // Store in the daily folder
+                    parents: [milestoneFolderId] // Back to milestone folder
                 },
                 media: { mimeType: file.mimetype, body: bufferStream },
                 fields: 'id, webViewLink'
@@ -1093,21 +1086,27 @@ app.post('/api/report/generate', async (req, res) => {
         let data = [];
         let reportTitle = "";
         
-        const query = { 
-            studentEmail: studentEmail.toLowerCase(), 
-            status: 'approved',
-            eventDate: { $gte: start, $lte: end }
-        };
-
         if (type === 'aicte') {
             reportTitle = "AICTE Activity Points Report";
-            data = await Submission.find(query).sort({ eventDate: 1 });
-        } else if (type === 'ach') {
-            reportTitle = "Achievement Node Report";
-            data = await Achievement.find(query).sort({ eventDate: 1 });
-        } else if (type === 'part') {
-            reportTitle = "Participation Node Report";
-            data = await Participation.find(query).sort({ eventDate: 1 });
+            // Ignore range for AICTE - get all approved
+            data = await Submission.find({ 
+                studentEmail: studentEmail.toLowerCase(), 
+                status: 'approved' 
+            }).sort({ eventDate: 1 });
+        } else {
+            const query = { 
+                studentEmail: studentEmail.toLowerCase(), 
+                status: 'approved',
+                eventDate: { $gte: start, $lte: end }
+            };
+
+            if (type === 'ach') {
+                reportTitle = "Achievement Node Report";
+                data = await Achievement.find(query).sort({ eventDate: 1 });
+            } else if (type === 'part') {
+                reportTitle = "Participation Node Report";
+                data = await Participation.find(query).sort({ eventDate: 1 });
+            }
         }
 
         console.log(`[REPORT] Found ${data.length} records for ${studentEmail} (${type}) in range ${startDate} to ${endDate}`);
