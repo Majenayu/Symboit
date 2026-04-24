@@ -634,10 +634,12 @@
 
         function openReportModal() {
             document.getElementById('report-modal').style.display = 'flex';
-            // Default dates: start of current year to now
             const now = new Date();
             document.getElementById('report-to').value = now.toISOString().split('T')[0];
-            document.getElementById('report-from').value = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+            // Default to 1 year ago from today to catch current academic cycle
+            const lastYear = new Date();
+            lastYear.setFullYear(now.getFullYear() - 1);
+            document.getElementById('report-from').value = lastYear.toISOString().split('T')[0];
         }
 
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }

@@ -1096,30 +1096,26 @@ app.post('/api/report/generate', async (req, res) => {
         let data = [];
         let reportTitle = "";
         
+        const query = { 
+            studentEmail: studentEmail.toLowerCase(), 
+            status: 'approved',
+            eventDate: { $gte: start, $lte: end }
+        };
+
         if (type === 'aicte') {
             reportTitle = "AICTE Activity Points Report";
-            data = await Submission.find({ 
-                studentEmail, 
-                status: 'approved',
-                eventDate: { $gte: start, $lte: end }
-            }).sort({ eventDate: 1 });
+            data = await Submission.find(query).sort({ eventDate: 1 });
         } else if (type === 'ach') {
             reportTitle = "Achievement Node Report";
-            data = await Achievement.find({ 
-                studentEmail, 
-                status: 'approved',
-                eventDate: { $gte: start, $lte: end }
-            }).sort({ eventDate: 1 });
+            data = await Achievement.find(query).sort({ eventDate: 1 });
         } else if (type === 'part') {
             reportTitle = "Participation Node Report";
-            data = await Participation.find({ 
-                studentEmail, 
-                status: 'approved',
-                eventDate: { $gte: start, $lte: end }
-            }).sort({ eventDate: 1 });
+            data = await Participation.find(query).sort({ eventDate: 1 });
         }
 
-        if (data.length === 0) return res.status(404).json({ success: false, error: 'No approved records found in this range.' });
+        console.log(`[REPORT] Found ${data.length} records for ${studentEmail} (${type}) in range ${startDate} to ${endDate}`);
+
+        if (data.length === 0) return res.status(404).json({ success: false, error: `No approved ${type.toUpperCase()} records found between ${startDate} and ${endDate}. Please check your dates.` });
 
         if (format === 'docx') {
             const sections = [];
