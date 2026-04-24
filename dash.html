@@ -6,7 +6,7 @@
     <title>Student Workspace | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --gold: #fbbf24; --danger: #ef4444; }
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --gold: #fbbf24; --danger: #ef4444; color-scheme: dark; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; }
         .glass-header { background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
@@ -87,7 +87,7 @@
                 
                 <div style="margin-bottom:20px;">
                     <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">ACTIVITY DATE</label>
-                    <input type="date" id="event-date" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white;">
+                    <input type="date" id="event-date" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; font-family:inherit; outline:none; display:block;">
                 </div>
 
                 <div id="preview-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap:10px; margin-bottom:15px;"></div>
