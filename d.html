@@ -6,7 +6,7 @@
     <title>Organizer Console | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --danger: #ef4444; --text: #fff; --text-dim: #94a3b8; }
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --danger: #ef4444; --gold: #fbbf24; --text: #fff; --text-dim: #94a3b8; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; overflow-y: auto; }
         
@@ -34,7 +34,10 @@
     <div class="grid">
         <!-- Manage Genres (Activities) -->
         <div class="glass-card">
-            <h2 style="margin-bottom:1.5rem; font-weight:400;">CURRICULUM MANAGER</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                <h2 style="font-weight:400;">CURRICULUM</h2>
+                <button class="btn" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.65rem;" onclick="resetCurriculum()">Re-sync Official Activities</button>
+            </div>
             <form id="genre-form" onsubmit="saveGenre(event)">
                 <input type="hidden" id="genre-id">
                 <input type="text" id="g-title" placeholder="Activity Title (e.g. Plantation Drive)" required>
@@ -166,6 +169,19 @@
             if(!confirm('Delete this activity?')) return;
             await fetch(`/api/genres/${id}`, { method: 'DELETE' });
             sync();
+        }
+
+        async function resetCurriculum() {
+            if(!confirm('This will delete your current activities and re-load the full 24-activity official set. Continue?')) return;
+            const res = await fetch('/api/genres/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ organizerEmail: user.email })
+            }).then(r => r.json());
+            if(res.success) {
+                showMessage('Curriculum Reset Successful! ✨');
+                sync();
+            }
         }
 
         function resetForm() {

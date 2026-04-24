@@ -435,6 +435,17 @@ app.get('/api/genres', async (req, res) => {
     }
 });
 
+app.post('/api/genres/reset', async (req, res) => {
+    const { organizerEmail } = req.body;
+    try {
+        await Genre.deleteMany({ organizerEmail });
+        // The next GET /api/genres will trigger the re-seed
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.post('/api/genres', async (req, res) => {
     try {
         const genre = new Genre(req.body);
