@@ -48,6 +48,7 @@ const userSchema = new mongoose.Schema({
     scopes: [String],
     refreshToken: String,
     driveRootFolderId: String, // Store the main AICTE folder ID
+    achievementFolderId: String, // Store the main Achievements folder ID
     mentorEmail: String, // The mentor assigned to this student
 });
 
@@ -762,6 +763,11 @@ app.post('/api/submit-achievement', upload.array('files'), async (req, res) => {
         const yearId = await getDriveFolder(drive, y, genreId);
         const monthId = await getDriveFolder(drive, m, yearId);
         const dayId = await getDriveFolder(drive, d, monthId);
+
+        // Update User with Achievement Folder ID if missing
+        if (!student.achievementFolderId) {
+            await User.findByIdAndUpdate(student._id, { achievementFolderId: rootId });
+        }
 
         const shareWith = [organizerEmail];
         const mentorInvite = await Invitation.findOne({ email: studentEmail, status: 'accepted' });

@@ -100,9 +100,12 @@
                         <h2 style="font-weight:400; font-size:1.5rem; color:var(--gold);">Extra-Curricular Achievements</h2>
                         <p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Recognizing your wins beyond academia</p>
                     </div>
-                    <div style="text-align:right;">
-                        <span id="ach-pts" style="font-size:2rem; font-weight:600; color:var(--gold);">0</span>
-                        <span style="color:var(--text-dim);"> Total Pts</span>
+                    <div style="text-align:right; display:flex; align-items:center; gap:15px;">
+                        <div>
+                            <span id="ach-pts" style="font-size:2rem; font-weight:600; color:var(--gold);">0</span>
+                            <span style="color:var(--text-dim);"> Total Pts</span>
+                        </div>
+                        <div id="ach-drive-link"></div>
                     </div>
                 </div>
             </div>
@@ -156,6 +159,15 @@
 
         async function render() {
             try {
+                // Refresh User Data to get Achievement Folder ID
+                const uRes = await fetch(`/api/users?email=${user.email}&organizerEmail=${user.organizerEmail}`).then(r => r.json());
+                if(uRes.users && uRes.users.length > 0) {
+                    const freshUser = uRes.users[0];
+                    if(freshUser.achievementFolderId) {
+                        document.getElementById('ach-drive-link').innerHTML = `<a href="https://drive.google.com/drive/folders/${freshUser.achievementFolderId}" target="_blank" title="Open Achievements Drive" style="color:var(--gold); text-decoration:none; font-size:1.8rem;">📂</a>`;
+                    }
+                }
+
                 // Fetch institutional genres first
                 const gRes = await fetch(`/api/genres?organizerEmail=${user.organizerEmail}`).then(r => r.json());
                 const allGenres = gRes.genres || [];
