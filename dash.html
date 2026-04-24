@@ -48,16 +48,22 @@
             .activity-grid { grid-template-columns: 1fr; }
             .modal-content { padding: 1.5rem; border-radius: 20px; }
             .tabs { overflow-x: auto; white-space: nowrap; }
+            #message { position: fixed; bottom: 20px; right: 20px; padding: 15px 25px; border-radius: 12px; color: white; display: none; z-index: 2000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: 600; animation: slideUp 0.3s ease; }
+            @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         }
     </style>
 </head>
 <body>
+    <div id="message"></div>
     <div style="max-width: 1200px; margin: 0 auto;">
         <div class="glass-header">
             <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">STUDENT</span></h1></div>
             <div style="text-align:right;">
                 <div id="u-name" style="font-weight:600;">Loading...</div>
-                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
+                <div style="display:flex; gap:15px; justify-content:flex-end; align-items:center; margin-top:5px;">
+                    <a href="javascript:openReportModal()" style="color:var(--primary); font-size:0.75rem; text-decoration:none; font-weight:600;">Generate Report</a>
+                    <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
+                </div>
             </div>
         </div>
 
@@ -168,6 +174,43 @@
                 <input type="file" multiple id="file-input" accept="image/*" onchange="previewImages()" style="width:100%; padding:1rem; background:rgba(0,0,0,0.2); border:1px dashed rgba(255,255,255,0.2); border-radius:10px; color:white;">
                 <button class="btn" id="submit-btn" style="margin-top:1.5rem; width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="handleSubmit()">Upload to Drive</button>
             </div>
+        </div>
+    </div>
+    <div class="modal" id="report-modal">
+        <div class="modal-content" style="border-color:var(--gold);">
+            <span class="close-btn" onclick="closeReportModal()">✕</span>
+            <h2 style="margin-bottom:10px;">Generate Activity Report</h2>
+            <p style="color:var(--text-dim); font-size:0.8rem; margin-bottom:20px;">Select the details for your formal report.</p>
+            
+            <div style="margin-bottom:20px;">
+                <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">REPORT TYPE</label>
+                <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white;">
+                    <option value="aicte">AICTE Activity Points</option>
+                    <option value="ach">Achievement Node</option>
+                    <option value="part">Participation Node</option>
+                </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+                <div>
+                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">FROM DATE</label>
+                    <input type="date" id="report-from" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white;">
+                </div>
+                <div>
+                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">TO DATE</label>
+                    <input type="date" id="report-to" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white;">
+                </div>
+            </div>
+
+            <div style="margin-bottom:25px;">
+                <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">FORMAT</label>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn" id="fmt-pdf" onclick="setFormat('pdf')" style="flex:1; background:var(--primary);">PDF</button>
+                    <button class="btn" id="fmt-docx" onclick="setFormat('docx')" style="flex:1; background:rgba(255,255,255,0.05);">Word (.docx)</button>
+                </div>
+            </div>
+
+            <button class="btn" id="gen-btn" onclick="generateReport()" style="width:100%; padding:15px; background:var(--gold); color:black; font-weight:bold;">Download Report</button>
         </div>
     </div>
 
@@ -585,6 +628,82 @@
                 } else alert(res.error);
             } catch (err) { alert('Upload failed'); }
             finally { btn.innerText = 'Upload to Drive'; btn.disabled = false; }
+        }
+
+        let selectedReportFormat = 'pdf';
+
+        function openReportModal() {
+            document.getElementById('report-modal').style.display = 'flex';
+            // Default dates: start of current year to now
+            const now = new Date();
+            document.getElementById('report-to').value = now.toISOString().split('T')[0];
+            document.getElementById('report-from').value = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+        }
+
+        function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
+
+        function setFormat(f) {
+            selectedReportFormat = f;
+            document.getElementById('fmt-pdf').style.background = f === 'pdf' ? 'var(--primary)' : 'rgba(255,255,255,0.05)';
+            document.getElementById('fmt-docx').style.background = f === 'docx' ? 'var(--primary)' : 'rgba(255,255,255,0.05)';
+        }
+
+        async function generateReport() {
+            const type = document.getElementById('report-type').value;
+            const from = document.getElementById('report-from').value;
+            const to = document.getElementById('report-to').value;
+            
+            if(!from || !to) return alert('Please select a date range.');
+
+            const btn = document.getElementById('gen-btn');
+            const originalText = btn.innerText;
+            btn.innerText = 'Processing Drive Files...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/report/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentEmail: user.email,
+                        organizerEmail: user.organizerEmail,
+                        type,
+                        startDate: from,
+                        endDate: to,
+                        format: selectedReportFormat
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${type}_report_${from}_to_${to}.${selectedReportFormat}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    showMessage('Report Generated Successfully');
+                    closeReportModal();
+                } else {
+                    const err = await response.json();
+                    alert(err.error || 'Generation failed');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('An error occurred during generation.');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showMessage(msg, isError = false) {
+            const m = document.getElementById('message');
+            m.innerText = msg;
+            m.style.background = isError ? 'var(--danger)' : 'var(--accent)';
+            m.style.display = 'block';
+            setTimeout(() => m.style.display = 'none', 3000);
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }

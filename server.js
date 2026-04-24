@@ -10,6 +10,8 @@ const multer = require('multer');
 const stream = require('stream');
 const cron = require('node-cron');
 const dotenv = require('dotenv');
+const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle } = require('docx');
+const puppeteer = require('puppeteer');
 dotenv.config();
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -1053,6 +1055,222 @@ cron.schedule('0 9 27 * *', async () => {
             const encoded = Buffer.from(rawMsg).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
             await gmail.users.messages.send({ userId: 'me', requestBody: { raw: encoded } }).catch(e => console.error('Cron mail fail:', e));
         }
+    }
+});
+
+// --- REPORT GENERATION ---
+
+async function fetchDriveImage(drive, fileId) {
+    try {
+        const res = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+        return Buffer.from(res.data);
+    } catch (e) {
+        console.error('Drive image fetch failed:', fileId, e.message);
+        return null;
+    }
+}
+
+app.post('/api/report/generate', async (req, res) => {
+    const { studentEmail, organizerEmail, type, startDate, endDate, format } = req.body;
+    try {
+        const student = await User.findOne({ email: studentEmail });
+        if (!student || !student.refreshToken) return res.status(400).json({ success: false, error: 'Drive permissions missing.' });
+
+        const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+        oauth2Client.setCredentials({ refresh_token: student.refreshToken });
+        const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+
+        let data = [];
+        let reportTitle = "";
+        
+        if (type === 'aicte') {
+            reportTitle = "AICTE Activity Points Report";
+            data = await Submission.find({ 
+                studentEmail, 
+                status: 'approved',
+                eventDate: { $gte: start, $lte: end }
+            }).sort({ eventDate: 1 });
+        } else if (type === 'ach') {
+            reportTitle = "Achievement Node Report";
+            data = await Achievement.find({ 
+                studentEmail, 
+                status: 'approved',
+                eventDate: { $gte: start, $lte: end }
+            }).sort({ eventDate: 1 });
+        } else if (type === 'part') {
+            reportTitle = "Participation Node Report";
+            data = await Participation.find({ 
+                studentEmail, 
+                status: 'approved',
+                eventDate: { $gte: start, $lte: end }
+            }).sort({ eventDate: 1 });
+        }
+
+        if (data.length === 0) return res.status(404).json({ success: false, error: 'No approved records found in this range.' });
+
+        if (format === 'docx') {
+            const sections = [];
+            
+            for (const item of data) {
+                const itemFiles = item.files || [];
+                const photoBuffers = [];
+                for (const f of itemFiles) {
+                    const id = typeof f === 'string' ? f : f.id;
+                    const buf = await fetchDriveImage(drive, id);
+                    if (buf) photoBuffers.push(buf);
+                }
+
+                const children = [
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: student.name || studentEmail.split('@')[0], bold: true, size: 24 }),
+                            new TextRun({ text: "\t\t\t\t\t\t\t\t\t" }), // Approximate tab
+                            new TextRun({ text: studentEmail, size: 20 }),
+                        ],
+                    }),
+                    new Paragraph({ text: "", spacing: { before: 200 } }),
+                    new Paragraph({
+                        children: [new TextRun({ text: reportTitle, bold: true, underline: {}, size: 32 })],
+                        alignment: AlignmentType.CENTER,
+                    }),
+                    new Paragraph({ text: "", spacing: { before: 400 } }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Activity: ", bold: true }),
+                            new TextRun({ text: item.activityTitle || item.title || item.genre }),
+                        ],
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Date: ", bold: true }),
+                            new TextRun({ text: new Date(item.eventDate).toLocaleDateString() }),
+                        ],
+                    }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Points Awarded: ", bold: true }),
+                            new TextRun({ text: (item.pointsAwarded || 10).toString() + " PTS" }),
+                        ],
+                    }),
+                    new Paragraph({ text: "", spacing: { before: 200 } }),
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Description: ", bold: true }),
+                            new TextRun({ text: "This activity confirms the student's involvement and verified contribution as per the institutional standards. The proof of work attached below has been reviewed and approved by the department mentor." }),
+                        ],
+                    }),
+                    new Paragraph({ text: "", spacing: { before: 400 } }),
+                ];
+
+                if (photoBuffers.length > 0) {
+                    const imgCount = photoBuffers.length;
+                    if (imgCount === 1) {
+                        children.push(new Paragraph({
+                            children: [new ImageRun({ data: photoBuffers[0], transformation: { width: 450, height: 300 } })],
+                            alignment: AlignmentType.CENTER
+                        }));
+                    } else {
+                        const rows = [];
+                        for (let i = 0; i < photoBuffers.length; i += 2) {
+                            const cells = [
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new ImageRun({ data: photoBuffers[i], transformation: { width: 220, height: 160 } })] })],
+                                    border: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
+                                })
+                            ];
+                            if (photoBuffers[i+1]) {
+                                cells.push(new TableCell({
+                                    children: [new Paragraph({ children: [new ImageRun({ data: photoBuffers[i+1], transformation: { width: 220, height: 160 } })] })],
+                                    border: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
+                                }));
+                            }
+                            rows.push(new TableRow({ children: cells }));
+                        }
+                        children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }));
+                    }
+                }
+
+                sections.push({ children });
+            }
+
+            const doc = new Document({ sections });
+            const buffer = await Packer.toBuffer(doc);
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            res.setHeader('Content-Disposition', `attachment; filename=${type}_report.docx`);
+            return res.send(buffer);
+
+        } else if (format === 'pdf') {
+            let html = `
+            <html>
+            <head>
+                <style>
+                    body { font-family: sans-serif; padding: 40px; }
+                    .page { page-break-after: always; min-height: 100vh; position: relative; }
+                    .header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 30px; }
+                    .title { text-align: center; font-size: 24px; font-weight: bold; margin: 40px 0; text-decoration: underline; }
+                    .details { line-height: 1.8; margin-bottom: 30px; }
+                    .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 40px; }
+                    .photo-single { text-align: center; margin-top: 40px; }
+                    img { max-width: 100%; border-radius: 8px; }
+                </style>
+            </head>
+            <body>`;
+
+            for (const item of data) {
+                const itemFiles = item.files || [];
+                const base64Photos = [];
+                for (const f of itemFiles) {
+                    const id = typeof f === 'string' ? f : f.id;
+                    const buf = await fetchDriveImage(drive, id);
+                    if (buf) base64Photos.push(`data:image/jpeg;base64,${buf.toString('base64')}`);
+                }
+
+                html += `
+                <div class="page">
+                    <div class="header">
+                        <div style="font-weight:bold;">${student.name || studentEmail.split('@')[0]}</div>
+                        <div>${studentEmail}</div>
+                    </div>
+                    <div class="title">${reportTitle}</div>
+                    <div class="details">
+                        <b>Activity:</b> ${item.activityTitle || item.title || item.genre}<br>
+                        <b>Date:</b> ${new Date(item.eventDate).toLocaleDateString()}<br>
+                        <b>Points Awarded:</b> ${item.pointsAwarded || 10} PTS<br><br>
+                        <b>Description:</b> This activity confirms the student's involvement and verified contribution as per the institutional standards. The proof of work attached below has been reviewed and approved by the department mentor.
+                    </div>
+                    ${base64Photos.length === 1 ? `
+                        <div class="photo-single"><img src="${base64Photos[0]}" style="width: 80%;"></div>
+                    ` : `
+                        <div class="photo-grid">
+                            ${base64Photos.map(p => `<img src="${p}">`).join('')}
+                        </div>
+                    `}
+                </div>`;
+            }
+
+            html += `</body></html>`;
+
+            const browser = await puppeteer.launch({ 
+                headless: "new",
+                args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+            });
+            const page = await browser.newPage();
+            await page.setContent(html, { waitUntil: 'networkidle0' });
+            const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+            await browser.close();
+
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `attachment; filename=${type}_report.pdf`);
+            return res.send(pdfBuffer);
+        }
+
+    } catch (error) {
+        console.error('Report generation error:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
