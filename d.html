@@ -45,10 +45,7 @@
 <body>
     <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; margin-bottom:3rem;">
         <h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1>
-        <div style="display:flex; gap:10px;">
-            <button class="btn btn-outline" style="border-color:var(--accent); color:var(--accent);" onclick="openReportModal()">📊 Generate Portfolio Reports</button>
-            <button class="btn btn-primary" onclick="logout()">Logout</button>
-        </div>
+        <button class="btn btn-primary" onclick="logout()">Logout</button>
     </div>
 
     <div class="grid">
@@ -56,7 +53,10 @@
         <div class="glass-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
                 <h2 style="font-weight:400;">CURRICULUM</h2>
-                <button class="btn" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.65rem;" onclick="resetCurriculum()">Re-sync Official Activities</button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn" style="background:rgba(16, 185, 129, 0.1); color:var(--accent); font-size:0.65rem;" onclick="openReportModal('aicte')">📊 Report</button>
+                    <button class="btn" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.65rem;" onclick="resetCurriculum()">Re-sync</button>
+                </div>
             </div>
             <form id="genre-form" onsubmit="saveGenre(event)">
                 <input type="hidden" id="genre-id">
@@ -85,7 +85,13 @@
 
         <!-- Mentors & Invites -->
         <div class="glass-card">
-            <h2 style="margin-bottom:1.5rem; font-weight:400;">MENTOR NETWORK</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                <h2 style="font-weight:400;">NETWORK</h2>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn" style="background:rgba(251, 191, 36, 0.1); color:var(--gold); font-size:0.65rem;" onclick="openReportModal('ach')">🏆 Ach</button>
+                    <button class="btn" style="background:rgba(56, 189, 248, 0.1); color:#38bdf8; font-size:0.65rem;" onclick="openReportModal('part')">🤝 Part</button>
+                </div>
+            </div>
             <div style="margin-bottom:2rem;">
                 <input type="email" id="invite-email" placeholder="Mentor Email">
                 <button class="btn btn-primary" style="width:100%;" onclick="sendInvite()">Send Invitation Link</button>
@@ -94,6 +100,7 @@
             <h3 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:1rem; letter-spacing:1px;">MENTOR NETWORK</h3>
             <div id="mentor-list"></div>
         </div>
+
     </div>
 
     <div id="report-modal" class="modal">
@@ -393,19 +400,26 @@
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
         // --- REPORTING ---
         let selectedFormat = 'pdf';
+        let targetStudent = null;
+
         function setFormat(f) {
             selectedFormat = f;
             document.getElementById('fmt-pdf').style.cssText = f === 'pdf' ? 'border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)' : '';
             document.getElementById('fmt-docx').style.cssText = f === 'docx' ? 'border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)' : '';
         }
 
-        function openReportModal() {
+        function openReportModal(type = 'aicte', studentEmail = null) {
+            targetStudent = studentEmail;
             document.getElementById('report-modal').style.display = 'flex';
+            document.getElementById('report-type').value = type;
+            
             const now = new Date();
             document.getElementById('report-to').value = now.toISOString().split('T')[0];
             const lastYear = new Date();
             lastYear.setFullYear(now.getFullYear() - 1);
             document.getElementById('report-from').value = lastYear.toISOString().split('T')[0];
+
+            document.getElementById('gen-btn').innerText = targetStudent ? `Generate For ${targetStudent.split('@')[0]}` : "Generate Comprehensive Report";
         }
 
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
@@ -416,14 +430,17 @@
             const start = document.getElementById('report-from').value;
             const end = document.getElementById('report-to').value;
 
-            btn.innerText = "Aggregating Portfolio Data...";
+            btn.innerText = "Processing Data...";
             btn.disabled = true;
 
             try {
+                const body = { organizerEmail: user.email, type, startDate: start, endDate: end, format: selectedFormat };
+                if (targetStudent) body.studentEmail = targetStudent;
+
                 const response = await fetch('/api/report/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ organizerEmail: user.email, type, startDate: start, endDate: end, format: selectedFormat })
+                    body: JSON.stringify(body)
                 });
 
                 if (!response.ok) {
@@ -435,16 +452,16 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `organizer_global_report_${type}_${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
+                a.download = `${targetStudent ? targetStudent.split('@')[0] : 'global'}_report_${type}_${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-                showMessage("Global report generated successfully!");
+                showMessage("Report generated successfully!");
                 closeReportModal();
             } catch (error) {
                 showMessage(error.message);
             } finally {
-                btn.innerText = "Generate Comprehensive Report";
+                btn.innerText = targetStudent ? "Generate For Student" : "Generate Comprehensive Report";
                 btn.disabled = false;
             }
         }
