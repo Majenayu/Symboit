@@ -156,9 +156,15 @@
                                             </div>
                                             </div>
                                             <div style="display:flex; gap:8px;">
-                                                <a href="${p.files[0]?.viewLink}" target="_blank" style="font-size:0.65rem; color:var(--primary); text-decoration:none; border:1px solid var(--primary); padding:2px 6px; border-radius:4px;">View Proof</a>
-                                                <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
-                                                <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+                                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                                    ${p.files.map((f, idx) => `
+                                                        <a href="${f.viewLink}" target="_blank" style="font-size:0.6rem; color:var(--primary); text-decoration:none; border:1px solid var(--primary); padding:1px 6px; border-radius:4px; text-align:center;">Proof ${idx + 1}</a>
+                                                    `).join('')}
+                                                </div>
+                                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                                    <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
+                                                    <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+                                                </div>
                                             </div>
                                         </div>
                                     `).join('')}
