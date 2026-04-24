@@ -624,14 +624,20 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
         oauth2Client.setCredentials({ refresh_token: student.refreshToken });
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-        // 1. Ensure Folder Structure: AICTE -> [Activity Title] -> [Milestone]
+        const date = new Date(eventDate);
+        const y = date.getFullYear().toString();
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const d = date.getDate().toString().padStart(2, '0');
+
+        // 1. Ensure Folder Structure: AICTE -> [Activity Title] -> [Year] -> [Month] -> [Day]
         const aicteFolderId = await getDriveFolder(drive, 'AICTE');
         const activityFolderId = await getDriveFolder(drive, activityTitle, aicteFolderId);
-        const milestoneFolderId = await getDriveFolder(drive, milestone || 'General', activityFolderId);
+        const yearId = await getDriveFolder(drive, y, activityFolderId);
+        const monthId = await getDriveFolder(drive, m, yearId);
+        const dayId = await getDriveFolder(drive, d, monthId);
 
-        // 2. Grant Permissions to Mentor and Organizer (if not already done)
+        // 2. Grant Permissions to Mentor and Organizer
         const shareWith = [organizerEmail];
-        // Find mentor who invited this student to share with them too
         const mentorInvite = await Invitation.findOne({ email: studentEmail, status: 'accepted' });
         if (mentorInvite && mentorInvite.inviterEmail !== organizerEmail) {
             shareWith.push(mentorInvite.inviterEmail);
@@ -640,18 +646,12 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
         for (const email of shareWith) {
             await drive.permissions.create({
                 fileId: aicteFolderId,
-                requestBody: {
-                    type: 'user',
-                    role: 'writer', // Editor access
-                    emailAddress: email
-                },
+                requestBody: { type: 'user', role: 'writer', emailAddress: email },
                 fields: 'id'
             }).catch(e => console.error(`Failed to share folder with ${email}`, e));
         }
 
         const uploadedFiles = [];
-
-        // 2. Upload each file to the folder
         for (const file of req.files) {
             const bufferStream = new stream.PassThrough();
             bufferStream.end(file.buffer);
@@ -659,12 +659,9 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
             const driveRes = await drive.files.create({
                 requestBody: {
                     name: `${studentEmail.split('@')[0]}_${milestone}_${Date.now()}_${file.originalname}`,
-                    parents: [milestoneFolderId]
+                    parents: [dayId] // Store in the daily folder
                 },
-                media: {
-                    mimeType: file.mimetype,
-                    body: bufferStream
-                },
+                media: { mimeType: file.mimetype, body: bufferStream },
                 fields: 'id, webViewLink'
             });
 
