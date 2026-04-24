@@ -64,37 +64,33 @@
         <div class="tabs">
             <div class="tab active" id="tab-aicte" onclick="switchTab('aicte')">AICTE Points</div>
             <div class="tab" id="tab-ach" onclick="switchTab('ach')">Achievement Node</div>
-        </div>
-
-        <div id="aicte-content">
-
-        <div class="progress-section">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                <div>
-                    <h2 style="font-weight:400; font-size:1.5rem;">AICTE Activity Points</h2>
-                    <p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Mandatory for Bachelor's Degree completion</p>
+        </div>        <div id="aicte-content">
+            <div class="progress-section">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div>
+                        <h2 style="font-weight:400; font-size:1.5rem;">AICTE Activity Points</h2>
+                        <p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Mandatory for Bachelor's Degree completion</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <span id="p-val" style="font-size:2rem; font-weight:600; color:var(--accent);">0</span>
+                        <span style="color:var(--text-dim);"> / <span id="p-max">100</span> pts</span>
+                    </div>
                 </div>
-                <div style="text-align:right;">
-                    <span id="p-val" style="font-size:2rem; font-weight:600; color:var(--accent);">0</span>
-                    <span style="color:var(--text-dim);"> / <span id="p-max">100</span> pts</span>
-                </div>
-            </div>
-            <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
-            <div style="display:flex; gap:20px; margin-top:10px;">
-                <div style="font-size:0.8rem; color:var(--text-dim); display:flex; gap:15px;">
-                    <span>📅 Day College: <b>100</b></span>
-                    <span>📍 Lateral (3yr): <b>75</b></span>
-                    <span>🎓 Lateral (2yr): <b>50</b></span>
+                <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
+                <div style="display:flex; gap:20px; margin-top:10px;">
+                    <div style="font-size:0.8rem; color:var(--text-dim); display:flex; gap:15px;">
+                        <span>📅 Day College: <b>100</b></span>
+                        <span>📍 Lateral (3yr): <b>75</b></span>
+                        <span>🎓 Lateral (2yr): <b>50</b></span>
+                    </div>
                 </div>
             </div>
-            </div>
-        </div>
 
-        <div class="section-title">Priority Rubrics (One-Day Events)</div>
-        <div class="activity-grid" id="rubric-grid"></div>
+            <div class="section-title">Priority Rubrics (One-Day Events)</div>
+            <div class="activity-grid" id="rubric-grid"></div>
 
-        <div class="section-title">AICTE Activity Heads (2-Week Milestones)</div>
-        <div class="activity-grid" id="activity-grid"></div>
+            <div class="section-title">AICTE Activity Heads (2-Week Milestones)</div>
+            <div class="activity-grid" id="activity-grid"></div>
         </div>
 
         <div id="ach-content" style="display:none;">
@@ -137,6 +133,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <div class="modal" id="modal">
@@ -252,6 +249,12 @@
                     </div>`;
             });
 
+            // Update AICTE Progress Bar
+            document.getElementById('p-val').innerText = totalPoints;
+            if(currentYearPoints > 30) {
+                document.getElementById('p-val').innerHTML += ` <span style="font-size:0.7rem; color:var(--gold);">(Yearly Cap: 30 / ${currentYearPoints} Earned)</span>`;
+            }
+            const max = parseInt(document.getElementById('p-max').innerText) || 100;
             document.getElementById('p-bar').style.width = Math.min(100, (totalPoints / max) * 100) + '%';
 
             // Render Achievements
