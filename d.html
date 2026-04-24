@@ -120,7 +120,7 @@
                 const iRes = await fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json());
                 const invitations = iRes.invites || [];
 
-                renderMentors(mentors, invitations, students, allSubmissions, allAchievements);
+                renderMentors(mentors, invitations, students, submissions, achievements, participations);
             } catch (e) { console.error(e); }
         }
 
@@ -142,7 +142,7 @@
             });
         }
 
-        function renderMentors(mentors, invitations, students, submissions, achievements) {
+        function renderMentors(mentors, invitations, students, submissions, achievements, participations) {
             const list = document.getElementById('mentor-list');
             list.innerHTML = '';
 

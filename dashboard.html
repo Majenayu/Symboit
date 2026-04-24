@@ -112,26 +112,32 @@
 
         async function sync() {
             try {
-                const uRes = await fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student&mentorEmail=${user.email}`).then(r => r.json());
-                const sRes = await fetch(`/api/submissions?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json());
-                const aRes = await fetch(`/api/achievements?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json());
+                const [uRes, sRes, aRes, pRes] = await Promise.all([
+                    fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student&mentorEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/submissions?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/achievements?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/participations?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json())
+                ]);
                 
-                const students = uRes.users;
-                const submissions = sRes.submissions;
+                const students = uRes.users || [];
+                const submissions = sRes.submissions || [];
                 const achievements = aRes.achievements || [];
+                const participations = pRes.participations || [];
 
                 document.getElementById('s-count').innerText = students.length;
-                document.getElementById('p-count').innerText = submissions.filter(s => s.status === 'pending').length + achievements.filter(a => a.status === 'pending').length;
+                document.getElementById('p-count').innerText = 
+                    submissions.filter(s => s.status === 'pending').length + 
+                    achievements.filter(a => a.status === 'pending').length +
+                    participations.filter(p => p.status === 'pending').length;
 
-                renderFeed(submissions, achievements);
-                renderStudents(students, submissions, achievements);
+                renderFeed(submissions, achievements, participations);
+                renderStudents(students, submissions, achievements, participations);
             } catch (err) { console.error('Sync failed', err); }
         }
 
-        function renderFeed(subs, achs) {
+        function renderFeed(subs, achs, parts) {
             const container = document.getElementById('feed-container');
             container.innerHTML = '';
-            const all = [...subs.map(x => ({...x, type: 'AICTE'})), ...achs.map(x => ({...x, type: 'ACH'}))].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
             [...subs, ...achs, ...parts].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 10).forEach(item => {
                 const type = item.rank ? 'ACH' : (item.activityTitle ? 'AICTE' : 'PART');
                 const color = type === 'AICTE' ? 'var(--primary)' : (type === 'ACH' ? 'var(--gold)' : '#38bdf8');

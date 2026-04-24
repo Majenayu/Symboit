@@ -160,12 +160,15 @@
 
         async function render() {
             try {
-                // Refresh User Data to get Achievement Folder ID
+                let freshUser = null;
                 const uRes = await fetch(`/api/users?email=${user.email}&organizerEmail=${user.organizerEmail}`).then(r => r.json());
                 if(uRes.users && uRes.users.length > 0) {
-                    const freshUser = uRes.users[0];
+                    freshUser = uRes.users[0];
                     if(freshUser.achievementFolderId) {
                         document.getElementById('ach-drive-link').innerHTML = `<a href="https://drive.google.com/drive/folders/${freshUser.achievementFolderId}" target="_blank" title="Open Achievements Drive" style="color:var(--gold); text-decoration:none; font-size:1.8rem;">📂</a>`;
+                    }
+                    if(freshUser.participationFolderId) {
+                        document.getElementById('part-drive-link').innerHTML = `<a href="https://drive.google.com/drive/folders/${freshUser.participationFolderId}" target="_blank" title="Open Participation Drive" style="color:#38bdf8; text-decoration:none; font-size:1.8rem;">📂</a>`;
                     }
                 }
 
@@ -186,11 +189,7 @@
                 const pData = await pRes.json();
                 submissions = sData.submissions || [];
                 const achievements = aData.achievements || [];
-                const participations = aData.participations || pData.participations || []; // Safety fallback
-                
-                if(freshUser.participationFolderId) {
-                    document.getElementById('part-drive-link').innerHTML = `<a href="https://drive.google.com/drive/folders/${freshUser.participationFolderId}" target="_blank" title="Open Participation Drive" style="color:#38bdf8; text-decoration:none; font-size:1.8rem;">📂</a>`;
-                }
+                const participations = pData.participations || [];
 
                 renderAchLog(achievements);
                 renderPartLog(participations);
