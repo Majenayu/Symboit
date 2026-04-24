@@ -461,7 +461,7 @@ app.get('/api/users', async (req, res) => {
         }
 
         if (mentorEmail) query.mentorEmail = mentorEmail;
-        const users = await User.find(query).select('name email role driveRootFolderId mentorEmail');
+        const users = await User.find(query).select('name email role driveRootFolderId achievementFolderId participationFolderId mentorEmail');
         res.json({ success: true, users });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
