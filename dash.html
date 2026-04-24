@@ -400,8 +400,6 @@
             }
         }
 
-        }
-
         async function renderPartLog(participations) {
             const agRes = await fetch('/api/achievement-genres').then(r => r.json());
             const ags = agRes.genres || [];
