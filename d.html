@@ -6,150 +6,137 @@
     <title>Organizer Console | Symboit</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --bg: #050505; 
-            --card: rgba(255,255,255,0.03); 
-            --primary: #6366f1; 
-            --primary-dark: #4f46e5;
-            --accent: #10b981; 
-            --danger: #ef4444; 
-            --gold: #fbbf24; 
-            --text: #fff; 
-            --text-dim: #94a3b8; 
-        }
+        :root { --bg: #050505; --card: rgba(255,255,255,0.03); --primary: #6366f1; --accent: #10b981; --text: #fff; --text-dim: #94a3b8; --danger: #ef4444; --gold: #fbbf24; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; min-height: 100vh; overflow-y: auto; }
         
-        /* Layout Grid */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
-        .glass-header { max-width: 1200px; margin: 0 auto 2rem auto; background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .glass-card { background: var(--card); backdrop-filter: blur(12px); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); height: fit-content; }
+        .container { max-width: 900px; margin: 0 auto; }
         
-        /* Stats */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 0 auto 2rem auto; }
-        .stat-card { background: var(--card); padding: 1.5rem; border-radius: 18px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .glass-header { background: var(--card); backdrop-filter: blur(12px); padding: 1.5rem 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; text-align: center; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--card); padding: 1.5rem; border-radius: 18px; border: 1px solid rgba(255,255,255,0.05); text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .stat-val { font-size: 2.2rem; font-weight: 600; color: var(--primary); }
-        .ai-card { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.1)); display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--accent); letter-spacing: 2px; }
-
-        /* Progress Bar */
-        .progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; margin: 10px 0; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: 1s ease; }
+        .ai-card { background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.1)); }
         
-        /* Buttons */
-        .btn { padding: 10px 20px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
-        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
-        .btn-outline:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .tools-area { background: var(--card); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 2rem; }
+        h2, h3 { font-weight: 400; letter-spacing: 1px; }
         
-        /* Inputs */
-        input, select, textarea { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 15px; font-family: inherit; outline: none; }
+        input, select, textarea { width: 100%; padding: 1.1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 1rem; outline: none; font-family: inherit; font-size: 0.9rem; }
         input:focus { border-color: var(--primary); }
         
-        /* Lists */
-        .list-item { background: rgba(255,255,255,0.02); padding: 1.2rem; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 1rem; }
-        .badge { font-size: 0.6rem; padding: 3px 10px; border-radius: 6px; background: rgba(99, 102, 241, 0.1); color: var(--primary); font-weight: bold; }
-        .status-pill { font-size: 0.65rem; padding: 3px 10px; border-radius: 6px; font-weight: bold; }
-        .status-active { background: rgba(16, 185, 129, 0.1); color: var(--accent); border: 1px solid rgba(16, 185, 129, 0.2); }
-        .status-pending { background: rgba(245, 158, 11, 0.1); color: var(--gold); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .btn { width: 100%; padding: 1rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; background: var(--primary); color: white; font-family: inherit; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+        .btn-outline { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
+        .btn-outline:hover { color: white; border-color: var(--primary); }
+        .btn-mini { width: auto; padding: 6px 15px; font-size: 0.7rem; border-radius: 8px; }
 
-        #message { position: fixed; top: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 14px; display: none; z-index: 2000; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; background: rgba(255,255,255,0.02); border-radius: 14px; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .list-item:hover { background: rgba(255,255,255,0.04); }
+        
+        .status { font-size: 0.65rem; padding: 3px 10px; border-radius: 6px; font-weight: bold; text-transform: uppercase; }
+        .status.active { background: rgba(16,185,129,0.1); color: var(--accent); border: 1px solid rgba(16,185,129,0.2); }
+        .status.pending { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+        
+        .btn-action { background: transparent; border: none; cursor: pointer; opacity: 0.6; transition: 0.3s; color: var(--text-dim); font-size: 0.8rem; }
+        .btn-action:hover { opacity: 1; color: var(--text); }
 
-        /* Modal */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: #111; padding: 2.5rem; border-radius: 30px; border: 1px solid var(--primary); max-width: 500px; width: 100%; position: relative; }
+        #message { position: fixed; top: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 14px; display: none; z-index: 2000; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); color: white; font-weight: 600; }
+
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: #0a0a0a; padding: 2.5rem; border-radius: 30px; border: 1px solid var(--primary); max-width: 500px; width: 100%; position: relative; }
         .close-btn { position: absolute; top: 1.5rem; right: 1.5rem; color: var(--text-dim); cursor: pointer; font-size: 1.5rem; }
-        input[type="date"] { color-scheme: dark; }
+
+        .badge { font-size: 0.6rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 6px; font-weight: bold; }
 
         @media (max-width: 768px) {
             body { padding: 1rem; }
-            .grid { grid-template-columns: 1fr; gap: 1rem; }
-            .glass-header { padding: 1rem; flex-direction: column; text-align: center; gap: 10px; }
-            .glass-card { padding: 1.5rem; }
             .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
-            .btn { width: 100%; }
+            .glass-header { flex-direction: column; gap: 1rem; padding: 1.5rem; }
+            .modal-content { padding: 1.5rem; }
+            .list-item { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .list-item > div:last-child { width: 100%; justify-content: space-between; display: flex; }
         }
     </style>
 </head>
 <body>
     <div id="message"></div>
 
-    <div class="glass-header">
-        <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1></div>
-        <div style="text-align:right;">
-            <div id="u-name" style="font-weight:600;">Loading...</div>
-            <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
-        </div>
-    </div>
-
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-val" id="m-count">0</div>
-            <div style="font-size:0.8rem; color:var(--text-dim)">Active Mentors</div>
-        </div>
-        <div class="stat-card ai-card">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:8px; height:8px; background:var(--accent); border-radius:50%; box-shadow: 0 0 10px var(--accent);"></div>
-                ENTERPRISE AI
+    <div class="container">
+        <!-- Header -->
+        <div class="glass-header">
+            <div>
+                <h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">ORGANIZER</span></h1>
+            </div>
+            <div style="text-align:center;">
+                <div id="u-name" style="font-weight:600; font-size:1.1rem; margin-bottom:4px;">Loading...</div>
+                <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
             </div>
         </div>
-    </div>
 
-    <div class="grid">
-        <!-- AICTE Section (Curriculum) -->
-        <div class="glass-card">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-val" id="m-count">0</div>
+                <div style="font-size:0.8rem; color:var(--text-dim)">Active Mentors</div>
+            </div>
+            <div class="stat-card ai-card">
+                <div style="font-weight:600; color:var(--accent); letter-spacing:2px; display:flex; align-items:center; gap:8px;">
+                    <span style="width:8px; height:8px; background:var(--accent); border-radius:50%; box-shadow:0 0 10px var(--accent);"></span>
+                    ENTERPRISE AI
+                </div>
+                <div style="font-size:0.6rem; color:var(--text-dim); margin-top:5px;">ACTIVE INSTANCE v2.4</div>
+            </div>
+        </div>
+
+        <!-- AICTE Curriculum -->
+        <div class="tools-area">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                <h2 style="font-weight:400; font-size:1.1rem; letter-spacing:1px;">AICTE CURRICULUM</h2>
+                <h2 style="font-size:1.1rem;">AICTE CURRICULUM</h2>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn btn-primary" style="padding:6px 12px; font-size:0.7rem; background:rgba(16, 185, 129, 0.1); color:var(--accent); border:1px solid rgba(16,185,129,0.2);" onclick="openReportModal('aicte')">📊 Report</button>
-                    <button class="btn" style="padding:6px 12px; font-size:0.7rem; background:rgba(251, 191, 36, 0.1); color:var(--gold); border:1px solid rgba(251,191,36,0.2);" onclick="resetCurriculum()">Resync</button>
+                    <button class="btn btn-outline btn-mini" style="border-color:var(--accent); color:var(--accent);" onclick="openReportModal()">📊 Report</button>
+                    <button class="btn btn-outline btn-mini" style="border-color:var(--gold); color:var(--gold);" onclick="resetCurriculum()">Resync</button>
                 </div>
             </div>
             
-            <form id="genre-form" onsubmit="saveGenre(event)" style="background:rgba(255,255,255,0.02); padding:1.5rem; border-radius:18px; border:1px solid rgba(255,255,255,0.05); margin-bottom:2rem;">
+            <form id="genre-form" onsubmit="saveGenre(event)">
                 <input type="hidden" id="genre-id">
                 <input type="text" id="g-title" placeholder="Activity Title" required>
                 <textarea id="g-desc" placeholder="Activity Description..." rows="2" required></textarea>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <input type="number" id="g-pts" placeholder="Points" required>
+                    <input type="number" id="g-pts" placeholder="Points (e.g. 10)" required>
                     <select id="g-type">
                         <option value="weeks">2-Week Project</option>
                         <option value="event">Single Day Event</option>
                     </select>
                 </div>
-                <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px; font-size:0.8rem;">
+                <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px; padding:0 5px;">
                     <input type="checkbox" id="g-rubric" style="width:auto; margin:0;">
-                    <label for="g-rubric" style="color:var(--text-dim);">Mark as Priority Rubric</label>
+                    <label for="g-rubric" style="font-size:0.8rem; color:var(--text-dim);">Priority Rubric Activity</label>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%;">Save Activity</button>
+                <button type="submit" class="btn">Save Activity</button>
+                <button type="button" class="btn btn-outline" style="margin-top:8px;" onclick="resetForm()">Cancel</button>
             </form>
 
-            <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1.5rem; letter-spacing:1px; text-transform:uppercase;">Existing Activities</h3>
-            <div id="genre-list" style="max-height: 400px; overflow-y: auto; padding-right: 5px;"></div>
+            <div style="margin-top:3rem;">
+                <p style="font-size:0.7rem; color:var(--text-dim); font-weight:600; letter-spacing:1.5px; margin-bottom:1rem; text-transform:uppercase;">Curriculum Inventory</p>
+                <div id="genre-list"></div>
+            </div>
         </div>
 
-        <!-- Network Section (Mentors/Achievements/Participation) -->
-        <div class="glass-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                <h2 style="font-weight:400; font-size:1.1rem; letter-spacing:1px;">MENTOR NETWORK</h2>
-                <div style="display:flex; gap:8px;">
-                    <button class="btn" style="padding:6px 12px; font-size:0.7rem; background:rgba(251, 191, 36, 0.1); color:var(--gold); border:1px solid rgba(251,191,36,0.2);" onclick="openReportModal('ach')">🏆 Ach</button>
-                    <button class="btn" style="padding:6px 12px; font-size:0.7rem; background:rgba(56, 189, 248, 0.1); color:#38bdf8; border:1px solid rgba(56,189,248,0.2);" onclick="openReportModal('part')">🤝 Part</button>
-                </div>
+        <!-- Mentor Network -->
+        <div class="tools-area">
+            <h3 style="margin-bottom:1.5rem; font-size:1.1rem;">MENTOR NETWORK</h3>
+            <div style="margin-bottom:2rem;">
+                <label style="font-size:0.75rem; color:var(--text-dim); margin-bottom:8px; display:block;">INVITE NEW MENTOR</label>
+                <input type="email" id="invite-email" placeholder="Mentor Email Address...">
+                <button class="btn" onclick="sendInvite()">Send Invitation Link</button>
             </div>
 
-            <div style="margin-bottom:2rem;">
-                <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:10px;">INVITE NEW MENTOR</p>
-                <div style="display:flex; gap:10px;">
-                    <input type="email" id="invite-email" placeholder="Enter mentor email..." style="margin:0;">
-                    <button class="btn btn-primary" onclick="sendInvite()" style="padding: 12px;">Invite</button>
-                </div>
+            <div style="margin-top:3rem;">
+                <p style="font-size:0.7rem; color:var(--text-dim); font-weight:600; letter-spacing:1.5px; margin-bottom:1rem; text-transform:uppercase;">Active Mentors & Invites</p>
+                <div id="mentor-list"></div>
             </div>
-            
-            <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:1.5rem; letter-spacing:1px; text-transform:uppercase;">Mentor Performance</h3>
-            <div id="mentor-list"></div>
         </div>
     </div>
 
@@ -157,34 +144,33 @@
     <div id="report-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeReportModal()">&times;</span>
-            <h2 style="font-weight:400; margin-bottom:1.5rem; letter-spacing:1px;">PORTFOLIO GENERATOR</h2>
+            <h2 style="font-weight:400; margin-bottom:1.5rem;">Global Portfolio Generation</h2>
             
-            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">REPORT CATEGORY</label>
-            <select id="report-type" disabled style="background:rgba(255,255,255,0.05); color:var(--text-dim);">
+            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">REPORT CATEGORY</label>
+            <select id="report-type">
                 <option value="aicte">AICTE Activity Points (All Time)</option>
                 <option value="ach">Achievement Node (Range)</option>
                 <option value="part">Participation Node (Range)</option>
             </select>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:10px;">
                 <div>
-                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">FROM DATE</label>
+                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">FROM</label>
                     <input type="date" id="report-from">
                 </div>
                 <div>
-                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">TO DATE</label>
+                    <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:5px;">TO</label>
                     <input type="date" id="report-to">
                 </div>
             </div>
 
-            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">FILE FORMAT</label>
+            <label style="display:block; font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;">FORMAT</label>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:25px;">
                 <button class="btn btn-outline" id="fmt-pdf" onclick="setFormat('pdf')" style="border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)">PDF</button>
                 <button class="btn btn-outline" id="fmt-docx" onclick="setFormat('docx')">Word</button>
             </div>
 
-            <button class="btn btn-primary" onclick="generateReport()" id="gen-btn" style="width:100%; height:50px;">Download Comprehensive Report</button>
-            <p style="font-size:0.7rem; color:var(--text-dim); margin-top:15px; text-align:center; line-height:1.4;">This will process all students grouped by their mentors and fetch images dynamically.</p>
+            <button class="btn" onclick="generateReport()" id="gen-btn">Generate Comprehensive Report</button>
         </div>
     </div>
 
@@ -195,111 +181,89 @@
 
         async function sync() {
             try {
-                const [gRes, mRes, sRes, subRes, achRes, partRes, iRes] = await Promise.all([
+                const [gRes, mRes, iRes] = await Promise.all([
                     fetch(`/api/genres?organizerEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/users?organizerEmail=${user.email}&role=mentor`).then(r => r.json()),
-                    fetch(`/api/users?organizerEmail=${user.email}&role=student`).then(r => r.json()),
-                    fetch(`/api/submissions?organizerEmail=${user.email}`).then(r => r.json()),
-                    fetch(`/api/achievements?organizerEmail=${user.email}`).then(r => r.json()),
-                    fetch(`/api/participations?organizerEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/invitations?organizerEmail=${user.email}`).then(r => r.json())
                 ]);
-
+                
                 renderGenres(gRes.genres || []);
-                renderMentors(mRes.users || [], iRes.invites || [], sRes.users || [], subRes.submissions || [], achRes.achievements || [], partRes.participations || []);
+                renderMentors(mRes.users || [], iRes.invites || []);
                 document.getElementById('m-count').innerText = (mRes.users || []).length;
-            } catch (e) { console.error('Sync failed', e); }
+            } catch (e) { console.error(e); }
         }
 
         function renderGenres(genres) {
             const list = document.getElementById('genre-list');
-            list.innerHTML = '';
-            genres.forEach(g => {
-                list.innerHTML += `
-                    <div class="list-item" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-weight:600; font-size:0.9rem;">${g.title} <span class="badge" style="margin-left:5px;">${g.pts} PTS</span></div>
-                            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:3px;">${g.type === 'weeks' ? '2-Week' : 'Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
-                        </div>
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="editGenre('${g._id}', '${g.title}', '${g.desc}', ${g.pts}, '${g.type}', ${g.isRubric})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.75rem;">Edit</button>
-                            <button onclick="deleteGenre('${g._id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.75rem;">Del</button>
-                        </div>
-                    </div>`;
-            });
+            list.innerHTML = genres.map(g => `
+                <div class="list-item">
+                    <div>
+                        <div style="font-weight:600; font-size:0.9rem;">${g.title} <span class="badge">${g.pts} PTS</span></div>
+                        <div style="font-size:0.7rem; color:var(--text-dim);">${g.type === 'weeks' ? '2-Week' : 'Event'} • ${g.isRubric ? 'Priority' : 'Normal'}</div>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button class="btn-action" onclick="editGenre('${g._id}', '${g.title}', '${g.desc.replace(/'/g, "\\'")}', ${g.pts}, '${g.type}', ${g.isRubric})">Edit</button>
+                        <button class="btn-action" onclick="deleteGenre('${g._id}')" style="color:var(--danger)">Del</button>
+                    </div>
+                </div>`).join('');
         }
 
-        function renderMentors(mentors, invitations, students, submissions, achievements, participations) {
-            const list = document.getElementById('mentor-list');
-            list.innerHTML = '';
-
-            mentors.forEach(m => {
-                const myStudents = students.filter(s => s.mentorEmail === m.email);
-                const progress = (() => {
-                    const totalPts = myStudents.reduce((acc, s) => {
-                        const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
-                        return acc + sSubs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
-                    }, 0);
-                    const maxPossible = myStudents.length * 100;
-                    return maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
-                })();
-
-                list.innerHTML += `
+        function renderMentors(mentors, invites) {
+            const container = document.getElementById('mentor-list');
+            container.innerHTML = '';
+            
+            // Active Mentors
+            mentors.forEach(u => {
+                container.innerHTML += `
                     <div class="list-item">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <div>
-                                <div style="font-weight:600; font-size:1rem;">${m.name || m.email.split('@')[0]}</div>
-                                <div style="font-size:0.7rem; color:var(--text-dim);">${m.email}</div>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <span class="status-pill status-active">ACTIVE</span>
-                                <button onclick="deleteMentor('${m._id}')" class="btn btn-danger" style="padding:4px 8px; font-size:0.6rem; border-radius:6px;">✕</button>
-                            </div>
+                        <div>
+                            <div style="font-weight:600;">${u.name || u.email.split('@')[0]}</div>
+                            <div style="font-size:0.75rem; color:var(--text-dim)">${u.email}</div>
                         </div>
-                        
-                        <div style="margin-bottom:15px;">
-                            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-dim); margin-bottom:5px;">
-                                <span>NET PROGRESS</span>
-                                <span style="color:var(--accent); font-weight:bold;">${progress}%</span>
-                            </div>
-                            <div class="progress-container"><div class="progress-bar" style="width:${progress}%"></div></div>
-                        </div>
-
-                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px; text-align:center;">
-                            <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:10px;">
-                                <div style="font-size:0.8rem; font-weight:600;">${myStudents.length}</div>
-                                <div style="font-size:0.5rem; color:var(--text-dim);">STUDENTS</div>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:10px;">
-                                <div style="font-size:0.8rem; font-weight:600; color:var(--gold);">${achievements.filter(a => myStudents.some(s=>s.email===a.studentEmail) && a.status==='approved').length}</div>
-                                <div style="font-size:0.5rem; color:var(--text-dim);">ACHIEVEMENTS</div>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:10px;">
-                                <div style="font-size:0.8rem; font-weight:600; color:#38bdf8;">${participations.filter(p => myStudents.some(s=>s.email===p.studentEmail) && p.status==='approved').length}</div>
-                                <div style="font-size:0.5rem; color:var(--text-dim);">PARTICIPATION</div>
-                            </div>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <span class="status active">ACTIVE</span>
+                            <button class="btn-action" onclick="deleteMentor('${u._id}')" style="color:var(--danger)">✕</button>
                         </div>
                     </div>`;
             });
 
-            invitations.filter(i => i.role === 'mentor' && i.status === 'pending').forEach(i => {
-                list.innerHTML += `
-                    <div class="list-item" style="border-style:dashed; opacity:0.8;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <div style="font-weight:600; font-size:0.9rem;">${i.email}</div>
-                                <div style="font-size:0.6rem; color:var(--gold); margin-top:3px;">INVITATION PENDING</div>
-                            </div>
-                            <div style="display:flex; gap:10px;">
-                                <button onclick="copyLink('${window.location.origin}?invite=${i.token}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.75rem;">Link</button>
-                                <button onclick="deleteInvite('${i._id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.75rem;">✕</button>
-                            </div>
+            // Pending Invites
+            invites.filter(i => i.role === 'mentor' && i.status === 'pending').forEach(i => {
+                const link = `${window.location.origin}?invite=${i.token}`;
+                container.innerHTML += `
+                    <div class="list-item" style="border-style:dashed;">
+                        <div>
+                            <div style="font-weight:600;">${i.email}</div>
+                            <div style="font-size:0.65rem; color:var(--gold); letter-spacing:1px; margin-top:4px;">INVITATION PENDING</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <button class="btn-action" onclick="copyLink('${link}')" title="Copy Link">🔗 Copy</button>
+                            <span class="status pending">PENDING</span>
+                            <button class="btn-action" onclick="deleteInvite('${i._id}')" style="color:var(--danger)">✕</button>
                         </div>
                     </div>`;
             });
         }
 
-        // --- CORE FUNCTIONS ---
+        async function sendInvite() {
+            const email = document.getElementById('invite-email').value;
+            if(!email) return showMessage('Enter email', true);
+            const res = await fetch('/api/invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, inviterEmail: user.email, organizerEmail: user.email, role: 'mentor' })
+            }).then(r => r.json());
+            if(res.success) {
+                showMessage('Invitation processed! 📧');
+                document.getElementById('invite-email').value = '';
+                sync();
+            } else { showMessage(res.error || 'Failed', true); }
+        }
+
+        function copyLink(link) {
+            navigator.clipboard.writeText(link).then(() => showMessage('Link Copied!'));
+        }
+
         async function saveGenre(e) {
             e.preventDefault();
             const id = document.getElementById('genre-id').value;
@@ -311,12 +275,10 @@
                 type: document.getElementById('g-type').value,
                 isRubric: document.getElementById('g-rubric').checked
             };
-            const res = await fetch(id ? `/api/genres/${id}` : '/api/genres', {
-                method: id ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }).then(r => r.json());
-            if(res.success) { showMessage(id ? 'Updated!' : 'Created!'); resetForm(); sync(); }
+            const url = id ? `/api/genres/${id}` : '/api/genres';
+            const method = id ? 'PUT' : 'POST';
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
+            if(res.success) { showMessage('Activity Saved!'); resetForm(); sync(); }
         }
 
         function editGenre(id, title, desc, pts, type, isRubric) {
@@ -330,73 +292,60 @@
         }
 
         async function deleteGenre(id) { if(confirm('Delete activity?')) { await fetch(`/api/genres/${id}`, { method: 'DELETE' }); sync(); } }
-        async function resetCurriculum() { if(confirm('Reset to official set?')) { await fetch('/api/genres/reset', { method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({organizerEmail:user.email}) }); sync(); } }
-        function resetForm() { document.getElementById('genre-id').value = ''; document.getElementById('genre-form').reset(); }
-
-        async function sendInvite() {
-            const email = document.getElementById('invite-email').value;
-            if(!email) return showMessage('Enter email', true);
-            const res = await fetch('/api/invite', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, role: 'mentor', inviterEmail: user.email, organizerEmail: user.email })
-            }).then(r => r.json());
-            if(res.success) { showMessage('Invited!'); document.getElementById('invite-email').value = ''; sync(); }
-        }
-
         async function deleteMentor(id) { if(confirm('Remove mentor?')) { await fetch(`/api/users/${id}`, { method: 'DELETE' }); sync(); } }
         async function deleteInvite(id) { if(confirm('Cancel invite?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); sync(); } }
-        function copyLink(link) { navigator.clipboard.writeText(link).then(()=>alert('Link Copied!')); }
+        
+        async function resetCurriculum() {
+            if(!confirm('Reset to official 24-activity set?')) return;
+            const res = await fetch('/api/genres/reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ organizerEmail: user.email }) }).then(r => r.json());
+            if(res.success) { showMessage('Curriculum Reset!'); sync(); }
+        }
 
-        // --- REPORTING ---
+        function resetForm() { document.getElementById('genre-id').value = ''; document.getElementById('genre-form').reset(); }
+
+        function showMessage(txt, isError = false) {
+            const m = document.getElementById('message');
+            m.innerText = txt; m.style.display = 'block';
+            m.style.background = isError ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)';
+            setTimeout(() => m.style.display = 'none', 3000);
+        }
+
+        function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
+
+        // Reporting
         let selectedFormat = 'pdf';
         function setFormat(f) {
             selectedFormat = f;
             document.getElementById('fmt-pdf').style.cssText = f === 'pdf' ? 'border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)' : '';
             document.getElementById('fmt-docx').style.cssText = f === 'docx' ? 'border-color:var(--primary); color:var(--primary); background:rgba(99,102,241,0.1)' : '';
         }
-        function openReportModal(type) {
+        function openReportModal() {
             document.getElementById('report-modal').style.display = 'flex';
-            document.getElementById('report-type').value = type;
-            const now = new Date();
-            document.getElementById('report-to').value = now.toISOString().split('T')[0];
-            const lastYear = new Date();
-            lastYear.setFullYear(now.getFullYear() - 1);
-            document.getElementById('report-from').value = lastYear.toISOString().split('T')[0];
+            document.getElementById('report-to').value = new Date().toISOString().split('T')[0];
+            const start = new Date(); start.setFullYear(start.getFullYear() - 1);
+            document.getElementById('report-from').value = start.toISOString().split('T')[0];
         }
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
-
         async function generateReport() {
             const btn = document.getElementById('gen-btn');
             const type = document.getElementById('report-type').value;
-            const start = document.getElementById('report-from').value;
-            const end = document.getElementById('report-to').value;
-            btn.innerText = "Processing Cloud Data..."; btn.disabled = true;
+            btn.innerText = "Processing..."; btn.disabled = true;
             try {
                 const response = await fetch('/api/report/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ organizerEmail: user.email, type, startDate: start, endDate: end, format: selectedFormat })
+                    body: JSON.stringify({ organizerEmail: user.email, type, startDate: document.getElementById('report-from').value, endDate: document.getElementById('report-to').value, format: selectedFormat })
                 });
-                if(!response.ok) throw new Error('Generation failed');
+                if (!response.ok) throw new Error('Failed');
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `comprehensive_report_${type}.${selectedFormat}`;
-                document.body.appendChild(a); a.click(); a.remove();
-                showMessage("Success!"); closeReportModal();
-            } catch (e) { showMessage("Generation failed", true); } finally { btn.innerText = "Download Comprehensive Report"; btn.disabled = false; }
+                const a = document.createElement('a'); a.href = url;
+                a.download = `portfolio_report_${type}.${selectedFormat}`;
+                a.click(); showMessage("Success!"); closeReportModal();
+            } catch (e) { showMessage("Error generating report", true); }
+            finally { btn.innerText = "Generate Comprehensive Report"; btn.disabled = false; }
         }
 
-        function showMessage(txt, isErr=false) {
-            const m = document.getElementById('message');
-            m.innerText = txt; m.style.display = 'block';
-            m.style.background = isErr ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)';
-            m.style.color = 'white';
-            setTimeout(() => m.style.display = 'none', 3000);
-        }
-
-        function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
         sync();
     </script>
 </body>
