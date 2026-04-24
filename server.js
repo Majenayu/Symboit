@@ -102,6 +102,26 @@ const achievementSchema = new mongoose.Schema({
 const Submission = mongoose.model('Submission', submissionSchema);
 const Achievement = mongoose.model('Achievement', achievementSchema);
 
+const achievementGenreSchema = new mongoose.Schema({
+    name: { type: String, unique: true },
+    isDefault: { type: Boolean, default: false }
+});
+const AchievementGenre = mongoose.model('AchievementGenre', achievementGenreSchema);
+
+// Initialize Default Achievement Genres
+async function initAchGenres() {
+    const defaults = [
+        "Hackathon", "NCC", "NSS", "Marathon", "Sports", "Paper Presentation", "Coding Contest", 
+        "Robotics", "Cultural / Dance", "Music / Singing", "Internship", "Workshop", 
+        "Certification", "Quiz", "Debate", "Photography", "Volunteering", 
+        "Start-up / Innovation", "Entrepreneurship", "IEEE / CSI Events", "Project Exhibition"
+    ];
+    for (const name of defaults) {
+        await AchievementGenre.updateOne({ name }, { $set: { name, isDefault: true } }, { upsert: true });
+    }
+}
+initAchGenres().catch(e => console.error('Init AchGenres failed', e));
+
 // --- Auth Endpoints ---
 
 // Google Auth (Accepts Authorization Code)
@@ -782,6 +802,25 @@ app.post('/api/verify-achievement', async (req, res) => {
         await Achievement.findByIdAndUpdate(id, { status, pointsAwarded: status === 'approved' ? points : 0 });
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+});
+
+app.get('/api/achievement-genres', async (req, res) => {
+    try {
+        const genres = await AchievementGenre.find().sort({ name: 1 });
+        res.json({ success: true, genres });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+});
+
+app.post('/api/achievement-genres', async (req, res) => {
+    const { name } = req.body;
+    try {
+        const genre = new AchievementGenre({ name, isDefault: false });
+        await genre.save();
+        res.json({ success: true, genre });
+    } catch (error) {
+        if (error.code === 11000) return res.json({ success: true }); // Already exists
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 // Verify/Reject Submission

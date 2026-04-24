@@ -114,30 +114,14 @@
             <div class="grid" style="display:grid; grid-template-columns: 1fr 2fr; gap:2rem;">
                 <div class="glass-card" style="background:var(--card); padding:2rem; border-radius:24px; border:1px solid rgba(255,255,255,0.05); height:fit-content;">
                     <h3 class="section-title">New Achievement</h3>
-                    <select id="ach-genre" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; margin-bottom:15px;">
-                        <option value="">Select Genre</option>
-                        <option value="Hackathon">Hackathon</option>
-                        <option value="NCC">NCC</option>
-                        <option value="NSS">NSS</option>
-                        <option value="Marathon">Marathon</option>
-                        <option value="Sports">Sports</option>
-                        <option value="Paper Presentation">Paper Presentation</option>
-                        <option value="Coding Contest">Coding Contest</option>
-                        <option value="Robotics">Robotics</option>
-                        <option value="Cultural / Dance">Cultural / Dance</option>
-                        <option value="Music / Singing">Music / Singing</option>
-                        <option value="Internship">Internship</option>
-                        <option value="Workshop">Workshop</option>
-                        <option value="Certification">Certification</option>
-                        <option value="Quiz">Quiz</option>
-                        <option value="Debate">Debate</option>
-                        <option value="Photography">Photography</option>
-                        <option value="Volunteering">Volunteering</option>
-                        <option value="Start-up / Innovation">Start-up / Innovation</option>
-                        <option value="Entrepreneurship">Entrepreneurship</option>
-                        <option value="IEEE / CSI Events">IEEE / CSI Events</option>
-                        <option value="Project Exhibition">Project Exhibition</option>
-                    </select>
+                    
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <select id="ach-genre" style="flex:1; padding:12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white;">
+                            <option value="">Select Genre</option>
+                        </select>
+                        <button onclick="addNewGenre()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; padding:0 15px; cursor:pointer;" title="Add New Genre">+</button>
+                    </div>
+
                     <input type="text" id="ach-title" placeholder="Achievement Title (e.g. 1st Place in Hackfest)">
                     <input type="date" id="ach-date">
                     
@@ -273,6 +257,16 @@
             // Render Achievements
             const achRes = await fetch(`/api/achievements?studentEmail=${user.email}`).then(r => r.json());
             const achievements = achRes.achievements || [];
+            
+            // Sync Achievement Genres
+            const agRes = await fetch('/api/achievement-genres').then(r => r.json());
+            const ags = agRes.genres || [];
+            const select = document.getElementById('ach-genre');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Select Genre</option>';
+            ags.forEach(g => select.innerHTML += `<option value="${g.name}">${g.name}</option>`);
+            select.value = currentVal;
+
             const achList = document.getElementById('ach-list');
             achList.innerHTML = '';
             
@@ -346,6 +340,22 @@
                 } else alert(res.error);
             } catch (e) { alert('Failed'); }
             finally { btn.innerText = 'Upload Achievement'; btn.disabled = false; }
+        }
+
+        async function addNewGenre() {
+            const name = prompt("Enter the name of the new achievement genre:");
+            if (!name) return;
+            try {
+                const res = await fetch('/api/achievement-genres', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                }).then(r => r.json());
+                if (res.success) {
+                    alert('New Genre Registered!');
+                    render();
+                } else alert(res.error);
+            } catch (e) { alert('Failed'); }
         }
 
         function openModal(id, isRubric) {
