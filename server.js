@@ -78,21 +78,29 @@ const submissionSchema = new mongoose.Schema({
     studentEmail: String,
     organizerEmail: String,
     activityTitle: String,
-    milestone: String, // "Week 1", "Week 2", "Full"
-    eventDate: Date, // The date the student actually did the activity
-    driveFolderId: String,
-    driveRootFolderId: String,
-    files: [{
-        name: String,
-        driveFileId: String,
-        viewLink: String
-    }],
+    milestone: String,
+    eventDate: Date,
+    submittedAt: { type: Date, default: Date.now },
     status: { type: String, default: 'pending' },
     pointsAwarded: { type: Number, default: 0 },
-    submittedAt: { type: Date, default: Date.now }
+    files: [{ id: String, viewLink: String }]
+});
+
+const achievementSchema = new mongoose.Schema({
+    studentEmail: String,
+    organizerEmail: String,
+    mentorEmail: String,
+    genre: String,
+    title: String,
+    eventDate: Date,
+    submittedAt: { type: Date, default: Date.now },
+    status: { type: String, default: 'pending' },
+    pointsAwarded: { type: Number, default: 0 },
+    files: [{ id: String, viewLink: String }]
 });
 
 const Submission = mongoose.model('Submission', submissionSchema);
+const Achievement = mongoose.model('Achievement', achievementSchema);
 
 // --- Auth Endpoints ---
 
@@ -690,6 +698,90 @@ app.get('/api/submissions', async (req, res) => {
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
+});
+
+app.get('/api/achievements', async (req, res) => {
+    const { studentEmail, organizerEmail, mentorEmail } = req.query;
+    try {
+        let query = {};
+        if (organizerEmail) query.organizerEmail = organizerEmail;
+        if (studentEmail) {
+            query.studentEmail = studentEmail;
+        } else if (mentorEmail) {
+            // Include students linked via mentorEmail field OR Invitation fallback
+            const studentsWithField = await User.find({ mentorEmail, role: 'student' }).select('email');
+            const invites = await Invitation.find({ inviterEmail: mentorEmail, role: 'student', status: 'accepted' });
+            const studentEmails = [...new Set([...studentsWithField.map(s => s.email), ...invites.map(i => i.email)])];
+            query.studentEmail = { $in: studentEmails };
+        }
+        const achievements = await Achievement.find(query).sort({ submittedAt: -1 });
+        res.json({ success: true, achievements });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/submit-achievement', upload.array('files'), async (req, res) => {
+    const { studentEmail, organizerEmail, genre, title, eventDate } = req.body;
+    try {
+        const student = await User.findOne({ email: studentEmail });
+        if (!student || !student.refreshToken) return res.status(400).json({ success: false, error: 'Drive permissions missing.' });
+
+        const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage');
+        oauth2Client.setCredentials({ refresh_token: student.refreshToken });
+        const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+        const date = new Date(eventDate);
+        const y = date.getFullYear().toString();
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const d = date.getDate().toString().padStart(2, '0');
+
+        // Hierarchy: Achievements -> Genre -> Year -> Month -> Day
+        const rootId = await getDriveFolder(drive, 'Achievements');
+        const genreId = await getDriveFolder(drive, genre, rootId);
+        const yearId = await getDriveFolder(drive, y, genreId);
+        const monthId = await getDriveFolder(drive, m, yearId);
+        const dayId = await getDriveFolder(drive, d, monthId);
+
+        const shareWith = [organizerEmail];
+        const mentorInvite = await Invitation.findOne({ email: studentEmail, status: 'accepted' });
+        if (mentorInvite && mentorInvite.inviterEmail !== organizerEmail) shareWith.push(mentorInvite.inviterEmail);
+
+        for (const email of shareWith) {
+            await drive.permissions.create({
+                fileId: rootId,
+                requestBody: { type: 'user', role: 'writer', emailAddress: email },
+                fields: 'id'
+            }).catch(() => {});
+        }
+
+        const uploadedFiles = [];
+        for (const file of req.files) {
+            const bufferStream = new stream.PassThrough();
+            bufferStream.end(file.buffer);
+            const driveRes = await drive.files.create({
+                requestBody: { name: `${studentEmail.split('@')[0]}_${title}_${file.originalname}`, parents: [dayId] },
+                media: { mimeType: file.mimetype, body: bufferStream },
+                fields: 'id, webViewLink'
+            });
+            uploadedFiles.push({ id: driveRes.data.id, viewLink: driveRes.data.webViewLink });
+        }
+
+        const achievement = new Achievement({
+            studentEmail, organizerEmail, mentorEmail: mentorInvite?.inviterEmail,
+            genre, title, eventDate, files: uploadedFiles
+        });
+        await achievement.save();
+        res.json({ success: true });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+});
+
+app.post('/api/verify-achievement', async (req, res) => {
+    const { id, status, points } = req.body;
+    try {
+        await Achievement.findByIdAndUpdate(id, { status, pointsAwarded: status === 'approved' ? points : 0 });
+        res.json({ success: true });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
 });
 
 // Verify/Reject Submission

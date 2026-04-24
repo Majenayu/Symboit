@@ -33,6 +33,10 @@
         .milestone-box:hover { border-color: var(--primary); background: rgba(255,255,255,0.02); }
         .milestone-box.selected { border-color: var(--accent); background: rgba(16, 185, 129, 0.05); }
 
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+        .tab { cursor: pointer; padding: 8px 20px; border-radius: 10px; font-size: 0.9rem; color: var(--text-dim); transition: 0.3s; }
+        .tab.active { background: var(--primary); color: white; }
+
         /* Mobile Adjustments */
         @media (max-width: 768px) {
             body { padding: 1rem; }
@@ -43,6 +47,7 @@
             .progress-section div { text-align: center !important; }
             .activity-grid { grid-template-columns: 1fr; }
             .modal-content { padding: 1.5rem; border-radius: 20px; }
+            .tabs { overflow-x: auto; white-space: nowrap; }
         }
     </style>
 </head>
@@ -55,6 +60,13 @@
                 <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
             </div>
         </div>
+
+        <div class="tabs">
+            <div class="tab active" id="tab-aicte" onclick="switchTab('aicte')">AICTE Points</div>
+            <div class="tab" id="tab-ach" onclick="switchTab('ach')">Achievement Node</div>
+        </div>
+
+        <div id="aicte-content">
 
         <div class="progress-section">
             <div style="display:flex; justify-content:space-between; align-items:flex-end;">
@@ -83,6 +95,64 @@
 
         <div class="section-title">AICTE Activity Heads (2-Week Milestones)</div>
         <div class="activity-grid" id="activity-grid"></div>
+        </div>
+
+        <div id="ach-content" style="display:none;">
+            <div class="progress-section" style="border-color: var(--gold);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div>
+                        <h2 style="font-weight:400; font-size:1.5rem; color:var(--gold);">Extra-Curricular Achievements</h2>
+                        <p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Recognizing your wins beyond academia</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <span id="ach-pts" style="font-size:2rem; font-weight:600; color:var(--gold);">0</span>
+                        <span style="color:var(--text-dim);"> Total Pts</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid" style="display:grid; grid-template-columns: 1fr 2fr; gap:2rem;">
+                <div class="glass-card" style="background:var(--card); padding:2rem; border-radius:24px; border:1px solid rgba(255,255,255,0.05); height:fit-content;">
+                    <h3 class="section-title">New Achievement</h3>
+                    <select id="ach-genre" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; margin-bottom:15px;">
+                        <option value="">Select Genre</option>
+                        <option value="Hackathon">Hackathon</option>
+                        <option value="NCC">NCC</option>
+                        <option value="NSS">NSS</option>
+                        <option value="Marathon">Marathon</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Paper Presentation">Paper Presentation</option>
+                        <option value="Coding Contest">Coding Contest</option>
+                        <option value="Robotics">Robotics</option>
+                        <option value="Cultural / Dance">Cultural / Dance</option>
+                        <option value="Music / Singing">Music / Singing</option>
+                        <option value="Internship">Internship</option>
+                        <option value="Workshop">Workshop</option>
+                        <option value="Certification">Certification</option>
+                        <option value="Quiz">Quiz</option>
+                        <option value="Debate">Debate</option>
+                        <option value="Photography">Photography</option>
+                        <option value="Volunteering">Volunteering</option>
+                        <option value="Start-up / Innovation">Start-up / Innovation</option>
+                        <option value="Entrepreneurship">Entrepreneurship</option>
+                        <option value="IEEE / CSI Events">IEEE / CSI Events</option>
+                        <option value="Project Exhibition">Project Exhibition</option>
+                    </select>
+                    <input type="text" id="ach-title" placeholder="Achievement Title (e.g. 1st Place in Hackfest)">
+                    <input type="date" id="ach-date">
+                    
+                    <div id="ach-preview" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap:10px; margin-bottom:15px;"></div>
+                    <input type="file" id="ach-files" multiple accept="image/*" onchange="previewAch()" style="font-size:0.7rem; margin-bottom:15px;">
+                    
+                    <button class="btn btn-primary" style="width:100%; background:var(--gold); border:none;" onclick="submitAchievement()">Upload Achievement</button>
+                </div>
+
+                <div>
+                    <h3 class="section-title">Your Achievement Log</h3>
+                    <div id="ach-list" class="activity-grid"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal" id="modal">
@@ -198,13 +268,84 @@
                     </div>`;
             });
 
-            // Update Progress Bar
-            document.getElementById('p-val').innerText = totalPoints;
-            if(currentYearPoints > 30) {
-                document.getElementById('p-val').innerHTML += ` <span style="font-size:0.7rem; color:var(--gold);">(Yearly Cap: 30 / ${currentYearPoints} Earned)</span>`;
-            }
-            const max = parseInt(document.getElementById('p-max').innerText);
             document.getElementById('p-bar').style.width = Math.min(100, (totalPoints / max) * 100) + '%';
+
+            // Render Achievements
+            const achRes = await fetch(`/api/achievements?studentEmail=${user.email}`).then(r => r.json());
+            const achievements = achRes.achievements || [];
+            const achList = document.getElementById('ach-list');
+            achList.innerHTML = '';
+            
+            let totalAchPoints = 0;
+            achievements.forEach(a => {
+                if(a.status === 'approved') totalAchPoints += (a.pointsAwarded || 10);
+                achList.innerHTML += `
+                    <div class="activity-card" style="cursor:default; border-color:${a.status === 'approved' ? 'var(--accent)' : 'rgba(255,255,255,0.05)'}">
+                        <span class="badge" style="color:var(--gold); background:rgba(251, 191, 36, 0.1); border-radius:10px;">${a.genre}</span>
+                        <h4 style="font-size:0.9rem; margin-bottom:5px;">${a.title}</h4>
+                        <p style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase;">${new Date(a.eventDate).toLocaleDateString()}</p>
+                        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:0.6rem; font-weight:bold; color:${a.status === 'approved' ? 'var(--accent)' : (a.status === 'rejected' ? 'var(--danger)' : 'var(--gold)')}">${a.status.toUpperCase()}</span>
+                            ${a.status === 'approved' ? `<span style="font-size:0.8rem; font-weight:600; color:var(--gold);">+${a.pointsAwarded} PTS</span>` : ''}
+                        </div>
+                    </div>`;
+            });
+            document.getElementById('ach-pts').innerText = totalAchPoints;
+        }
+
+        function switchTab(t) {
+            document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+            document.getElementById(`tab-${t}`).classList.add('active');
+            document.getElementById('aicte-content').style.display = t === 'aicte' ? 'block' : 'none';
+            document.getElementById('ach-content').style.display = t === 'ach' ? 'block' : 'none';
+        }
+
+        function previewAch() {
+            const container = document.getElementById('ach-preview');
+            container.innerHTML = '';
+            const files = document.getElementById('ach-files').files;
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.width = '100%'; img.style.height = '50px'; img.style.objectFit = 'cover'; img.style.borderRadius = '5px';
+                    container.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function submitAchievement() {
+            const genre = document.getElementById('ach-genre').value;
+            const title = document.getElementById('ach-title').value;
+            const date = document.getElementById('ach-date').value;
+            const files = document.getElementById('ach-files').files;
+
+            if(!genre || !title || !date || files.length === 0) return alert('Fill all fields and add proof.');
+            
+            const fd = new FormData();
+            fd.append('studentEmail', user.email);
+            fd.append('organizerEmail', user.organizerEmail);
+            fd.append('genre', genre);
+            fd.append('title', title);
+            fd.append('eventDate', date);
+            Array.from(files).forEach(f => fd.append('files', f));
+
+            const btn = event.currentTarget;
+            btn.innerText = 'Uploading...'; btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/submit-achievement', { method: 'POST', body: fd }).then(r => r.json());
+                if(res.success) {
+                    alert('Achievement Submitted!');
+                    document.getElementById('ach-title').value = '';
+                    document.getElementById('ach-files').value = '';
+                    document.getElementById('ach-preview').innerHTML = '';
+                    render();
+                } else alert(res.error);
+            } catch (e) { alert('Failed'); }
+            finally { btn.innerText = 'Upload Achievement'; btn.disabled = false; }
         }
 
         function openModal(id, isRubric) {

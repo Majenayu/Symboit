@@ -114,32 +114,36 @@
             try {
                 const uRes = await fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student&mentorEmail=${user.email}`).then(r => r.json());
                 const sRes = await fetch(`/api/submissions?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json());
+                const aRes = await fetch(`/api/achievements?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json());
                 
                 const students = uRes.users;
                 const submissions = sRes.submissions;
+                const achievements = aRes.achievements || [];
 
                 document.getElementById('s-count').innerText = students.length;
-                document.getElementById('p-count').innerText = submissions.filter(s => s.status === 'pending').length;
+                document.getElementById('p-count').innerText = submissions.filter(s => s.status === 'pending').length + achievements.filter(a => a.status === 'pending').length;
 
-                renderFeed(submissions);
-                renderStudents(students, submissions);
+                renderFeed(submissions, achievements);
+                renderStudents(students, submissions, achievements);
             } catch (err) { console.error('Sync failed', err); }
         }
 
-        function renderFeed(subs) {
+        function renderFeed(subs, achs) {
             const container = document.getElementById('feed-container');
             container.innerHTML = '';
-            subs.slice(0, 10).forEach(s => {
+            const all = [...subs.map(x => ({...x, type: 'AICTE'})), ...achs.map(x => ({...x, type: 'ACH'}))].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+            
+            all.slice(0, 10).forEach(s => {
                 container.innerHTML += `
                     <div class="feed-item">
-                        <div style="color:var(--text)">${s.studentEmail.split('@')[0]}</div>
-                        <div style="color:var(--text-dim)">Sub: ${s.activityTitle}</div>
+                        <div style="color:var(--text)">${s.studentEmail.split('@')[0]} <span style="font-size:0.5rem; color:var(--primary);">${s.type}</span></div>
+                        <div style="color:var(--text-dim)">${s.type === 'ACH' ? s.title : s.activityTitle}</div>
                         <div style="font-size:0.6rem; color:var(--accent); margin-top:4px;">${new Date(s.submittedAt).toLocaleTimeString()}</div>
                     </div>`;
             });
         }
 
-        function renderStudents(students, submissions) {
+        function renderStudents(students, submissions, achievements) {
             const container = document.getElementById('student-list');
             container.innerHTML = '';
             
@@ -150,9 +154,13 @@
                     const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
                     const points = sSubs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
                     totalPointsEarned += points;
+
+                    const sAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'approved');
+                    const achPoints = sAchs.reduce((acc, curr) => acc + (curr.pointsAwarded || 10), 0);
                     
                     const perc = Math.min(100, (points / 100) * 100);
                     const pending = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'pending');
+                    const pendingAchs = achievements.filter(a => a.studentEmail === s.email && a.status === 'pending');
                     
                     // Use folder ID from User model (always available after first login)
                     const rootFolderId = s.driveRootFolderId;
@@ -166,40 +174,69 @@
                                 </div>
                                 <div style="text-align:right; display:flex; align-items:center; gap:15px;">
                                     ${rootFolderId ? `<a href="https://drive.google.com/drive/folders/${rootFolderId}" target="_blank" title="Open AICTE Drive" style="color:var(--primary); text-decoration:none; font-size:1.4rem;">📂</a>` : '<span title="Awaiting first login" style="opacity:0.2; font-size:1.4rem;">📂</span>'}
-                                    <div>
-                                        <span style="font-size:1.5rem; font-weight:600; color:var(--accent)">${points}</span>
-                                        <span style="font-size:0.7rem; color:var(--text-dim)">/ 100 pts</span>
+                                    <div style="display:flex; gap:15px;">
+                                        <div style="text-align:center;">
+                                            <div style="font-size:1.2rem; font-weight:600; color:var(--accent)">${points}</div>
+                                            <div style="font-size:0.5rem; color:var(--text-dim); text-transform:uppercase;">AICTE</div>
+                                        </div>
+                                        <div style="text-align:center;">
+                                            <div style="font-size:1.2rem; font-weight:600; color:var(--gold)">${achPoints}</div>
+                                            <div style="font-size:0.5rem; color:var(--text-dim); text-transform:uppercase;">ACH</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="progress-container" style="height:6px; margin-top:15px;"><div class="progress-bar" style="width:${perc}%"></div></div>
                             
-                            ${pending.length > 0 ? `
-                                <div style="margin-top:20px; background:rgba(251, 191, 36, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.1);">
-                                    <p style="font-size:0.6rem; color:var(--gold); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">VERIFICATION PENDING (${pending.length})</p>
-                                    ${pending.map(p => `
-                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
-                                            <div>
-                                            <div style="font-size:0.8rem; font-weight:600;">${p.activityTitle}</div>
-                                            <div style="font-size:0.6rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px;">
-                                                ${p.milestone || 'Full Event'} • ${new Date(p.eventDate).toLocaleDateString()}
+                         </div>
+                         
+                         ${pending.length > 0 ? `
+                                <div style="margin-top:20px; background:rgba(99, 102, 241, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(99, 102, 241, 0.1);">
+                                     <p style="font-size:0.6rem; color:var(--primary); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">AICTE VERIFICATION PENDING (${pending.length})</p>
+                                     ${pending.map(p => `
+                                         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
+                                             <div>
+                                             <div style="font-size:0.8rem; font-weight:600;">${p.activityTitle}</div>
+                                             <div style="font-size:0.6rem; color:var(--primary); text-transform:uppercase; letter-spacing:1px;">
+                                                 ${p.milestone || 'Full Event'} • ${new Date(p.eventDate).toLocaleDateString()}
+                                             </div>
+                                             </div>
+                                             <div style="display:flex; gap:8px;">
+                                                 <div style="display:flex; flex-direction:column; gap:4px;">
+                                                     ${p.files.map((f, idx) => `<a href="${f.viewLink}" target="_blank" style="font-size:0.6rem; color:var(--primary); text-decoration:none; border:1px solid var(--primary); padding:1px 6px; border-radius:4px; text-align:center;">Proof ${idx + 1}</a>`).join('')}
+                                                 </div>
+                                                 <div style="display:flex; flex-direction:column; gap:4px;">
+                                                     <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
+                                                     <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     `).join('')}
+                                 </div>
+                            ` : ''}
+
+                         ${pendingAchs.length > 0 ? `
+                            <div style="margin-top:10px; background:rgba(251, 191, 36, 0.05); padding:12px; border-radius:12px; border:1px solid rgba(251, 191, 36, 0.1);">
+                                <p style="font-size:0.6rem; color:var(--gold); margin-bottom:8px; font-weight:bold; letter-spacing:1px;">ACHIEVEMENTS PENDING (${pendingAchs.length})</p>
+                                ${pendingAchs.map(a => `
+                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; margin-bottom:5px;">
+                                        <div>
+                                            <div style="font-size:0.8rem; font-weight:600;">${a.title}</div>
+                                            <div style="font-size:0.6rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px;">${a.genre} • ${new Date(a.eventDate).toLocaleDateString()}</div>
+                                        </div>
+                                        <div style="display:flex; gap:8px;">
+                                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                                ${a.files.map((f, idx) => `<a href="${f.viewLink}" target="_blank" style="font-size:0.6rem; color:var(--gold); text-decoration:none; border:1px solid var(--gold); padding:1px 6px; border-radius:4px; text-align:center;">Proof ${idx + 1}</a>`).join('')}
                                             </div>
-                                            </div>
-                                            <div style="display:flex; gap:8px;">
-                                                <div style="display:flex; flex-direction:column; gap:4px;">
-                                                    ${p.files.map((f, idx) => `
-                                                        <a href="${f.viewLink}" target="_blank" style="font-size:0.6rem; color:var(--primary); text-decoration:none; border:1px solid var(--primary); padding:1px 6px; border-radius:4px; text-align:center;">Proof ${idx + 1}</a>
-                                                    `).join('')}
-                                                </div>
-                                                <div style="display:flex; flex-direction:column; gap:4px;">
-                                                    <button onclick="verify('${p._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
-                                                    <button onclick="verify('${p._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
-                                                </div>
+                                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                                <button onclick="verifyAch('${a._id}', 'approved')" style="background:var(--accent); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Verify</button>
+                                                <button onclick="verifyAch('${a._id}', 'rejected')" style="background:var(--danger); border:none; color:white; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">✕</button>
                                             </div>
                                         </div>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                         ` : ''}
                         </div>`;
                 });
 
@@ -219,6 +256,20 @@
                 
                 if(res.success) {
                     showMessage(`Activity ${status === 'approved' ? 'Verified ✓' : 'Rejected ✕'}`);
+                    sync();
+                }
+            } catch (e) { showMessage('Verification failed', true); }
+        }
+
+        async function verifyAch(id, status) {
+            try {
+                const res = await fetch('/api/verify-achievement', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, status, points: 10 })
+                }).then(r => r.json());
+                if(res.success) {
+                    showMessage(`Achievement ${status === 'approved' ? 'Verified ✓' : 'Rejected ✕'}`);
                     sync();
                 }
             } catch (e) { showMessage('Verification failed', true); }
