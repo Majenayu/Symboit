@@ -486,14 +486,6 @@
             document.getElementById('part-content').style.display = t === 'part' ? 'block' : 'none';
         }
 
-        function previewAch() {
-            const container = document.getElementById('ach-preview');
-            container.innerHTML = '';
-            const files = document.getElementById('ach-files').files;
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = document.createElement('img');
         async function addNewGenre() {
             const name = prompt("Enter the name of the new achievement genre:");
             if (!name) return;
