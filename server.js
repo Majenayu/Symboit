@@ -1062,10 +1062,14 @@ cron.schedule('0 9 27 * *', async () => {
 
 async function fetchDriveImage(drive, fileId) {
     try {
+        console.log(`[REPORT] Fetching Drive image: ${fileId}`);
         const res = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
-        return Buffer.from(res.data);
+        if (res && res.data) {
+            return Buffer.from(res.data);
+        }
+        return null;
     } catch (e) {
-        console.error('Drive image fetch failed:', fileId, e.message);
+        console.error(`[REPORT] Drive image fetch failed (${fileId}):`, e.message);
         return null;
     }
 }
@@ -1125,11 +1129,21 @@ app.post('/api/report/generate', async (req, res) => {
                 }
 
                 const children = [
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: student.name || studentEmail.split('@')[0], bold: true, size: 24 }),
-                            new TextRun({ text: "\t\t\t\t\t\t\t\t\t" }), // Approximate tab
-                            new TextRun({ text: studentEmail, size: 20 }),
+                    // Header Table for perfect Name/Email alignment
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: student.name || studentEmail.split('@')[0], bold: true, size: 24 })] })],
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({ children: [new TextRun({ text: studentEmail, size: 20 })], alignment: AlignmentType.RIGHT })],
+                                    }),
+                                ],
+                            }),
                         ],
                     }),
                     new Paragraph({ text: "", spacing: { before: 200 } }),
@@ -1143,18 +1157,21 @@ app.post('/api/report/generate', async (req, res) => {
                             new TextRun({ text: "Activity: ", bold: true }),
                             new TextRun({ text: item.activityTitle || item.title || item.genre }),
                         ],
+                        spacing: { after: 100 }
                     }),
                     new Paragraph({
                         children: [
                             new TextRun({ text: "Date: ", bold: true }),
                             new TextRun({ text: new Date(item.eventDate).toLocaleDateString() }),
                         ],
+                        spacing: { after: 100 }
                     }),
                     new Paragraph({
                         children: [
                             new TextRun({ text: "Points Awarded: ", bold: true }),
                             new TextRun({ text: (item.pointsAwarded || 10).toString() + " PTS" }),
                         ],
+                        spacing: { after: 100 }
                     }),
                     new Paragraph({ text: "", spacing: { before: 200 } }),
                     new Paragraph({
@@ -1167,30 +1184,29 @@ app.post('/api/report/generate', async (req, res) => {
                 ];
 
                 if (photoBuffers.length > 0) {
-                    const imgCount = photoBuffers.length;
-                    if (imgCount === 1) {
+                    if (photoBuffers.length === 1) {
                         children.push(new Paragraph({
                             children: [new ImageRun({ data: photoBuffers[0], transformation: { width: 450, height: 300 } })],
                             alignment: AlignmentType.CENTER
                         }));
                     } else {
                         const rows = [];
-                        for (let i = 0; i < photoBuffers.length; i += 2) {
+                        for (let j = 0; j < photoBuffers.length; j += 2) {
                             const cells = [
                                 new TableCell({
-                                    children: [new Paragraph({ children: [new ImageRun({ data: photoBuffers[i], transformation: { width: 220, height: 160 } })] })],
-                                    border: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
+                                    children: [new Paragraph({ children: [new ImageRun({ data: photoBuffers[j], transformation: { width: 220, height: 160 } })] }), new Paragraph({ text: "" })],
+                                    borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
                                 })
                             ];
-                            if (photoBuffers[i+1]) {
+                            if (photoBuffers[j+1]) {
                                 cells.push(new TableCell({
-                                    children: [new Paragraph({ children: [new ImageRun({ data: photoBuffers[i+1], transformation: { width: 220, height: 160 } })] })],
-                                    border: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
+                                    children: [new Paragraph({ children: [new ImageRun({ data: photoBuffers[j+1], transformation: { width: 220, height: 160 } })] }), new Paragraph({ text: "" })],
+                                    borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } }
                                 }));
                             }
                             rows.push(new TableRow({ children: cells }));
                         }
-                        children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }));
+                        children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } }, rows }));
                     }
                 }
 
@@ -1235,26 +1251,43 @@ app.post('/api/report/generate', async (req, res) => {
                 for (const f of itemFiles) {
                     const id = typeof f === 'string' ? f : f.id;
                     const buf = await fetchDriveImage(drive, id);
-                    if (buf) photoBuffers.push(buf);
+                    if (buf) {
+                        photoBuffers.push(buf);
+                    }
                 }
 
                 if (photoBuffers.length > 0) {
                     const imgWidth = 220;
                     const imgHeight = 160;
-                    const startY = doc.y;
+                    let currentY = doc.y + 20;
                     
                     for (let j = 0; j < photoBuffers.length; j++) {
                         const col = j % 2;
                         const row = Math.floor(j / 2);
                         const x = 40 + col * (imgWidth + 20);
-                        const y = startY + row * (imgHeight + 20);
+                        const y = currentY + row * (imgHeight + 20);
                         
+                        // Prevent page overflow
+                        if (y + imgHeight > doc.page.height - 40) {
+                            doc.addPage();
+                            currentY = 40; // Reset Y on new page
+                        }
+
                         try {
                             doc.image(photoBuffers[j], x, y, { width: imgWidth, height: imgHeight });
+                            // Advance doc.y if this is the last image or end of a row
+                            if (j === photoBuffers.length - 1) {
+                                doc.y = y + imgHeight + 20;
+                            }
                         } catch (e) {
-                            console.error('PDF Image insertion error:', e.message);
+                            console.error(`[PDF] Image insert error for ${item.title}:`, e.message);
+                            doc.fontSize(8).fillColor('red').text(`[Error: Image format not supported]`, x, y);
+                            doc.fillColor('black');
                         }
                     }
+                } else {
+                    doc.fontSize(10).fillColor('gray').text('[No proof images attached/available]', { align: 'center' });
+                    doc.fillColor('black');
                 }
             }
 
