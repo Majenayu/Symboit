@@ -35,11 +35,11 @@
         .list-item { background: rgba(255,255,255,0.02); padding: 18px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
 
         /* Mobile Container */
-        .mobile-container { display: block; padding: 1rem 1.5rem 7rem 1.5rem; }
+        .mobile-container { display: block; padding: 1rem 1.5rem 7.5rem 1.5rem; }
         .header-mobile { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0 2rem 0; }
         .view { display: none; }
         .view.active { display: block; }
-        .mentor-card-mob { background: rgba(255,255,255,0.03); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05); }
+        .mentor-card-mob { background: rgba(255,255,255,0.03); border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.05); }
         
         /* Circular Progress (AICTE Only) */
         .circle-progress { width: 45px; height: 45px; border-radius: 50%; background: conic-gradient(var(--primary) var(--perc), rgba(255,255,255,0.05) 0); position: relative; display: flex; align-items: center; justify-content: center; }
@@ -48,22 +48,22 @@
         
         .student-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05); }
 
-        /* Advanced Bottom Nav (Camera style) */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(3, 0, 20, 0.95); backdrop-filter: blur(20px); height: 75px; display: flex; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); z-index: 1000; padding: 0 10px; }
+        /* Advanced Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(3, 0, 20, 0.95); backdrop-filter: blur(25px); height: 80px; display: flex; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; padding: 0 10px; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-dim); text-decoration: none; font-size: 0.65rem; cursor: pointer; transition: 0.3s; }
         .nav-item.active { color: var(--primary); }
         
         /* Central Button */
-        .center-btn-wrap { position: relative; width: 70px; height: 70px; margin-top: -35px; }
-        .center-btn { width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #ec4899); display: flex; items-center; justify-content: center; box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4); border: 4px solid #030014; cursor: pointer; position: absolute; left: 50%; transform: translateX(-50%); transition: 0.2s; }
+        .center-btn-wrap { position: relative; width: 80px; height: 80px; margin-top: -40px; }
+        .center-btn { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #ec4899); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.5); border: 5px solid #030014; cursor: pointer; position: absolute; left: 50%; transform: translateX(-50%); transition: 0.2s; }
         .center-btn:active { transform: translateX(-50%) scale(0.9); }
-        .center-btn span { font-size: 1.5rem; }
-        .center-label { position: absolute; bottom: -22px; width: 100%; text-align: center; font-size: 0.65rem; font-weight: 600; color: var(--text-dim); }
+        .center-btn span { font-size: 1.8rem; }
+        .center-label { position: absolute; bottom: -25px; width: 100%; text-align: center; font-size: 0.7rem; font-weight: 600; color: var(--text-dim); }
 
         /* Shared Components */
         #message { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; z-index: 3000; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
-        .modal-content { background: #0d0d19; padding: 2rem; border-radius: 30px; border: 1px solid var(--primary); width: 100%; max-width: 500px; position: relative; }
+        .modal-content { background: #0d0d19; padding: 2.5rem; border-radius: 35px; border: 1px solid var(--primary); width: 100%; max-width: 500px; position: relative; }
         .close-btn { position: absolute; top: 1rem; right: 1.5rem; color: var(--text-dim); cursor: pointer; font-size: 1.5rem; }
 
         @media (min-width: 1024px) {
@@ -124,18 +124,16 @@
         </div>
 
         <div id="mob-view-aicte" class="view active">
-            <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.2rem; font-weight:600;">AICTE PROGRESS</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+                <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); font-weight:600;">AICTE PROGRESS</p>
+                <button onclick="openReportModal()" style="background:rgba(139, 92, 246, 0.1); border:1px solid rgba(139, 92, 246, 0.2); color:var(--primary); padding:6px 12px; border-radius:8px; font-size:0.65rem; font-weight:600; cursor:pointer;">📊 REPORTS</button>
+            </div>
             <div id="mob-aicte-list"></div>
         </div>
         
-        <div id="mob-view-ach" class="view">
-            <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.2rem; font-weight:600;">ACHIEVEMENTS</p>
-            <div id="mob-ach-list"></div>
-        </div>
-        
-        <div id="mob-view-part" class="view">
-            <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.2rem; font-weight:600;">PARTICIPATION</p>
-            <div id="mob-part-list"></div>
+        <div id="mob-view-portfolio" class="view">
+            <p style="font-size:0.7rem; letter-spacing:2px; color:var(--primary); margin-bottom:1.2rem; font-weight:600;">PORTFOLIO NETWORK</p>
+            <div id="mob-portfolio-list"></div>
         </div>
         
         <div id="mob-view-mentors" class="view">
@@ -166,11 +164,11 @@
     <!-- BOTTOM NAV -->
     <div class="bottom-nav">
         <div class="nav-item active" onclick="switchMobView('aicte', this)"><span>📋</span><span>AICTE</span></div>
-        <div class="nav-item" onclick="switchMobView('ach', this)"><span>🌟</span><span>ACH</span></div>
+        <div class="nav-item" onclick="switchMobView('portfolio', this)"><span>🌟</span><span>Portfolio</span></div>
         
         <div class="center-btn-wrap">
-            <div class="center-btn" onclick="openReportModal()"><span>📊</span></div>
-            <div class="center-label">REPORTS</div>
+            <div class="center-btn" onclick="alert('Manage Events Triggered')"><span>📅</span></div>
+            <div class="center-label">EVENTS</div>
         </div>
         
         <div class="nav-item" onclick="switchMobView('mentors', this)"><span>👥</span><span>Mentors</span></div>
@@ -248,7 +246,7 @@
         }
 
         function renderMobile(genres, mentors, students, subs, achs, parts, invites) {
-            // AICTE (with progress)
+            // AICTE
             document.getElementById('mob-aicte-list').innerHTML = mentors.map(m => {
                 const myS = students.filter(s => s.mentorEmail === m.email);
                 if(myS.length === 0) return '';
@@ -257,19 +255,26 @@
                 return `<div class="mentor-card-mob"><div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;"><div class="circle-progress" style="--perc:${perc}%"><div class="circle-val">${perc}%</div></div><div><div style="font-weight:600; font-size:0.9rem;">${m.name||m.email.split('@')[0]}</div><div style="font-size:0.65rem; color:var(--text-dim);">Mentor • ${myS.length} Students</div></div></div>${myS.map(s => `<div class="student-row"><div style="font-size:0.8rem;">${s.name||s.email.split('@')[0]}</div><div style="display:flex; align-items:center; gap:10px;"><div style="font-size:0.75rem; font-weight:600; color:var(--primary);">${subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0)} PTS</div><a href="${s.driveRootFolderId?'https://drive.google.com/drive/folders/'+s.driveRootFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.driveRootFolderId?1:0.1}">📁</a></div></div>`).join('')}</div>`;
             }).join('');
 
-            // Achievements & Participation (No Progress circle as requested)
-            const nodeTypes = [{id:'ach', data:achs, folder:'achievementFolderId'}, {id:'part', data:parts, folder:'participationFolderId'}];
-            nodeTypes.forEach(node => {
-                document.getElementById(`mob-${node.id}-list`).innerHTML = mentors.map(m => {
-                    const myS = students.filter(s => s.mentorEmail === m.email);
-                    if(myS.length === 0) return '';
-                    return `<div class="mentor-card-mob"><div style="font-weight:600; font-size:0.9rem; margin-bottom:1rem;">${m.name||m.email.split('@')[0]} <span style="font-weight:300; color:var(--text-dim); font-size:0.7rem;">(${myS.length} Students)</span></div>${myS.map(s => {
-                        const pts = node.data.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                        const folderId = s[node.folder];
-                        return `<div class="student-row"><div><div style="font-size:0.8rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:10px;"><div style="font-size:0.75rem; font-weight:600; color:var(--gold);">${pts} PTS</div><a href="${folderId?'https://drive.google.com/drive/folders/'+folderId:'#'}" target="_blank" style="text-decoration:none; opacity:${folderId?1:0.1}">📁</a></div></div>`;
-                    }).join('')}</div>`;
-                }).join('');
-            });
+            // Portfolio (Merged ACH & PART)
+            document.getElementById('mob-portfolio-list').innerHTML = mentors.map(m => {
+                const myS = students.filter(s => s.mentorEmail === m.email);
+                if(myS.length === 0) return '';
+                return `<div class="mentor-card-mob">
+                    <div style="font-weight:600; font-size:0.9rem; margin-bottom:1.2rem;">${m.name||m.email.split('@')[0]}</div>
+                    
+                    <p style="font-size:0.6rem; color:var(--gold); font-weight:600; margin-bottom:10px; letter-spacing:1px;">ACHIEVEMENTS</p>
+                    ${myS.map(s => {
+                        const pts = achs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                        return `<div class="student-row"><div><div style="font-size:0.8rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:10px;"><div style="font-size:0.75rem; font-weight:600; color:var(--gold);">${pts} PTS</div><a href="${s.achievementFolderId?'https://drive.google.com/drive/folders/'+s.achievementFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.achievementFolderId?1:0.1}">📁</a></div></div>`;
+                    }).join('')}
+
+                    <p style="font-size:0.6rem; color:#38bdf8; font-weight:600; margin:20px 0 10px 0; letter-spacing:1px;">PARTICIPATIONS</p>
+                    ${myS.map(s => {
+                        const pts = parts.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                        return `<div class="student-row"><div><div style="font-size:0.8rem;">${s.name||s.email.split('@')[0]}</div></div><div style="display:flex; align-items:center; gap:10px;"><div style="font-size:0.75rem; font-weight:600; color:#38bdf8;">${pts} PTS</div><a href="${s.participationFolderId?'https://drive.google.com/drive/folders/'+s.participationFolderId:'#'}" target="_blank" style="text-decoration:none; opacity:${s.participationFolderId?1:0.1}">📁</a></div></div>`;
+                    }).join('')}
+                </div>`;
+            }).join('');
 
             // Mentors Management (Mobile)
             document.getElementById('mob-mentor-mgmt-list').innerHTML = mentors.map(m => `
