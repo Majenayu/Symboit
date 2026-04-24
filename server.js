@@ -382,8 +382,38 @@ app.post('/api/invite/accept', async (req, res) => {
 app.get('/api/users', async (req, res) => {
     const { role, organizerEmail, mentorEmail } = req.query;
     try {
-        const query = { role };
+        let query = { role };
         if (organizerEmail) query.organizerEmail = organizerEmail;
+        
+        if (mentorEmail && role === 'student') {
+            // Find students who HAVE the field
+            const hasField = await User.find({ ...query, mentorEmail });
+            
+            // FALLBACK: Find students who were invited by this mentor but DON'T have the field yet
+            const invites = await Invitation.find({ inviterEmail: mentorEmail, role: 'student', status: 'accepted' });
+            const invitedEmails = invites.map(i => i.email);
+            
+            const legacyStudents = await User.find({ 
+                ...query, 
+                email: { $in: invitedEmails },
+                mentorEmail: { $exists: false } 
+            });
+            
+            // Auto-heal legacy students for future faster queries
+            if (legacyStudents.length > 0) {
+                await User.updateMany(
+                    { email: { $in: legacyStudents.map(s => s.email) } },
+                    { $set: { mentorEmail: mentorEmail } }
+                );
+            }
+
+            const allStudents = [...hasField, ...legacyStudents];
+            // Remove duplicates if any
+            const uniqueStudents = Array.from(new Map(allStudents.map(s => [s.email, s])).values());
+            
+            return res.json({ success: true, users: uniqueStudents });
+        }
+
         if (mentorEmail) query.mentorEmail = mentorEmail;
         const users = await User.find(query).select('name email role driveRootFolderId mentorEmail');
         res.json({ success: true, users });
@@ -641,10 +671,18 @@ app.get('/api/submissions', async (req, res) => {
         if (studentEmail) {
             query.studentEmail = studentEmail;
         } else if (mentorEmail) {
-            // Find all students for this mentor
-            const students = await User.find({ mentorEmail, role: 'student' }).select('email');
-            const studentEmails = students.map(s => s.email);
-            query.studentEmail = { $in: studentEmails };
+            // Find students who HAVE the field
+            const studentsWithField = await User.find({ mentorEmail, role: 'student' }).select('email');
+            
+            // Also find students who were invited by this mentor (fallback for legacy)
+            const invites = await Invitation.find({ inviterEmail: mentorEmail, role: 'student', status: 'accepted' });
+            
+            const studentEmails = [
+                ...studentsWithField.map(s => s.email),
+                ...invites.map(i => i.email)
+            ];
+            
+            query.studentEmail = { $in: [...new Set(studentEmails)] };
         }
         
         const submissions = await Submission.find(query).sort({ submittedAt: -1 });

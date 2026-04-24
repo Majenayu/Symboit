@@ -62,6 +62,12 @@
             <button class="btn btn-primary" onclick="bulkNotify()">📧 Bulk Email Students</button>
         </div>
 
+        <div class="glass-card" style="padding:1rem;">
+            <p style="font-size:0.7rem; color:var(--text-dim); margin-bottom:10px;">MANAGEMENT</p>
+            <input type="email" id="student-email" placeholder="Student Email" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:white; font-size:0.8rem; outline:none; margin-bottom:10px;">
+            <button class="btn btn-outline" style="margin-top:0; font-size:0.75rem;" onclick="sendInvite('student')">Add Student</button>
+        </div>
+
         <div class="update-feed">
             <p style="font-size:0.7rem; color:var(--gold); font-weight:bold; letter-spacing:1px; margin-bottom:1rem;">LIVE UPDATES</p>
             <div id="feed-container"></div>
@@ -216,6 +222,33 @@
                     sync();
                 }
             } catch (e) { showMessage('Verification failed', true); }
+        }
+
+        async function sendInvite(role) {
+            const email = document.getElementById('student-email').value;
+            if(!email) return showMessage('Enter student email', true);
+            
+            showMessage('Sending invite...');
+            try {
+                const res = await fetch('/api/invite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email, 
+                        role: 'student', 
+                        inviterEmail: user.email, 
+                        organizerEmail: user.organizerEmail 
+                    })
+                }).then(r => r.json());
+                
+                if(res.success) {
+                    showMessage('Invitation Sent! 📧');
+                    document.getElementById('student-email').value = '';
+                    sync();
+                } else {
+                    showMessage(res.error || 'Failed', true);
+                }
+            } catch (e) { showMessage('Invite failed', true); }
         }
 
         async function bulkNotify() {
