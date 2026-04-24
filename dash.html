@@ -39,7 +39,7 @@
         .tab { cursor: pointer; padding: 8px 20px; border-radius: 10px; font-size: 0.9rem; color: var(--text-dim); transition: 0.3s; }
         .tab.active { background: var(--primary); color: white; }
 
-        #message { position: fixed; bottom: 20px; right: 20px; padding: 15px 25px; border-radius: 12px; color: white; display: none; z-index: 2000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: 600; }
+        #message { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; z-index: 3000; display: none; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
         /* MOBILE OVERLAYS */
         .mobile-container { display: none; flex-direction: column; height: 100vh; position: fixed; inset: 0; background: var(--bg); z-index: 500; }
@@ -57,6 +57,10 @@
         .fab { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #ec4899); border: 6px solid var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 12px 30px rgba(139, 92, 246, 0.5); cursor: pointer; color: white; }
         .m-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
+        /* Report Button (d.html style) */
+        .report-pill { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: var(--primary); padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+        input[type="date"], select { width: 100%; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; font-family: inherit; margin-bottom: 12px; }
+
         @media (max-width: 767px) {
             body { padding: 0; overflow: hidden; }
             .desktop-wrapper { display: none; }
@@ -71,12 +75,10 @@
         <div style="max-width: 1200px; margin: 0 auto;">
             <div class="glass-header">
                 <div><h1 style="font-size:1.2rem; letter-spacing:2px; font-weight:600;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">STUDENT</span></h1></div>
-                <div style="text-align:right;">
-                    <div id="u-name" style="font-weight:600;">Loading...</div>
-                    <div style="display:flex; gap:15px; justify-content:flex-end; align-items:center; margin-top:5px;">
-                        <a href="javascript:openReportModal()" style="color:var(--primary); font-size:0.75rem; text-decoration:none; font-weight:600;">Generate Report</a>
-                        <a href="javascript:logout()" style="color:var(--text-dim); font-size:0.75rem; text-decoration:none; opacity:0.7;">Sign Out</a>
-                    </div>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <div id="u-name" style="font-weight:600; font-size:0.9rem;">Loading...</div>
+                    <div class="report-pill" onclick="openReportModal()">📊 REPORTS</div>
+                    <div onclick="logout()" style="color:var(--danger); font-weight:600; font-size:0.8rem; cursor:pointer; opacity:0.7;">LOGOUT</div>
                 </div>
             </div>
 
@@ -89,7 +91,7 @@
             <div id="aicte-content">
                 <div class="progress-section">
                     <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                        <div><h2 style="font-weight:400; font-size:1.5rem;">AICTE Activity Points</h2><p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Mandatory for degree completion</p></div>
+                        <div><h2 style="font-weight:400; font-size:1.5rem;">AICTE Activity Points</h2><p style="color:var(--text-dim); font-size:0.8rem; margin-top:5px;">Institutional mandatory points</p></div>
                         <div style="text-align:right;"><span id="p-val" style="font-size:2rem; font-weight:600; color:var(--accent);">0</span><span style="color:var(--text-dim);"> / 100 pts</span></div>
                     </div>
                     <div class="bar-bg"><div class="bar-fill" id="p-bar"></div></div>
@@ -131,7 +133,10 @@
     <div class="mobile-container">
         <div class="m-header">
             <div style="font-weight:600; letter-spacing:1px; font-size:1rem;">Symboit <span style="font-weight:300; opacity:0.6;">Student</span></div>
-            <div onclick="logout()" style="color:var(--danger); font-weight:600; font-size:0.8rem; cursor:pointer;">LOGOUT</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="report-pill" onclick="openReportModal()">📊 REPORTS</div>
+                <div onclick="logout()" style="color:var(--danger); font-weight:600; font-size:0.8rem; cursor:pointer;">LOGOUT</div>
+            </div>
         </div>
         <div class="mobile-content">
             <div id="m-view-aicte" class="mobile-tab-view active">
@@ -141,7 +146,6 @@
                         <div><span id="m-pts-val" style="font-size:1.4rem; font-weight:600; color:var(--accent);">0</span><small>/100</small></div>
                     </div>
                     <div class="bar-bg" style="height:8px; margin:5px 0;"><div class="bar-fill" id="m-p-bar"></div></div>
-                    <button onclick="openReportModal()" style="width:100%; padding:10px; margin-top:10px; border-radius:10px; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); color:var(--primary); font-size:0.75rem; font-weight:600;">📊 DOWNLOAD REPORT</button>
                 </div>
                 <div class="section-title">Activities</div>
                 <div class="activity-grid" id="m-rubric-grid"></div>
@@ -184,39 +188,59 @@
         </div>
     </div>
 
-    <!-- MODALS -->
+    <!-- MODALS (PREMIUM D.HTML STYLE) -->
     <div class="modal" id="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">✕</span>
-            <h2 id="m-title" style="margin-bottom:5px;">Detail</h2>
+            <h2 id="m-title" style="margin-bottom:5px; font-weight:400;">Detail</h2>
             <p id="m-type" style="font-size:0.7rem; color:var(--gold); margin-bottom:15px; text-transform:uppercase;"></p>
             <p id="m-desc" style="color:var(--text-dim); line-height:1.6; margin-bottom:2rem; font-size:0.9rem;"></p>
             <div id="milestone-selector" style="margin-bottom:20px;"></div>
             <div id="upload-area" style="display:none;">
+                <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">ACTIVITY DATE</label>
                 <input type="date" id="event-date">
-                <input type="file" multiple id="file-input" style="margin-top:10px;">
-                <button class="btn" style="width:100%; margin-top:20px; background:var(--primary); color:white;" onclick="handleSubmit()" id="submit-btn">Upload Evidence</button>
+                <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">PROOF PHOTOS</label>
+                <input type="file" multiple id="file-input" style="padding:15px; border:1px dashed rgba(255,255,255,0.1); background:rgba(0,0,0,0.2);">
+                <button class="btn" style="width:100%; margin-top:20px; padding:15px; background:var(--primary); color:white; border:none; border-radius:12px; font-weight:600; cursor:pointer;" onclick="handleSubmit()" id="submit-btn">Upload Evidence</button>
             </div>
         </div>
     </div>
 
     <div class="modal" id="report-modal">
-        <div class="modal-content">
+        <div class="modal-content" style="border:1px solid var(--gold);">
             <span class="close-btn" onclick="closeReportModal()">✕</span>
-            <h2>Generate Report</h2>
-            <select id="report-type"><option value="aicte">AICTE Points</option><option value="ach">Achievement</option><option value="part">Participation</option></select>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;"><input type="date" id="report-from"><input type="date" id="report-to"></div>
-            <button class="btn" id="gen-btn" onclick="generateReport()" style="width:100%; background:var(--gold); color:black;">Download</button>
+            <h2 style="margin-bottom:10px; font-weight:400;">Workspace Reports</h2>
+            <p style="color:var(--text-dim); font-size:0.8rem; margin-bottom:20px;">Select report type and date range for your formal export.</p>
+            
+            <label style="font-size:0.7rem; color:var(--gold); display:block; margin-bottom:8px; font-weight:600;">REPORT TYPE</label>
+            <select id="report-type">
+                <option value="aicte">AICTE Portfolio (All-Time)</option>
+                <option value="ach">Achievements (Range)</option>
+                <option value="part">Participation (Range)</option>
+            </select>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                <div>
+                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">FROM</label>
+                    <input type="date" id="report-from">
+                </div>
+                <div>
+                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">TO</label>
+                    <input type="date" id="report-to">
+                </div>
+            </div>
+            
+            <button class="btn" id="gen-btn" onclick="generateReport()" style="width:100%; padding:15px; background:var(--gold); color:black; font-weight:600; border-radius:12px; border:none; cursor:pointer;">Download Master Report</button>
         </div>
     </div>
 
     <script>
         let user = JSON.parse(localStorage.getItem('symboit_user'));
         if(!user || user.role !== 'student') window.location.href = '/';
-        document.getElementById('u-name').innerText = user.name;
+        document.getElementById('u-name').innerText = user.name || user.email.split('@')[0];
 
         let rubrics = [], activities = [], submissions = [], achievements = [], participations = [], achievementGenres = [];
-        let currentActivity = null, selectedMilestone = null, selectedReportFormat = 'pdf';
+        let currentActivity = null, selectedMilestone = null;
 
         function switchTab(t) {
             document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
@@ -241,9 +265,8 @@
                     fetch(`/api/achievement-genres`).then(r => r.json())
                 ]);
                 
-                const genres = gRes.genres || [];
-                rubrics = genres.filter(g => g.isRubric);
-                activities = genres.filter(g => !g.isRubric);
+                rubrics = (gRes.genres || []).filter(g => g.isRubric);
+                activities = (gRes.genres || []).filter(g => !g.isRubric);
                 submissions = sRes.submissions || [];
                 achievements = aRes.achievements || [];
                 participations = pRes.participations || [];
@@ -276,11 +299,8 @@
                 </div>`;
             });
 
-            // Genres
-            const achG = document.getElementById('ach-genre-grid'), partG = document.getElementById('part-genre-grid');
-            achG.innerHTML = achievementGenres.map(g => `<div class="activity-card" onclick="openAchModal('${g.name}')"><h4>${g.name}</h4></div>`).join('') + `<div class="activity-card" onclick="addNewGenre()"><h4>+ Add Genre</h4></div>`;
-            partG.innerHTML = achievementGenres.map(g => `<div class="activity-card" onclick="openPartModal('${g.name}')"><h4>${g.name}</h4></div>`);
-
+            document.getElementById('ach-genre-grid').innerHTML = achievementGenres.map(g => `<div class="activity-card" onclick="openAchModal('${g.name}')"><h4>${g.name}</h4></div>`).join('') + `<div class="activity-card" style="border:1px dashed var(--gold);" onclick="addNewGenre()"><h4>+ New Genre</h4></div>`;
+            document.getElementById('part-genre-grid').innerHTML = achievementGenres.map(g => `<div class="activity-card" onclick="openPartModal('${g.name}')"><h4>${g.name}</h4></div>`);
             document.getElementById('ach-log').innerHTML = achievements.map(a => `<div class="activity-card"><h4>${a.title}</h4><p>${a.genre} - ${a.status.toUpperCase()}</p></div>`).join('');
             document.getElementById('ach-pts').innerText = achievements.filter(a=>a.status==='approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
             document.getElementById('part-log').innerHTML = participations.map(p => `<div class="activity-card"><h4>Participation</h4><p>${p.genre} - ${p.status.toUpperCase()}</p></div>`).join('');
@@ -303,11 +323,8 @@
 
             document.getElementById('m-ach-genres').innerHTML = achievementGenres.map(g => `<div class="activity-card" onclick="openAchModal('${g.name}')"><h4>${g.name}</h4></div>`).join('') + `<div class="activity-card" onclick="addNewGenre()"><h4>+</h4></div>`;
             document.getElementById('m-part-genres').innerHTML = achievementGenres.map(g => `<div class="activity-card" onclick="openPartModal('${g.name}')"><h4>${g.name}</h4></div>`).join('');
-
             document.getElementById('m-ach-val').innerText = achievements.filter(a=>a.status==='approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
             document.getElementById('m-part-val').innerText = participations.filter(p=>p.status==='approved').length * 10;
-            document.getElementById('m-ach-log').innerHTML = achievements.map(a => `<div class="activity-card" style="padding:10px; font-size:0.8rem;">${a.title} - ${a.status}</div>`).join('');
-            document.getElementById('m-part-log').innerHTML = participations.map(p => `<div class="activity-card" style="padding:10px; font-size:0.8rem;">Participation - ${p.status}</div>`).join('');
             document.getElementById('m-event-list').innerHTML = rubrics.map(r => `<div class="activity-card" onclick="openModal('${r._id}', true)"><h4>${r.title}</h4></div>`).join('');
         }
 
@@ -317,51 +334,38 @@
             sync();
         }
 
-        let currentGenre = '';
-        function openAchModal(g) {
-            currentGenre = g; document.getElementById('m-title').innerText = g; document.getElementById('m-type').innerText = 'ACHIEVEMENT';
-            document.getElementById('milestone-selector').innerHTML = `<div class="milestone-box" onclick="selectAch('1st Place')">1st Place</div><div class="milestone-box" onclick="selectAch('2nd Place')">2nd Place</div><div class="milestone-box" onclick="selectAch('Participation')">Participation</div>`;
-            document.getElementById('modal').style.display = 'flex'; document.getElementById('upload-area').style.display = 'none';
-        }
-        function selectAch(r) { selectedMilestone = r; document.getElementById('upload-area').style.display = 'block'; document.getElementById('submit-btn').onclick = handleAchSubmit; }
-        
-        async function handleAchSubmit() {
-            const fd = new FormData(); fd.append('studentEmail', user.email); fd.append('organizerEmail', user.organizerEmail); fd.append('genre', currentGenre); fd.append('title', selectedMilestone); fd.append('eventDate', document.getElementById('event-date').value); Array.from(document.getElementById('file-input').files).forEach(f => fd.append('files', f));
-            await fetch('/api/submit-achievement', { method: 'POST', body: fd }); closeModal(); sync(); showMessage('Submitted! ✨');
-        }
+        let curG = '';
+        function openAchModal(g) { curG = g; document.getElementById('m-title').innerText = g; document.getElementById('milestone-selector').innerHTML = `<div class="milestone-box" onclick="selA('1st Place')">1st Place</div><div class="milestone-box" onclick="selA('2nd Place')">2nd Place</div><div class="milestone-box" onclick="selA('Participation')">Participation</div>`; document.getElementById('modal').style.display = 'flex'; document.getElementById('upload-area').style.display = 'none'; }
+        function selA(r) { selectedMilestone = r; document.getElementById('upload-area').style.display = 'block'; document.getElementById('submit-btn').onclick = subA; }
+        async function subA() { const fd = new FormData(); fd.append('studentEmail', user.email); fd.append('organizerEmail', user.organizerEmail); fd.append('genre', curG); fd.append('title', selectedMilestone); fd.append('eventDate', document.getElementById('event-date').value); Array.from(document.getElementById('file-input').files).forEach(f => fd.append('files', f)); await fetch('/api/submit-achievement', { method: 'POST', body: fd }); closeModal(); sync(); showMessage('Submitted!'); }
 
-        function openPartModal(g) {
-            currentGenre = g; document.getElementById('m-title').innerText = 'Participation: ' + g; document.getElementById('m-type').innerText = 'PARTICIPATION';
-            document.getElementById('milestone-selector').innerHTML = `<div class="milestone-box" onclick="selectPart()">Upload Certificate</div>`;
-            document.getElementById('modal').style.display = 'flex'; document.getElementById('upload-area').style.display = 'none';
-        }
-        function selectPart() { document.getElementById('upload-area').style.display = 'block'; document.getElementById('submit-btn').onclick = handlePartSubmit; }
-        
-        async function handlePartSubmit() {
-            const fd = new FormData(); fd.append('studentEmail', user.email); fd.append('organizerEmail', user.organizerEmail); fd.append('genre', currentGenre); fd.append('title', 'Participation'); fd.append('eventDate', document.getElementById('event-date').value); Array.from(document.getElementById('file-input').files).forEach(f => fd.append('files', f));
-            await fetch('/api/submit-participation', { method: 'POST', body: fd }); closeModal(); sync(); showMessage('Submitted! ✨');
-        }
+        function openPartModal(g) { curG = g; document.getElementById('m-title').innerText = 'Participation: ' + g; document.getElementById('milestone-selector').innerHTML = `<div class="milestone-box" onclick="selP()">Upload Certificate</div>`; document.getElementById('modal').style.display = 'flex'; document.getElementById('upload-area').style.display = 'none'; }
+        function selP() { document.getElementById('upload-area').style.display = 'block'; document.getElementById('submit-btn').onclick = subP; }
+        async function subP() { const fd = new FormData(); fd.append('studentEmail', user.email); fd.append('organizerEmail', user.organizerEmail); fd.append('genre', curG); fd.append('title', 'Participation'); fd.append('eventDate', document.getElementById('event-date').value); Array.from(document.getElementById('file-input').files).forEach(f => fd.append('files', f)); await fetch('/api/submit-participation', { method: 'POST', body: fd }); closeModal(); sync(); showMessage('Submitted!'); }
 
         function openModal(id, isR) {
             const list = isR ? rubrics : activities; currentActivity = list.find(x => x._id === id);
-            document.getElementById('m-title').innerText = currentActivity.title; document.getElementById('m-type').innerText = currentActivity.type;
-            document.getElementById('modal').style.display = 'flex'; const sel = document.getElementById('milestone-selector'); sel.innerHTML = ''; document.getElementById('upload-area').style.display = 'none';
-            if(currentActivity.type === 'weeks') { ['Week 1', 'Week 2'].forEach(m => sel.innerHTML += `<div class="milestone-box" onclick="selectMilestone('${m}')">${m}</div>`); }
-            else { sel.innerHTML += `<div class="milestone-box" onclick="selectMilestone('Full')">Upload Proof</div>`; }
-            document.getElementById('submit-btn').onclick = handleSubmit;
+            document.getElementById('m-title').innerText = currentActivity.title; document.getElementById('modal').style.display = 'flex'; const sel = document.getElementById('milestone-selector'); sel.innerHTML = ''; document.getElementById('upload-area').style.display = 'none';
+            if(currentActivity.type === 'weeks') { ['Week 1', 'Week 2'].forEach(m => sel.innerHTML += `<div class="milestone-box" onclick="selM('${m}')">${m}</div>`); }
+            else { sel.innerHTML += `<div class="milestone-box" onclick="selM('Full')">Upload Proof</div>`; }
+            document.getElementById('submit-btn').onclick = subM;
         }
-
-        function selectMilestone(m) { selectedMilestone = m; document.getElementById('upload-area').style.display = 'block'; }
-        async function handleSubmit() {
-            const fd = new FormData(); fd.append('studentEmail', user.email); fd.append('organizerEmail', user.organizerEmail); fd.append('activityTitle', currentActivity.title); fd.append('milestone', selectedMilestone); fd.append('eventDate', document.getElementById('event-date').value); Array.from(document.getElementById('file-input').files).forEach(f => fd.append('files', f));
-            await fetch('/api/submit-activity', { method: 'POST', body: fd }); closeModal(); sync(); showMessage('Uploaded! ✨');
-        }
+        function selM(m) { selectedMilestone = m; document.getElementById('upload-area').style.display = 'block'; }
+        async function subM() { const fd = new FormData(); fd.append('studentEmail', user.email); fd.append('organizerEmail', user.organizerEmail); fd.append('activityTitle', currentActivity.title); fd.append('milestone', selectedMilestone); fd.append('eventDate', document.getElementById('event-date').value); Array.from(document.getElementById('file-input').files).forEach(f => fd.append('files', f)); await fetch('/api/submit-activity', { method: 'POST', body: fd }); closeModal(); sync(); showMessage('Uploaded!'); }
 
         function openReportModal() { document.getElementById('report-modal').style.display = 'flex'; }
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
         async function generateReport() {
-            const res = await fetch('/api/report/generate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ studentEmail: user.email, organizerEmail: user.organizerEmail, type: document.getElementById('report-type').value, startDate: document.getElementById('report-from').value, endDate: document.getElementById('report-to').value, format: 'pdf' }) });
-            const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'report.pdf'; a.click(); closeReportModal();
+            const btn = document.getElementById('gen-btn'); btn.innerText = 'Processing...'; btn.disabled = true;
+            try {
+                const res = await fetch('/api/report/generate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ studentEmail: user.email, organizerEmail: user.organizerEmail, type: document.getElementById('report-type').value, startDate: document.getElementById('report-from').value, endDate: document.getElementById('report-to').value, format: 'pdf' }) });
+                if(!res.ok) throw new Error('Failed');
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'student_report.pdf'; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);
+                closeReportModal(); showMessage('Downloaded! 📄');
+            } catch (e) { alert('Report generation failed.'); }
+            finally { btn.innerText = 'Download Master Report'; btn.disabled = false; }
         }
 
         function showMessage(t) { const m = document.getElementById('message'); m.innerText = t; m.style.display = 'block'; m.style.background = 'var(--primary)'; setTimeout(()=>m.style.display='none',3000); }
