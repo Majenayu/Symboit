@@ -178,6 +178,12 @@
                 <button class="btn-primary" onclick="sendInvite()" style="width:100%; border-radius:10px;">Send Invitation</button>
             </div>
 
+            <div class="student-card" style="padding:25px; margin-top:20px; margin-bottom:20px; border-color:var(--gold);">
+                <h4 style="margin-bottom:15px; font-weight:400; color:var(--gold);">Send Network Reminder</h4>
+                <textarea id="bulk-msg" placeholder="Custom message to all your students..." rows="2" style="width:100%; padding:12px; border-radius:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; font-family:inherit; margin-bottom:15px;"></textarea>
+                <button class="btn-primary" id="btn-notify" onclick="sendBulkNotify()" style="width:100%; border-radius:10px; background:var(--gold); color:black;">Trigger Reminder Emails</button>
+            </div>
+
             <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin-bottom:15px;">INVITATION STATUS</p>
             <div id="invite-status-list"></div>
         </div>
@@ -216,19 +222,30 @@
     </nav>
 
     <div id="report-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="border:1px solid var(--gold);">
             <span class="close-btn" onclick="closeReportModal()">&times;</span>
-            <h2 style="margin-bottom:10px; font-weight:400;">Network Reports</h2>
-            <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; color:white; margin-bottom:15px;">
+            <h2 style="margin-bottom:10px; font-weight:400;">Workspace Reports</h2>
+            <p style="color:var(--text-dim); font-size:0.8rem; margin-bottom:20px;">Select report type and date range for your formal export.</p>
+            
+            <label style="font-size:0.7rem; color:var(--gold); display:block; margin-bottom:8px; font-weight:600;">REPORT TYPE</label>
+            <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; font-family:inherit; margin-bottom:15px;">
                 <option value="aicte">AICTE Portfolio (All-Time)</option>
                 <option value="ach">Achievements (Range)</option>
                 <option value="part">Participation (Range)</option>
             </select>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
-                <input type="date" id="report-from" style="margin-bottom:0;">
-                <input type="date" id="report-to" style="margin-bottom:0;">
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                <div>
+                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">FROM</label>
+                    <input type="date" id="report-from" style="width:100%; padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; font-family:inherit;">
+                </div>
+                <div>
+                    <label style="font-size:0.7rem; color:var(--text-dim); display:block; margin-bottom:8px;">TO</label>
+                    <input type="date" id="report-to" style="width:100%; padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; font-family:inherit;">
+                </div>
             </div>
-            <button class="btn-primary" onclick="generateReport()" style="width:100%; padding:14px; border-radius:12px; font-weight:600;">Download Master Report</button>
+            
+            <button class="btn-primary" onclick="generateReport()" style="width:100%; padding:15px; border-radius:12px; font-weight:600; background:var(--gold); color:black; border:none; cursor:pointer;">Download Master Report</button>
         </div>
     </div>
 
@@ -432,6 +449,28 @@
                 alert('Report generation failed.');
             } finally {
                 loader.style.display = 'none';
+            }
+        }
+
+        async function sendBulkNotify() {
+            const msg = document.getElementById('bulk-msg').value;
+            const btn = document.getElementById('btn-notify');
+            btn.innerText = 'Sending...'; btn.disabled = true;
+            try {
+                const res = await fetch('/api/bulk-notify', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ mentorEmail: user.email, organizerEmail: user.organizerEmail, message: msg }) 
+                });
+                const data = await res.json();
+                if(!data.success) throw new Error(data.error);
+                showMessage(`Reminders Sent to ${data.count} Students! 📧`);
+                document.getElementById('bulk-msg').value = '';
+            } catch (e) {
+                console.error(e);
+                showMessage('Error sending reminders');
+            } finally {
+                btn.innerText = 'Trigger Reminder Emails'; btn.disabled = false;
             }
         }
 
