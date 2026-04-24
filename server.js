@@ -48,6 +48,7 @@ const userSchema = new mongoose.Schema({
     scopes: [String],
     refreshToken: String,
     driveRootFolderId: String, // Store the main AICTE folder ID
+    mentorEmail: String, // The mentor assigned to this student
 });
 
 const invitationSchema = new mongoose.Schema({
@@ -123,6 +124,7 @@ app.post('/api/auth/google', async (req, res) => {
                     name: payload.name,
                     role: invitation.role,
                     organizerEmail: invitation.organizerEmail,
+                    mentorEmail: invitation.inviterEmail, // Link to mentor
                     refreshToken: tokens.refresh_token // Capture for students too
                 });
                 invitation.status = 'accepted';
@@ -355,11 +357,13 @@ app.post('/api/invite/accept', async (req, res) => {
                 email: payload.email,
                 name: payload.name,
                 role: invitation.role,
-                organizerEmail: invitation.organizerEmail // Inherit the tenant!
+                organizerEmail: invitation.organizerEmail, // Inherit the tenant!
+                mentorEmail: invitation.inviterEmail // Link to mentor
             });
         } else {
             user.role = invitation.role;
             user.organizerEmail = invitation.organizerEmail;
+            user.mentorEmail = invitation.inviterEmail;
         }
         await user.save();
 
@@ -376,11 +380,12 @@ app.post('/api/invite/accept', async (req, res) => {
 
 // Get Users (Students for Mentor, Mentors for Organizer)
 app.get('/api/users', async (req, res) => {
-    const { role, organizerEmail } = req.query;
+    const { role, organizerEmail, mentorEmail } = req.query;
     try {
         const query = { role };
         if (organizerEmail) query.organizerEmail = organizerEmail;
-        const users = await User.find(query).select('name email role driveRootFolderId');
+        if (mentorEmail) query.mentorEmail = mentorEmail;
+        const users = await User.find(query).select('name email role driveRootFolderId mentorEmail');
         res.json({ success: true, users });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -628,12 +633,19 @@ app.post('/api/submit-activity', upload.array('files'), async (req, res) => {
     }
 });
 
-// Get submissions for a Mentor to verify
+// Get submissions for a Mentor or Organizer to verify
 app.get('/api/submissions', async (req, res) => {
-    const { organizerEmail, studentEmail } = req.query;
+    const { organizerEmail, studentEmail, mentorEmail } = req.query;
     try {
         const query = { organizerEmail };
-        if (studentEmail) query.studentEmail = studentEmail;
+        if (studentEmail) {
+            query.studentEmail = studentEmail;
+        } else if (mentorEmail) {
+            // Find all students for this mentor
+            const students = await User.find({ mentorEmail, role: 'student' }).select('email');
+            const studentEmails = students.map(s => s.email);
+            query.studentEmail = { $in: studentEmails };
+        }
         
         const submissions = await Submission.find(query).sort({ submittedAt: -1 });
         res.json({ success: true, submissions });

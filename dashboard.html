@@ -27,10 +27,34 @@
 
         #message { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 2rem; border-radius: 12px; display: none; z-index: 1000; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Mobile Adjustments */
+        .mobile-header { display: none; background: #080808; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .hamburger { cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
+        .hamburger div { width: 25px; height: 2px; background: white; transition: 0.3s; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { 
+                position: fixed; left: -320px; top: 0; bottom: 0; z-index: 200; transition: 0.3s; 
+                box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+            }
+            .sidebar.active { left: 0; }
+            .mobile-header { display: flex; }
+            .main-content { padding: 1rem; }
+            .stat-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    <div class="mobile-header">
+        <h2 style="font-size:1rem; letter-spacing:2px;">SYMBOIT</h2>
+        <div class="hamburger" onclick="toggleSidebar()">
+            <div></div><div></div><div></div>
+        </div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
         <h2 style="font-size:1.2rem; letter-spacing:2px; margin-bottom:2rem;">SYMBOIT <span style="font-weight:300; color:var(--text-dim)">MENTOR</span></h2>
         
         <div class="glass-card" style="padding:1rem;">
@@ -82,8 +106,8 @@
 
         async function sync() {
             try {
-                const uRes = await fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student`).then(r => r.json());
-                const sRes = await fetch(`/api/submissions?organizerEmail=${user.organizerEmail}`).then(r => r.json());
+                const uRes = await fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student&mentorEmail=${user.email}`).then(r => r.json());
+                const sRes = await fetch(`/api/submissions?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json());
                 
                 const students = uRes.users;
                 const submissions = sRes.submissions;
@@ -216,6 +240,10 @@
             m.style.background = isError ? 'var(--danger)' : 'var(--accent)';
             m.style.color = 'white';
             setTimeout(() => m.style.display = 'none', 4000);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
         }
 
         function logout() { localStorage.removeItem('symboit_user'); window.location.href = '/'; }
