@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Symboit | Educational Portal</title>
+    <link rel="manifest" href="/manifest.json">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -90,9 +91,50 @@
             h1 { font-size: 1.8rem; }
             .stats-grid { grid-template-columns: 1fr; }
         }
+
+        /* PWA Install Prompt */
+        .pwa-prompt {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+        }
+        .pwa-prompt.show { bottom: 20px; }
+        .pwa-text h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+        .pwa-text p { font-size: 0.75rem; color: var(--text-dim); }
+        .pwa-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: 0.2s; }
+        .pwa-btn:hover { background: var(--primary-dark); transform: scale(1.05); }
+        .pwa-close { color: var(--text-dim); cursor: pointer; font-size: 1.2rem; margin-left: 10px; background: none; border: none; }
     </style>
 </head>
 <body>
+    <div id="pwa-install-prompt" class="pwa-prompt">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="background:var(--primary); width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.2rem; flex-shrink:0;">S</div>
+            <div class="pwa-text">
+                <h4>Install Symboit</h4>
+                <p>Add to home screen</p>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <button class="pwa-btn" id="pwa-install-btn">Install</button>
+            <button class="pwa-close" id="pwa-close-btn">✕</button>
+        </div>
+    </div>
+
     <div class="container">
         <div class="glass-card">
             <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 1rem;">
@@ -418,6 +460,39 @@
             checkInvite();
             initGoogleAuth();
         };
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW Registration failed: ', err));
+            });
+        }
+
+        // PWA Installation Prompt Logic
+        let deferredPrompt;
+        const pwaPrompt = document.getElementById('pwa-install-prompt');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const closeBtn = document.getElementById('pwa-close-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            setTimeout(() => { pwaPrompt.classList.add('show'); }, 3000); // Show popup after 3 seconds
+        });
+
+        installBtn.addEventListener('click', async () => {
+            pwaPrompt.classList.remove('show');
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') console.log('User accepted PWA installation');
+                deferredPrompt = null;
+            }
+        });
+
+        closeBtn.addEventListener('click', () => {
+            pwaPrompt.classList.remove('show');
+        });
     </script>
 </body>
 </html>
