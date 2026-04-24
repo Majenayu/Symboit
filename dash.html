@@ -92,6 +92,7 @@
                 <div class="tab active" id="tab-aicte" onclick="switchTab('aicte')">AICTE Points</div>
                 <div class="tab" id="tab-ach" onclick="switchTab('ach')">Achievement Node</div>
                 <div class="tab" id="tab-part" onclick="switchTab('part')">Participation Node</div>
+                <div class="tab" id="tab-events" onclick="switchTab('events')">📅 Events Feed</div>
             </div>
 
             <div id="aicte-content">
@@ -357,7 +358,6 @@
             document.getElementById('m-part-genres').innerHTML = achievementGenres.map(g => `<div class="activity-card" onclick="openPartModal('${g.name}')"><h4>${g.name}</h4></div>`).join('');
             document.getElementById('m-ach-val').innerText = achievements.filter(a=>a.status==='approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
             document.getElementById('m-part-val').innerText = participations.filter(p=>p.status==='approved').length * 10;
-            document.getElementById('m-event-list').innerHTML = rubrics.map(r => `<div class="activity-card" onclick="openModal('${r._id}', true)"><h4>${r.title}</h4></div>`).join('');
         }
 
         function renderFeed(events) {
@@ -376,7 +376,7 @@
                         ${ev.downloadLink ? `<a href="${ev.downloadLink}" target="_blank" style="text-decoration:none; color:var(--primary); font-size:0.8rem; font-weight:600; padding:8px 16px; background:rgba(139, 92, 246, 0.1); border-radius:8px;">📥 Download Image</a>` : ''}
                     </div>
                 </div>
-            `).join('');
+            `).join('') || '<p style="font-size:0.75rem; color:var(--text-dim); text-align:center; padding:20px;">No events posted yet.</p>';
 
             document.getElementById('desk-event-feed').innerHTML = html;
             document.getElementById('m-event-feed').innerHTML = html;
