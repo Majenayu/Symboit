@@ -107,30 +107,12 @@
                 </div>
             </div>
 
-            <div class="grid" style="display:grid; grid-template-columns: 1fr 2fr; gap:2rem;">
-                <div class="glass-card" style="background:var(--card); padding:2rem; border-radius:24px; border:1px solid rgba(255,255,255,0.05); height:fit-content;">
-                    <h3 class="section-title">New Achievement</h3>
-                    
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <select id="ach-genre" style="flex:1; padding:12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white;">
-                            <option value="">Select Genre</option>
-                        </select>
-                        <button onclick="addNewGenre()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:white; padding:0 15px; cursor:pointer;" title="Add New Genre">+</button>
-                    </div>
-
-                    <input type="text" id="ach-title" placeholder="Achievement Title (e.g. 1st Place in Hackfest)">
-                    <input type="date" id="ach-date">
-                    
-                    <div id="ach-preview" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap:10px; margin-bottom:15px;"></div>
-                    <input type="file" id="ach-files" multiple accept="image/*" onchange="previewAch()" style="font-size:0.7rem; margin-bottom:15px;">
-                    
-                    <button class="btn btn-primary" style="width:100%; background:var(--gold); border:none;" onclick="submitAchievement()">Upload Achievement</button>
-                </div>
-
-                <div>
-                    <h3 class="section-title">Your Achievement Log</h3>
-                    <div id="ach-list" class="activity-grid"></div>
-                </div>
+            <div id="ach-list-container">
+                <h3 class="section-title">Achievement Genres</h3>
+                <div class="activity-grid" id="ach-genre-grid"></div>
+                
+                <h3 class="section-title" style="margin-top:3rem;">Your Achievement Log</h3>
+                <div id="ach-log" class="activity-grid"></div>
             </div>
         </div>
     </div>
@@ -257,20 +239,28 @@
             const max = parseInt(document.getElementById('p-max').innerText) || 100;
             document.getElementById('p-bar').style.width = Math.min(100, (totalPoints / max) * 100) + '%';
 
-            // Render Achievements
-            const achRes = await fetch(`/api/achievements?studentEmail=${user.email}`).then(r => r.json());
-            const achievements = achRes.achievements || [];
-            
-            // Sync Achievement Genres
+            // Render Achievement Genres
             const agRes = await fetch('/api/achievement-genres').then(r => r.json());
             const ags = agRes.genres || [];
-            const select = document.getElementById('ach-genre');
-            const currentVal = select.value;
-            select.innerHTML = '<option value="">Select Genre</option>';
-            ags.forEach(g => select.innerHTML += `<option value="${g.name}">${g.name}</option>`);
-            select.value = currentVal;
+            const agGrid = document.getElementById('ach-genre-grid');
+            agGrid.innerHTML = '';
+            ags.forEach(g => {
+                agGrid.innerHTML += `
+                    <div class="activity-card" style="border-color:var(--gold); background:rgba(251, 191, 36, 0.02);" onclick="openAchModal('${g.name}')">
+                        <span class="badge" style="background:rgba(251, 191, 36, 0.1); color:var(--gold);">GENRE</span>
+                        <h4 style="margin-bottom:10px; font-size:0.9rem;">${g.name}</h4>
+                        <div style="font-size:0.6rem; color:var(--text-dim);">CLICK TO UPLOAD PROOF</div>
+                    </div>`;
+            });
+            agGrid.innerHTML += `
+                <div class="activity-card" style="border:2px dashed rgba(255,255,255,0.1); display:flex; justify-content:center; align-items:center;" onclick="addNewGenre()">
+                    <div style="text-align:center;">
+                        <div style="font-size:1.5rem; color:var(--gold);">+</div>
+                        <div style="font-size:0.6rem; color:var(--text-dim);">REGISTER GENRE</div>
+                    </div>
+                </div>`;
 
-            const achList = document.getElementById('ach-list');
+            const achList = document.getElementById('ach-log');
             achList.innerHTML = '';
             
             let totalAchPoints = 0;
@@ -288,6 +278,70 @@
                     </div>`;
             });
             document.getElementById('ach-pts').innerText = totalAchPoints;
+        }
+
+        let currentAchGenre = null;
+        let selectedRank = null;
+
+        function openAchModal(genre) {
+            currentAchGenre = genre;
+            document.getElementById('m-title').innerText = genre;
+            document.getElementById('m-type').innerText = 'ACHIEVEMENT NODE';
+            document.getElementById('m-desc').innerText = 'Select your rank or achievement type and upload proof images.';
+            document.getElementById('modal').style.display = 'flex';
+            
+            const selector = document.getElementById('milestone-selector');
+            selector.innerHTML = `
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
+                    <div class="milestone-box" onclick="selectRank('1st Place')"><b>1st</b></div>
+                    <div class="milestone-box" onclick="selectRank('2nd Place')"><b>2nd</b></div>
+                    <div class="milestone-box" onclick="selectRank('3rd Place')"><b>3rd</b></div>
+                    <div class="milestone-box" onclick="selectRank('Special Prize')"><b>Special</b></div>
+                </div>
+            `;
+            document.getElementById('upload-area').style.display = 'none';
+            // Swap handlesubmit for achievements
+            document.getElementById('submit-btn').onclick = handleAchSubmit;
+        }
+
+        function selectRank(r) {
+            selectedRank = r;
+            document.querySelectorAll('.milestone-box').forEach(b => b.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            document.getElementById('upload-area').style.display = 'block';
+            document.getElementById('preview-container').innerHTML = '';
+            document.getElementById('file-input').value = '';
+        }
+
+        async function handleAchSubmit() {
+            const files = document.getElementById('file-input').files;
+            const date = document.getElementById('event-date').value;
+            if(!date || files.length === 0) return alert('Select date and files.');
+
+            const btn = document.getElementById('submit-btn');
+            btn.innerText = 'Uploading Achievement...'; btn.disabled = true;
+
+            const fd = new FormData();
+            fd.append('studentEmail', user.email);
+            fd.append('organizerEmail', user.organizerEmail);
+            fd.append('genre', currentAchGenre);
+            fd.append('title', selectedRank);
+            fd.append('eventDate', date);
+            Array.from(files).forEach(f => fd.append('files', f));
+
+            try {
+                const res = await fetch('/api/submit-achievement', { method: 'POST', body: fd }).then(r => r.json());
+                if(res.success) {
+                    alert('Achievement Submitted!');
+                    closeModal();
+                    render();
+                } else alert(res.error);
+            } catch (e) { alert('Failed'); }
+            finally { 
+                btn.innerText = 'Upload to Drive'; btn.disabled = false;
+                // Reset submit-btn back to AICTE handler for next time
+                document.getElementById('submit-btn').onclick = handleSubmit;
+            }
         }
 
         function switchTab(t) {
@@ -362,6 +416,9 @@
         }
 
         function openModal(id, isRubric) {
+            // Reset submit-btn back to AICTE handler
+            document.getElementById('submit-btn').onclick = handleSubmit;
+            
             const list = isRubric ? rubrics : activities;
             currentActivity = list.find(x => x._id === id);
             
