@@ -51,19 +51,15 @@
             z-index: 100;
         }
         header .app-name { 
-            font-size: 1.1rem; 
+            font-size: 1.15rem; 
             font-weight: 600; 
             background: linear-gradient(to right, #fff, var(--primary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
         }
-        header .logout-btn { background: transparent; color: var(--danger); border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-
-        /* Sidebar (Desktop Only) */
-        .desktop-sidebar {
-            display: none; width: 300px; background: rgba(3, 0, 20, 0.5); border-right: 1px solid var(--border);
-            padding: 2rem; flex-direction: column;
-        }
+        header .header-actions { display: flex; align-items: center; gap: 12px; }
+        .report-pill { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: var(--primary); padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
 
         /* Main Content Area */
         #content { flex: 1; overflow-y: auto; position: relative; }
@@ -72,10 +68,14 @@
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Student Card */
-        .student-card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-bottom: 15px; }
+        /* Mentor Progress Bar */
+        .mentor-progress-card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-bottom: 25px; }
         .bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; margin-top: 15px; }
         .bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: 1s ease; }
+
+        /* Student Card */
+        .student-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 18px; margin-bottom: 12px; }
+        .pending-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-top: 10px; }
 
         /* Bottom Navigation */
         nav { 
@@ -114,23 +114,15 @@
 
         /* UI Elements */
         .section-title { font-size: 0.75rem; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; margin-top: 30px; font-weight: 600; }
-        .btn { padding: 12px 20px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: inherit; font-size: 0.85rem; }
+        .btn { padding: 10px 15px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: inherit; font-size: 0.8rem; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
-        input, select { width: 100%; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; color: white; margin-bottom: 15px; font-family: inherit; }
+        input { width: 100%; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; color: white; margin-bottom: 12px; font-family: inherit; }
 
         /* Modal */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); display: none; justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
         .modal-content { background: #080808; padding: 25px; border-radius: 24px; border: 1px solid var(--primary); width: 100%; max-width: 450px; position: relative; }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: var(--text-dim); }
-
-        @media (min-width: 1024px) {
-            body { flex-direction: row; }
-            header { position: fixed; top: 0; left: 0; right: 0; }
-            .desktop-sidebar { display: flex; padding-top: 80px; }
-            #content { padding-top: 80px; }
-            nav { display: none; }
-        }
 
         #message { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; z-index: 3000; display: none; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     </style>
@@ -140,57 +132,60 @@
 
     <header>
         <div class="app-name">Symboit <span style="font-weight:300; opacity:0.6;">Mentor</span></div>
-        <button class="logout-btn" onclick="logout()">Sign Out</button>
+        <div class="header-actions">
+            <div class="report-pill" onclick="openReportModal()">📊 REPORTS</div>
+            <div onclick="logout()" style="color:var(--danger); font-weight:600; font-size:0.8rem; cursor:pointer;">LOGOUT</div>
+        </div>
     </header>
 
-    <div class="desktop-sidebar">
-        <h2 style="font-size:1.1rem; letter-spacing:1px; margin-bottom:1.5rem;">Symboit <span style="font-weight:300;">Mentor</span></h2>
-        
-        <button class="btn btn-primary" style="margin-bottom:10px; background:rgba(139, 92, 246, 0.1); border:1px solid rgba(139, 92, 246, 0.2); color:var(--primary);" onclick="openReportModal()">📊 Generate Report</button>
-        
-        <div style="flex:1; overflow-y:auto; margin-top:1.5rem;">
-            <p style="font-size:0.65rem; color:var(--text-dim); letter-spacing:1px; margin-bottom:15px;">LIVE FEED</p>
-            <div id="d-feed" style="font-size:0.8rem;"></div>
-        </div>
-
-        <div style="margin-top:auto; border-top:1px solid var(--border); padding-top:1.5rem;">
-            <p id="m-email" style="font-size:0.75rem; color:var(--text-dim); margin-bottom:10px;"></p>
-            <button class="btn" style="background:rgba(239, 68, 68, 0.1); color:var(--danger); width:100%;" onclick="logout()">Sign Out</button>
-            <button class="btn" style="background:rgba(255,255,255,0.05); color:white; width:100%; margin-top:8px; font-size:0.75rem;" onclick="openReportModal()">📊 Master Report</button>
-        </div>
-    </div>
-
     <div id="content">
-        <!-- Tab: AICTE (Student List) -->
+        <!-- Tab 1: AICTE (ONLY AICTE) -->
         <div id="tab-aicte" class="tab-content active">
-            <p style="font-size:0.75rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin-bottom:1.5rem;">STUDENT NETWORK (AICTE)</p>
-            <div id="student-list"></div>
-        </div>
-
-        <!-- Tab: Achievements -->
-        <div id="tab-ach" class="tab-content">
-            <p style="font-size:0.75rem; color:var(--gold); font-weight:600; letter-spacing:2px; margin-bottom:1.5rem;">ACHIEVEMENT VERIFICATION</p>
-            <div id="ach-pending-list"></div>
-        </div>
-
-        <!-- Tab: Participations -->
-        <div id="tab-part" class="tab-content">
-            <p style="font-size:0.75rem; color:var(--blue); font-weight:600; letter-spacing:2px; margin-bottom:1.5rem;">PARTICIPATION VERIFICATION</p>
-            <div id="part-pending-list"></div>
-        </div>
-
-        <!-- Tab: Manage (Add + Verify AICTE) -->
-        <div id="tab-manage" class="tab-content">
-            <p style="font-size:0.75rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin-bottom:1.5rem;">MANAGEMENT & VERIFY</p>
-            
-            <div class="student-card" style="padding:25px;">
-                <h4 style="margin-bottom:15px; font-weight:400;">Add Student to Network</h4>
-                <input type="email" id="invite-email" placeholder="Student Email Address" style="margin-bottom:12px;">
-                <button class="btn-primary" onclick="sendInvite()" style="width:100%; border-radius:12px;">Send Invitation</button>
+            <div class="mentor-progress-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div>
+                        <h2 style="font-weight:400; font-size:1.4rem;">Mentor Progress</h2>
+                        <p style="color:var(--text-dim); font-size:0.75rem; margin-top:5px;">Overall network completion</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <span id="m-perc" style="font-size:1.8rem; font-weight:600; color:var(--accent);">0%</span>
+                    </div>
+                </div>
+                <div class="bar-bg"><div class="bar-fill" id="m-bar" style="width:0%"></div></div>
             </div>
 
-            <div class="section-title">Pending AICTE Submissions</div>
+            <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin-bottom:15px;">PENDING AICTE APPROVALS</p>
             <div id="aicte-pending-list"></div>
+
+            <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin:25px 0 15px 0;">STUDENT AICTE POINTS</p>
+            <div id="aicte-student-list"></div>
+        </div>
+
+        <!-- Tab 2: Portfolio (Merged ACH + PART) -->
+        <div id="tab-portfolio" class="tab-content">
+            <p style="font-size:0.7rem; color:var(--gold); font-weight:600; letter-spacing:2px; margin-bottom:15px;">PORTFOLIO VERIFICATION</p>
+            <div id="portfolio-pending-list"></div>
+
+            <p style="font-size:0.7rem; color:var(--gold); font-weight:600; letter-spacing:2px; margin:25px 0 15px 0;">STUDENT PORTFOLIO VIEW</p>
+            <div id="portfolio-student-list"></div>
+        </div>
+
+        <!-- Tab 4: Network (Add Student + Status) -->
+        <div id="tab-network" class="tab-content">
+            <div class="student-card" style="padding:25px;">
+                <h4 style="margin-bottom:15px; font-weight:400;">Add Student</h4>
+                <input type="email" id="invite-email" placeholder="Student Email Address">
+                <button class="btn-primary" onclick="sendInvite()" style="width:100%; border-radius:10px;">Send Invitation</button>
+            </div>
+
+            <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin-bottom:15px;">INVITATION STATUS</p>
+            <div id="invite-status-list"></div>
+        </div>
+
+        <!-- Tab 5: Feed -->
+        <div id="tab-feed" class="tab-content">
+            <p style="font-size:0.7rem; color:var(--primary); font-weight:600; letter-spacing:2px; margin-bottom:15px;">MY FEED</p>
+            <div id="live-feed-list"></div>
         </div>
     </div>
 
@@ -200,9 +195,9 @@
             <div class="nav-icon">📋</div>
             <span>AICTE</span>
         </div>
-        <div class="nav-item" onclick="switchTab('ach', this)">
+        <div class="nav-item" onclick="switchTab('portfolio', this)">
             <div class="nav-icon">🌟</div>
-            <span>ACH</span>
+            <span>PORTFOLIO</span>
         </div>
         <div class="fab-wrap">
             <div class="fab" onclick="switchTab('aicte', document.querySelector('.nav-item'))">
@@ -210,22 +205,22 @@
                 <div class="fab-label">Events</div>
             </div>
         </div>
-        <div class="nav-item" onclick="switchTab('part', this)">
-            <div class="nav-icon">👥</div>
-            <span>PART</span>
+        <div class="nav-item" onclick="switchTab('network', this)">
+            <div class="nav-icon">➕</div>
+            <span>NETWORK</span>
         </div>
-        <div class="nav-item" onclick="switchTab('manage', this)">
-            <div class="nav-icon">🛠️</div>
-            <span>VERIFY</span>
+        <div class="nav-item" onclick="switchTab('feed', this)">
+            <div class="nav-icon">🔔</div>
+            <span>FEED</span>
         </div>
     </nav>
 
-    <!-- Master Report Modal -->
+    <!-- Report Modal (From d.html reference) -->
     <div id="report-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeReportModal()">&times;</span>
-            <h2 style="margin-bottom:10px; font-weight:400;">Master Network Report</h2>
-            <select id="report-type">
+            <h2 style="margin-bottom:10px; font-weight:400;">Network Reports</h2>
+            <select id="report-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; color:white; margin-bottom:15px; font-family:inherit;">
                 <option value="aicte">AICTE Portfolio (All-Time)</option>
                 <option value="ach">Achievements (Range)</option>
                 <option value="part">Participation (Range)</option>
@@ -234,7 +229,7 @@
                 <input type="date" id="report-from" style="margin-bottom:0;">
                 <input type="date" id="report-to" style="margin-bottom:0;">
             </div>
-            <button class="btn-primary" onclick="generateReport()" style="width:100%;">Generate Report</button>
+            <button class="btn-primary" onclick="generateReport()" style="width:100%; padding:14px; border-radius:12px; font-weight:600;">Download Master Report</button>
         </div>
     </div>
 
@@ -252,93 +247,132 @@
 
         async function sync() {
             try {
-                const [uRes, sRes, aRes, pRes] = await Promise.all([
+                const [uRes, sRes, aRes, pRes, iRes] = await Promise.all([
                     fetch(`/api/users?organizerEmail=${user.organizerEmail}&role=student&mentorEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/submissions?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json()),
                     fetch(`/api/achievements?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json()),
-                    fetch(`/api/participations?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json())
+                    fetch(`/api/participations?organizerEmail=${user.organizerEmail}&mentorEmail=${user.email}`).then(r => r.json()),
+                    fetch(`/api/invitations?organizerEmail=${user.organizerEmail}&inviterEmail=${user.email}`).then(r => r.json())
                 ]);
                 
                 const students = uRes.users || [];
                 const subs = sRes.submissions || [];
                 const achs = aRes.achievements || [];
                 const parts = pRes.participations || [];
+                const invites = iRes.invites || [];
 
-                renderNetwork(students, subs, achs, parts);
-                renderPending(subs, achs, parts);
+                renderAICTE(students, subs);
+                renderPortfolio(students, achs, parts);
+                renderNetwork(invites);
                 renderFeed(subs, achs, parts);
+
+                // Mentor Progress Calculation
+                const totalEarned = [...subs, ...achs, ...parts].filter(i => i.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                const totalPossible = students.length * 150; // AICTE(100) + ACH(50) approximate
+                const perc = totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 0;
+                document.getElementById('m-perc').innerText = perc + '%';
+                document.getElementById('m-bar').style.width = perc + '%';
             } catch (e) { console.error(e); }
         }
 
-        function renderNetwork(students, subs, achs, parts) {
-            const container = document.getElementById('student-list');
-            container.innerHTML = students.map(s => {
-                const aicte = subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                const ach = achs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                const part = parts.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
-                const total = aicte + ach + part;
-                const perc = Math.min(100, (total / 150) * 100);
-
-                return `<div class="student-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <h4 style="font-size:1rem;">${s.name || s.email.split('@')[0]}</h4>
-                            <p style="font-size:0.7rem; color:var(--text-dim);">${s.email}</p>
-                        </div>
-                        <div style="text-align:right;"><div style="font-size:1.2rem; font-weight:600; color:var(--accent);">${total}</div><div style="font-size:0.5rem; color:var(--text-dim);">PTS</div></div>
-                    </div>
-                    <div class="bar-bg"><div class="bar-fill" style="width:${perc}%"></div></div>
-                    <div style="display:flex; gap:12px; margin-top:12px;">
-                        ${s.driveRootFolderId ? `<a href="https://drive.google.com/drive/folders/${s.driveRootFolderId}" target="_blank" style="text-decoration:none; font-size:1.2rem;">📋</a>` : ''}
-                        <span style="font-size:0.6rem; color:var(--text-dim); align-self:center;">${aicte} AICTE • ${ach} ACH • ${part} PART</span>
-                    </div>
-                </div>`;
-            }).join('') || '<p style="text-align:center; color:var(--text-dim); margin-top:2rem;">No students found.</p>';
-        }
-
-        function renderPending(subs, achs, parts) {
-            const aList = document.getElementById('aicte-pending-list');
-            const achList = document.getElementById('ach-pending-list');
-            const partList = document.getElementById('part-pending-list');
-
-            const renderCard = (p, type) => `
+        function renderAICTE(students, subs) {
+            const pList = document.getElementById('aicte-pending-list');
+            const pending = subs.filter(s => s.status === 'pending');
+            pList.innerHTML = pending.map(p => `
                 <div class="student-card">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div>
-                            <h4 style="font-size:0.95rem;">${p.title || p.activityTitle || 'Submission'}</h4>
-                            <p style="font-size:0.7rem; color:var(--text-dim);">${p.studentEmail.split('@')[0]}</p>
+                            <h4 style="font-size:0.9rem;">${p.activityTitle}</h4>
+                            <p style="font-size:0.65rem; color:var(--text-dim);">${p.studentEmail.split('@')[0]}</p>
                         </div>
                         <div style="display:flex; gap:8px;">
-                            <button class="btn" style="padding:6px 12px; font-size:0.7rem; background:var(--accent); color:white;" onclick="verify('${p._id}', 'approved', '${type}', '${p.title||''}')">Verify</button>
-                            <button class="btn-danger" style="padding:6px 12px; font-size:0.7rem;" onclick="verify('${p._id}', 'rejected', '${type}')">✕</button>
+                            <button class="btn" style="background:var(--accent); color:white; padding:5px 10px; font-size:0.65rem;" onclick="verify('${p._id}', 'approved', 'AICTE', '${p.activityTitle}')">Verify</button>
+                            <button class="btn-danger" style="padding:5px 10px; font-size:0.65rem;" onclick="verify('${p._id}', 'rejected', 'AICTE')">✕</button>
                         </div>
                     </div>
-                    ${p.files && p.files.length > 0 ? `<div style="display:flex; gap:8px;">${p.files.map((f, i) => `<a href="https://drive.google.com/uc?id=${f.id || f}" target="_blank" style="font-size:0.6rem; color:var(--primary); text-decoration:none; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; border:1px solid var(--border);">Proof ${i+1}</a>`).join('')}</div>` : ''}
-                </div>`;
+                </div>`).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No pending AICTE.</p>';
 
-            aList.innerHTML = subs.filter(s => s.status === 'pending').map(s => renderCard(s, 'AICTE')).join('') || '<p style="font-size:0.8rem; color:var(--text-dim);">No pending AICTE.</p>';
-            achList.innerHTML = achs.filter(a => a.status === 'pending').map(a => renderCard(a, 'ACH')).join('') || '<p style="font-size:0.8rem; color:var(--text-dim);">No pending achievements.</p>';
-            partList.innerHTML = parts.filter(p => p.status === 'pending').map(p => renderCard(p, 'PART')).join('') || '<p style="font-size:0.8rem; color:var(--text-dim);">No pending participations.</p>';
+            const sList = document.getElementById('aicte-student-list');
+            sList.innerHTML = students.map(s => {
+                const pts = subs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                return `<div class="student-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div><h4 style="font-size:0.9rem;">${s.name || s.email.split('@')[0]}</h4></div>
+                        <div style="font-size:1.1rem; font-weight:600; color:var(--primary);">${pts} <span style="font-size:0.5rem; color:var(--text-dim);">PTS</span></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderPortfolio(students, achs, parts) {
+            const pList = document.getElementById('portfolio-pending-list');
+            const allPending = [
+                ...achs.filter(a => a.status === 'pending').map(a => ({...a, type: 'ACH'})),
+                ...parts.filter(p => p.status === 'pending').map(p => ({...p, type: 'PART'}))
+            ].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+            pList.innerHTML = allPending.map(p => `
+                <div class="student-card">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                        <div>
+                            <p style="font-size:0.55rem; color:${p.type==='ACH'?'var(--gold)':'var(--blue)'}; font-weight:700;">${p.type}</p>
+                            <h4 style="font-size:0.9rem;">${p.title || p.genre}</h4>
+                            <p style="font-size:0.65rem; color:var(--text-dim);">${p.studentEmail.split('@')[0]}</p>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn" style="background:var(--accent); color:white; padding:5px 10px; font-size:0.65rem;" onclick="verify('${p._id}', 'approved', '${p.type}', '${p.title||p.genre}')">Verify</button>
+                            <button class="btn-danger" style="padding:5px 10px; font-size:0.65rem;" onclick="verify('${p._id}', 'rejected', '${p.type}')">✕</button>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">${(p.files||[]).map((f,i) => `<a href="https://drive.google.com/uc?id=${f.id || f}" target="_blank" style="font-size:0.6rem; color:var(--text-dim); text-decoration:none; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px;">Proof ${i+1}</a>`).join('')}</div>
+                </div>`).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No pending portfolio items.</p>';
+
+            const sList = document.getElementById('portfolio-student-list');
+            sList.innerHTML = students.map(s => {
+                const achPts = achs.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                const partPts = parts.filter(r => r.studentEmail === s.email && r.status === 'approved').reduce((a,c)=>a+(c.pointsAwarded||10),0);
+                return `<div class="student-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <h4 style="font-size:0.9rem;">${s.name || s.email.split('@')[0]}</h4>
+                        <div style="display:flex; gap:8px;">
+                            ${s.achievementFolderId ? `<a href="https://drive.google.com/drive/folders/${s.achievementFolderId}" target="_blank" style="text-decoration:none; font-size:1.1rem;">🌟</a>` : ''}
+                            ${s.participationFolderId ? `<a href="https://drive.google.com/drive/folders/${s.participationFolderId}" target="_blank" style="text-decoration:none; font-size:1.1rem;">👥</a>` : ''}
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-dim);">
+                        <span>Achievements: <b style="color:var(--gold);">${achPts}</b></span>
+                        <span>Participation: <b style="color:var(--blue);">${partPts}</b></span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderNetwork(invites) {
+            const list = document.getElementById('invite-status-list');
+            list.innerHTML = invites.filter(i => i.status === 'pending').map(i => `
+                <div class="student-card" style="border:1px dashed var(--gold); background:transparent;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div><div style="font-size:0.85rem; color:var(--text-dim);">${i.email}</div><div style="font-size:0.55rem; color:var(--gold);">PENDING ACCEPTANCE</div></div>
+                        <button class="btn-danger" style="padding:4px 8px; font-size:0.6rem;" onclick="deleteInvite('${i._id}')">Cancel</button>
+                    </div>
+                </div>`).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No pending invitations.</p>';
         }
 
         function renderFeed(subs, achs, parts) {
-            const feed = [...subs, ...achs, ...parts].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 10);
-            const html = feed.map(item => {
+            const feed = [...subs, ...achs, ...parts].sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 15);
+            document.getElementById('live-feed-list').innerHTML = feed.map(item => {
                 const t = item.rank ? 'ACH' : (item.activityTitle ? 'AICTE' : 'PART');
-                return `<div style="padding:10px; border-bottom:1px solid var(--border);">
-                    <div style="font-size:0.8rem;"><b>${item.studentEmail.split('@')[0]}</b>: ${item.title || item.activityTitle || 'Proof'}</div>
-                    <div style="font-size:0.6rem; color:var(--text-dim); margin-top:2px;">${new Date(item.submittedAt).toLocaleTimeString()} • ${t}</div>
+                return `<div style="padding:12px; border-bottom:1px solid var(--border);">
+                    <div style="font-size:0.85rem;"><b>${item.studentEmail.split('@')[0]}</b>: ${item.title || item.activityTitle || 'Proof'}</div>
+                    <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px;">${new Date(item.submittedAt).toLocaleTimeString()} • ${t}</div>
                 </div>`;
             }).join('');
-            document.getElementById('d-feed').innerHTML = html;
         }
 
         async function verify(id, status, type, title) {
             const url = type === 'AICTE' ? '/api/verify-submission' : (type === 'ACH' ? '/api/verify-achievement' : '/api/verify-participation');
-            try {
-                await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status, rank: title, points: 10 }) });
-                sync(); showMessage('Status Updated!');
-            } catch (e) { showMessage('Failed', true); }
+            await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status, rank: title, points: 10 }) });
+            sync(); showMessage('Status Updated!');
         }
 
         async function sendInvite() {
@@ -349,6 +383,7 @@
             sync(); showMessage('Invitation Sent! 📧');
         }
 
+        async function deleteInvite(id) { if(confirm('Cancel invite?')) { await fetch(`/api/invitations/${id}`, { method: 'DELETE' }); sync(); } }
         function openReportModal() { document.getElementById('report-modal').style.display = 'flex'; }
         function closeReportModal() { document.getElementById('report-modal').style.display = 'none'; }
 
@@ -364,9 +399,9 @@
             closeReportModal(); showMessage('Downloaded!');
         }
 
-        function showMessage(txt, isError = false) {
+        function showMessage(txt) {
             const m = document.getElementById('message');
-            m.innerText = txt; m.style.display = 'block'; m.style.background = isError ? 'var(--danger)' : 'var(--primary)';
+            m.innerText = txt; m.style.display = 'block'; m.style.background = 'var(--primary)';
             setTimeout(() => m.style.display = 'none', 3000);
         }
 
