@@ -13,6 +13,9 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
         .glass-card { background: var(--card); backdrop-filter: blur(12px); padding: 2rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
         
+        .progress-container { width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: 1s ease; }
+        
         .btn { padding: 10px 20px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: inherit; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
@@ -149,11 +152,35 @@
                                 <div style="font-weight:600; font-size:1rem;">${m.name || m.email.split('@')[0]}</div>
                                 <div style="font-size:0.75rem; color:var(--text-dim);">${m.email}</div>
                             </div>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--accent); font-size:0.55rem;">ACTIVE</span>
-                                <span class="badge" style="background:rgba(99, 102, 241, 0.1); color:var(--primary);">${myStudents.length} Students</span>
-                                <button onclick="deleteMentor('${m._id}')" class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;">Remove</button>
+                            <div style="text-align:right;">
+                                <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end;">
+                                    <span class="badge" style="background:rgba(16, 185, 129, 0.1); color:var(--accent); font-size:0.55rem;">ACTIVE</span>
+                                    <span class="badge" style="background:rgba(99, 102, 241, 0.1); color:var(--primary);">${myStudents.length} Students</span>
+                                    <button onclick="deleteMentor('${m._id}')" class="btn btn-danger" style="padding:5px 10px; font-size:0.6rem;">Remove</button>
+                                </div>
                             </div>
+                        </div>
+                        
+                        <div style="margin: 10px 0 20px 0;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-dim); margin-bottom:5px;">
+                                <span>MENTOR OVERALL PROGRESS</span>
+                                <span style="color:var(--accent); font-weight:bold;">${(() => {
+                                    const totalPts = myStudents.reduce((acc, s) => {
+                                        const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
+                                        return acc + sSubs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
+                                    }, 0);
+                                    const maxPossible = myStudents.length * 100;
+                                    return maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
+                                })()}%</span>
+                            </div>
+                            <div class="progress-container"><div class="progress-bar" style="width:${(() => {
+                                const totalPts = myStudents.reduce((acc, s) => {
+                                    const sSubs = submissions.filter(sub => sub.studentEmail === s.email && sub.status === 'approved');
+                                    return acc + sSubs.reduce((a, c) => a + (c.pointsAwarded || 10), 0);
+                                }, 0);
+                                const maxPossible = myStudents.length * 100;
+                                return maxPossible > 0 ? Math.round((totalPts / maxPossible) * 100) : 0;
+                            })()}%"></div></div>
                         </div>
                         
                         ${myStudents.length > 0 ? `
