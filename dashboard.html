@@ -408,7 +408,15 @@
         }
 
         function renderEvents(events) {
-            document.getElementById('global-event-list').innerHTML = events.map(ev => `
+            document.getElementById('global-event-list').innerHTML = events.map(ev => {
+                let imgId = ev.driveFileId;
+                if (!imgId && ev.viewLink) {
+                    const match = ev.viewLink.match(/\/d\/(.+?)\//);
+                    if (match) imgId = match[1];
+                }
+                const imgSrc = imgId ? `https://drive.google.com/thumbnail?id=${imgId}&sz=w800` : ev.viewLink;
+
+                return `
                 <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:20px; overflow:hidden;">
                     <div style="padding:15px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
                         <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1.2rem;">${ev.authorName.charAt(0).toUpperCase()}</div>
@@ -418,12 +426,12 @@
                         </div>
                     </div>
                     <div style="padding:15px; font-size:0.9rem; line-height:1.5;">${ev.description}</div>
-                    ${ev.viewLink ? `<img src="${ev.driveFileId ? `https://drive.google.com/thumbnail?id=${ev.driveFileId}&sz=w800` : ev.viewLink}" style="width:100%; max-height:400px; object-fit:cover; border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05);">` : ''}
+                    ${ev.viewLink ? `<img src="${imgSrc}" style="width:100%; max-height:400px; object-fit:cover; border-top:1px solid rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.05);">` : ''}
                     <div style="padding:15px; display:flex; justify-content:flex-end;">
-                        ${ev.downloadLink ? `<a href="${ev.downloadLink}" target="_blank" style="text-decoration:none; color:var(--primary); font-size:0.8rem; font-weight:600; padding:8px 16px; background:rgba(139, 92, 246, 0.1); border-radius:8px;">📥 Download Image</a>` : ''}
+                        ${ev.downloadLink ? `<a href="${ev.downloadLink}" target="_blank" download style="text-decoration:none; color:var(--primary); font-size:0.8rem; font-weight:600; padding:8px 16px; background:rgba(139, 92, 246, 0.1); border-radius:8px;">📥 Download Image</a>` : ''}
                     </div>
                 </div>
-            `).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No events posted yet.</p>';
+            `}).join('') || '<p style="font-size:0.75rem; color:var(--text-dim);">No events posted yet.</p>';
         }
 
         function renderHistory(subs, achs, parts) {

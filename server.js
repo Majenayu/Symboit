@@ -1372,9 +1372,10 @@ app.post('/api/global-events', upload.single('image'), async (req, res) => {
             const bufferStream = new stream.PassThrough();
             bufferStream.end(req.file.buffer);
 
+            const ext = req.file.originalname.substring(req.file.originalname.lastIndexOf('.'));
             const driveRes = await drive.files.create({
                 requestBody: {
-                    name: `${authorName.replace(/\s+/g,'_')}_${Date.now()}_Event`,
+                    name: `${authorName.replace(/\s+/g,'_')}_${Date.now()}_Event${ext}`,
                     parents: [eventsFolderId]
                 },
                 media: { mimeType: req.file.mimetype, body: bufferStream },
@@ -1383,7 +1384,7 @@ app.post('/api/global-events', upload.single('image'), async (req, res) => {
 
             driveFileId = driveRes.data.id;
             viewLink = driveRes.data.webViewLink;
-            downloadLink = driveRes.data.webContentLink; // direct download
+            downloadLink = driveRes.data.webContentLink; // direct download with proper name/extension
 
             // Make public to ANYONE with link
             await drive.permissions.create({
